@@ -166,40 +166,64 @@
       box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
-    .filter-group { display: flex; align-items: center; gap: 5px; }
+    .filter-group { display: flex; align-items: center; position: relative; }
 
-    .filter-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: #6b7a99;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-right: 2px;
-      white-space: nowrap;
+    .multi-select-trigger {
+      display: flex; align-items: center; gap: 6px;
+      height: 32px; padding: 0 10px;
+      border: 1px solid #dde1ea; border-radius: 8px;
+      background: #fff; cursor: pointer; white-space: nowrap;
+      font-family: inherit; font-size: 13px;
+      transition: border-color 0.15s, background 0.15s;
     }
+    .multi-select-trigger:hover { border-color: #b8bfd0; }
+    .multi-select-trigger.active-filter { border-color: #2463eb; background: #eef3fb; }
 
-    .pill {
-      padding: 4px 11px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 500;
-      border: 1px solid #dde1ea;
-      background: #fff;
-      color: #4a5568;
-      cursor: pointer;
-      white-space: nowrap;
-      line-height: 1.5;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
-    }
-    .pill.active { background: #1a2e5a; border-color: #1a2e5a; color: #fff; }
-    .pill:hover:not(.active) { background: #f5f7fa; border-color: #b8bfd0; }
+    .trigger-label { font-size: 11px; font-weight: 600; color: #6b7a99; text-transform: uppercase; letter-spacing: 0.05em; }
+    .trigger-value { font-size: 13px; color: #1a2332; font-weight: 500; }
+    .trigger-value.role-placeholder-value { color: #a0aec0; }
+    .trigger-chevron { color: #6b7a99; transition: transform 200ms ease; margin-left: 2px; }
+    .multi-select-trigger.open .trigger-chevron { transform: rotate(180deg); }
 
-    .filter-divider {
-      width: 1px;
-      height: 22px;
-      background: #dde1ea;
-      flex-shrink: 0;
+    .multi-select-panel {
+      position: absolute; top: calc(100% + 4px); left: 0;
+      min-width: 160px; z-index: 200;
+      background: #fff; border: 1px solid #dde1ea;
+      border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.10);
+      padding: 6px 0; display: none;
     }
+    .multi-select-panel.open { display: block; }
+
+    .panel-action {
+      display: flex; justify-content: space-between;
+      padding: 4px 14px 8px; border-bottom: 1px solid #f0f2f5; margin-bottom: 4px;
+    }
+    .panel-action button {
+      background: none; border: none; cursor: pointer;
+      font-size: 11px; font-weight: 600; color: #2463eb; padding: 0;
+    }
+    .panel-action button:hover { text-decoration: underline; }
+
+    .multi-select-option {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 14px; cursor: pointer; font-size: 13px; color: #1a2332;
+      transition: background 0.1s;
+    }
+    .multi-select-option:hover { background: #f5f7fa; }
+
+    .custom-checkbox {
+      width: 16px; height: 16px; border-radius: 4px; flex-shrink: 0;
+      border: 1.5px solid #dde1ea; background: #fff; display: flex;
+      align-items: center; justify-content: center;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .multi-select-option.checked .custom-checkbox { background: #1a2e5a; border-color: #1a2e5a; }
+
+    .role-select-option {
+      padding: 8px 14px; cursor: pointer; font-size: 13px; color: #1a2332; transition: background 0.1s;
+    }
+    .role-select-option:hover { background: #f5f7fa; }
+    .role-select-option.selected { background: #eef3fb; color: #2463eb; font-weight: 600; }
 
     .search-wrapper { margin-left: auto; position: relative; flex-shrink: 0; }
 
@@ -314,6 +338,15 @@
       flex-direction: column;
       gap: 8px;
     }
+
+    /* ── Jurisdiction accordions ── */
+    .jurisdiction-accordion { margin-bottom: 16px; border: 1px solid #e8ecf0; border-radius: 10px; overflow: hidden; }
+    .jurisdiction-header { padding: 13px 16px; background: #f0f2f5; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; transition: background 0.15s; }
+    .jurisdiction-header:hover { background: #e8ecf0; }
+    .jurisdiction-title { font-size: 15px; font-weight: 700; color: #1a2332; }
+    .jurisdiction-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 200ms ease; }
+    .jurisdiction-accordion.closed .jurisdiction-body { grid-template-rows: 0fr; }
+    .jurisdiction-body-inner { overflow: hidden; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 
     /* ── Cards ── */
     .card {
@@ -678,11 +711,15 @@
   let sidebarOpen   = true;
   let activeSection = 'roles';
   let searchTimer   = null;
+  let selectedRole  = null;
+  let openDropdown  = null;
+
+  const ROLES = [{ value: 'lpn-lvn', label: 'LPN / LVN' }];
 
   const ALL_JURISDICTIONS = ['CA','FL','US'];
   const ALL_PRIORITIES    = ['CRITICAL','HIGH'];
   const ALL_TIER_REASONS  = ['State Floor','Competency'];
-  const STATE_NAMES       = {CA:'California', FL:'Florida', US:'National (NALPN)'};
+  const STATE_NAMES       = {CA:'California', FL:'Florida', US:'United States'};
   const STATE_ORDER       = ['CA','FL','US'];
 
   const filterState = {
@@ -692,8 +729,11 @@
     search: ''
   };
 
-  const openCitations = new Set();   // state+'||'+citation  — all start open
-  const expandedCards = new Set();   // stable key per card  — all start closed
+  const openCitations     = new Set();
+  const expandedCards     = new Set();
+  const openJurisdictions = new Set();
+
+  const checkSvg = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`;
 
   // ─── Helpers ───
   function esc(s) {
@@ -780,36 +820,83 @@
 </div>`;
   }
 
-  // ─── State section ───
-  function renderSection(group) {
-    return `<section class="state-section">
-  <div class="state-header">
-    <h2 class="state-title">${esc(group.name)}</h2>
-    <span class="count-badge">${group.total}</span>
+  // ─── Jurisdiction accordion ───
+  function renderJurisdiction(group) {
+    const key    = group.state;
+    const isOpen = openJurisdictions.has(key);
+    const subs   = group.citations.map(([cit, rows]) => renderAccordion(cit, rows, group.state)).join('');
+    return `<div class="jurisdiction-accordion ${isOpen ? 'open' : 'closed'}" data-juris-key="${esc(key)}">
+  <div class="jurisdiction-header">
+    <div class="accordion-header-left">
+      <span class="jurisdiction-title">${esc(group.name)}</span>
+      <span class="accordion-count">${group.total}</span>
+    </div>
+    <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
   </div>
-  <hr class="state-hr">
-  ${group.citations.map(([cit, rows]) => renderAccordion(cit, rows, group.state)).join('')}
-</section>`;
+  <div class="jurisdiction-body"><div class="jurisdiction-body-inner">${subs}</div></div>
+</div>`;
+  }
+
+  // ─── Filter bar helpers ───
+  function dropdownSummary(allValues, selectedSet) {
+    if (selectedSet.size === 0 || selectedSet.size === allValues.length) return 'All';
+    if (selectedSet.size === 1) return [...selectedSet][0] === 'US' ? 'US / National' : [...selectedSet][0];
+    return `${selectedSet.size} selected`;
+  }
+
+  function renderDropdown(id, label, allValues, selectedSet) {
+    const summary  = dropdownSummary(allValues, selectedSet);
+    const isActive = selectedSet.size > 0 && selectedSet.size < allValues.length;
+    const isOpen   = openDropdown === id;
+    const options  = allValues.map(v => {
+      const display = v === 'US' ? 'US / National' : v;
+      const checked = selectedSet.size === 0 || selectedSet.has(v);
+      return `<div class="multi-select-option${checked ? ' checked' : ''}" data-dropdown="${id}" data-value="${esc(v)}">
+        <span class="custom-checkbox">${checked ? checkSvg : ''}</span>
+        <span>${esc(display)}</span>
+      </div>`;
+    }).join('');
+    return `<div class="filter-group">
+  <button class="multi-select-trigger${isActive ? ' active-filter' : ''}${isOpen ? ' open' : ''}" data-dropdown-trigger="${id}">
+    <span class="trigger-label">${esc(label)}</span>
+    <span class="trigger-value">${esc(summary)}</span>
+    <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
+  <div class="multi-select-panel${isOpen ? ' open' : ''}" data-dropdown-panel="${id}">
+    <div class="panel-action">
+      <button data-dropdown-all="${id}">Select all</button>
+      <button data-dropdown-clear="${id}">Clear</button>
+    </div>
+    ${options}
+  </div>
+</div>`;
+  }
+
+  function renderRoleDropdown() {
+    const isOpen   = openDropdown === 'role';
+    const selLabel = selectedRole ? ROLES.find(r => r.value === selectedRole)?.label : null;
+    const options  = ROLES.map(r => `<div class="role-select-option${selectedRole === r.value ? ' selected' : ''}" data-role-select="${esc(r.value)}">${esc(r.label)}</div>`).join('');
+    return `<div class="filter-group">
+  <button class="multi-select-trigger${isOpen ? ' open' : ''}" data-dropdown-trigger="role">
+    <span class="trigger-label">Role</span>
+    <span class="trigger-value${selLabel === null ? ' role-placeholder-value' : ''}">${selLabel === null ? 'Select a role' : esc(selLabel)}</span>
+    <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
+  <div class="multi-select-panel${isOpen ? ' open' : ''}" data-dropdown-panel="role">
+    ${options}
+  </div>
+</div>`;
   }
 
   // ─── Filter bar ───
-  function renderFilterBar() {
-    const jPills = ALL_JURISDICTIONS.map(j => {
-      const label = j === 'US' ? 'US / National' : j;
-      return `<button class="pill${filterState.jurisdictions.has(j) ? ' active' : ''}" data-filter="jurisdictions" data-value="${j}">${label}</button>`;
-    }).join('');
-    const pPills = ALL_PRIORITIES.map(p =>
-      `<button class="pill${filterState.priorities.has(p) ? ' active' : ''}" data-filter="priorities" data-value="${p}">${p}</button>`
-    ).join('');
-    const tPills = ALL_TIER_REASONS.map(t =>
-      `<button class="pill${filterState.tierReasons.has(t) ? ' active' : ''}" data-filter="tierReasons" data-value="${t}">${t}</button>`
-    ).join('');
+  function renderFilterBar(roleOnly = false) {
+    const roleDD = renderRoleDropdown();
+    if (roleOnly) return `<div class="filter-bar">${roleDD}</div>`;
     return `<div class="filter-bar">
-  <div class="filter-group"><span class="filter-label">Jurisdiction</span>${jPills}</div>
-  <div class="filter-divider"></div>
-  <div class="filter-group"><span class="filter-label">Priority</span>${pPills}</div>
-  <div class="filter-divider"></div>
-  <div class="filter-group"><span class="filter-label">Tier Reason</span>${tPills}</div>
+  ${roleDD}
+  ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
+  ${renderDropdown('priorities',    'Priority',     ALL_PRIORITIES,    filterState.priorities)}
+  ${renderDropdown('tierReasons',   'Tier Reason',  ALL_TIER_REASONS,  filterState.tierReasons)}
   <div class="search-wrapper">
     <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     <input type="text" class="search-input" id="searchInput" placeholder="Search topics or citations…" value="${esc(filterState.search)}">
@@ -820,9 +907,10 @@
   // ─── Counter ───
   function updateCounter(n) {
     const el = document.getElementById('rowCounter');
-    if (el) el.textContent = activeSection === 'care-settings'
-      ? '0 items'
-      : `Showing ${n} of ${DATA.length} items`;
+    if (!el) return;
+    if (selectedRole === null) { el.textContent = '—'; return; }
+    if (activeSection === 'care-settings') { el.textContent = '0 items'; return; }
+    el.textContent = `Showing ${n} of ${DATA.length} items`;
   }
 
   // ─── Main render ───
@@ -842,10 +930,23 @@
       return;
     }
 
+    if (selectedRole === null) {
+      panel.innerHTML = renderFilterBar(true) + `<div class="main-content"><div class="empty-state">
+        <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <p class="empty-state-title">Select a role to get started</p>
+        <p class="empty-state-text">Choose a role from the dropdown above to view regulatory requirements.</p>
+      </div></div>`;
+      updateCounter(0);
+      return;
+    }
+
     const filtered = filterData();
     const groups   = groupData(filtered);
     const body     = groups.length
-      ? groups.map(renderSection).join('')
+      ? groups.map(renderJurisdiction).join('')
       : `<div class="empty-state">
            <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
            <p class="empty-state-title">No results</p>
@@ -858,19 +959,64 @@
 
   // ─── Event delegation on content panel ───
   document.getElementById('contentPanel').addEventListener('click', e => {
-    // Pill filter
-    const pill = e.target.closest('.pill[data-filter]');
-    if (pill) {
-      const dim = pill.dataset.filter;
-      const val = pill.dataset.value;
-      const allMap = {jurisdictions: ALL_JURISDICTIONS, priorities: ALL_PRIORITIES, tierReasons: ALL_TIER_REASONS};
+    // Jurisdiction accordion header
+    const jurisHeader = e.target.closest('.jurisdiction-header');
+    if (jurisHeader) {
+      const acc = jurisHeader.closest('.jurisdiction-accordion');
+      const key = acc.dataset.jurisKey;
+      if (openJurisdictions.has(key)) { openJurisdictions.delete(key); acc.classList.replace('open','closed'); }
+      else { openJurisdictions.add(key); acc.classList.replace('closed','open'); }
+      return;
+    }
+    // Dropdown trigger → open/close
+    const trigger = e.target.closest('[data-dropdown-trigger]');
+    if (trigger) {
+      const id = trigger.dataset.dropdownTrigger;
+      openDropdown = openDropdown === id ? null : id;
+      render();
+      return;
+    }
+    // Role option
+    const roleOpt = e.target.closest('[data-role-select]');
+    if (roleOpt) {
+      selectedRole = roleOpt.dataset.roleSelect;
+      openDropdown = null;
+      render();
+      return;
+    }
+    // Multi-select option toggle
+    const opt = e.target.closest('[data-dropdown][data-value]');
+    if (opt) {
+      const dim = opt.dataset.dropdown;
+      const val = opt.dataset.value;
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, priorities: ALL_PRIORITIES, tierReasons: ALL_TIER_REASONS };
       const s = filterState[dim];
+      if (s.size === 0 || s.size === allMap[dim].length) allMap[dim].forEach(v => s.add(v));
       if (s.has(val)) { s.delete(val); if (!s.size) allMap[dim].forEach(v => s.add(v)); }
       else s.add(val);
       render();
       return;
     }
-    // Accordion header
+    // Select all
+    const allBtn = e.target.closest('[data-dropdown-all]');
+    if (allBtn) {
+      const dim = allBtn.dataset.dropdownAll;
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, priorities: ALL_PRIORITIES, tierReasons: ALL_TIER_REASONS };
+      allMap[dim].forEach(v => filterState[dim].add(v));
+      render();
+      return;
+    }
+    // Clear
+    const clearBtn = e.target.closest('[data-dropdown-clear]');
+    if (clearBtn) {
+      const dim = clearBtn.dataset.dropdownClear;
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, priorities: ALL_PRIORITIES, tierReasons: ALL_TIER_REASONS };
+      filterState[dim].clear();
+      allMap[dim].forEach(v => filterState[dim].add(v));
+      render();
+      return;
+    }
+    // Citation accordion header
     const accHeader = e.target.closest('.accordion-header');
     if (accHeader) {
       const acc = accHeader.closest('.accordion');
@@ -894,6 +1040,14 @@
     if (e.target.id === 'searchInput') {
       clearTimeout(searchTimer);
       searchTimer = setTimeout(() => { filterState.search = e.target.value; render(); }, 200);
+    }
+  });
+
+  // ─── Click outside closes dropdown ───
+  document.addEventListener('click', e => {
+    if (openDropdown !== null && !e.target.closest('.filter-group')) {
+      openDropdown = null;
+      render();
     }
   });
 
@@ -922,6 +1076,7 @@
 
   // ─── Init ───
   DATA.forEach(r => openCitations.add(r.state + '||' + r.tier_citation));
+  STATE_ORDER.forEach(s => openJurisdictions.add(s));
   render();
   </script>
 </body>
