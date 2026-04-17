@@ -394,6 +394,9 @@
     .badge-hours     { background: #e0e7ff; color: #3730a3; }
     .badge-voluntary { background: #f1f5f9; color: #6b7a99; border: 1px solid #e8ecf0; }
     .badge-type      { background: #f1f5f9; color: #4a5568; border: 1px solid #e8ecf0; }
+    .badge-citation  { background: #e8ecf0; color: #4a5568; font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: 10px; }
+    .badge-source    { background: #eef3fb; color: #2463eb; border: 1px solid #c7d7f8; text-decoration: none; }
+    .badge-source:hover { background: #dce8fb; }
 
     .text-frequency { font-size: 11px; color: #6b7a99; white-space: nowrap; }
 
@@ -765,8 +768,8 @@
     const key    = cardKey(row);
     const isOpen = expandedCards.has(key);
     const cls    = row.tier_priority === 'CRITICAL' ? 'critical' : 'high';
-    const bCls   = row.tier_priority === 'CRITICAL' ? 'badge-critical' : 'badge-high';
     const approval = row.approval_required != null ? esc(String(row.approval_required)) : '—';
+    const srcHref = row.source_url ? esc(row.source_url) : null;
     const src = row.source_url
       ? `<a href="${esc(row.source_url)}" target="_blank" rel="noopener" class="source-link">${esc(truncUrl(row.source_url))}</a>`
       : '—';
@@ -774,11 +777,12 @@
   <div class="card-top">
     <span class="card-topic">${esc(row.training_topic)}</span>
     <div class="card-badges">
-      <span class="badge ${bCls}">${esc(row.tier_priority)}</span>
+      ${row.tier_citation ? `<span class="badge badge-citation">${esc(row.tier_citation)}</span>` : ''}
       ${row.hours_required > 0 ? `<span class="badge badge-hours">${row.hours_required} hr${row.hours_required !== 1 ? 's' : ''}</span>` : ''}
       ${row.frequency ? `<span class="text-frequency">${esc(row.frequency)}</span>` : ''}
       ${row.type      ? `<span class="badge badge-type">${esc(row.type)}</span>` : ''}
       ${row.tier_reason === 'Competency' ? `<span class="badge badge-voluntary">Voluntary</span>` : ''}
+      ${srcHref ? `<a href="${srcHref}" target="_blank" rel="noopener" class="badge badge-source" onclick="event.stopPropagation()">Source ↗</a>` : ''}
     </div>
   </div>
   <div class="card-body-wrapper${isOpen ? ' open' : ''}">
