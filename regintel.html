@@ -533,6 +533,7 @@
 
   // ─── Data ───
   let DATA = [];
+  let CARE_DATA = [];
 
   // ─── UI state ───
   let sidebarOpen   = true;
@@ -541,7 +542,11 @@
   let selectedRole  = null;
   let openDropdown  = null;
 
-  const ROLES = [{ value: 'lpn-lvn', label: 'LPN / LVN' }];
+  const ROLES = [
+    { value: 'lpn-lvn', label: 'LPN / LVN' },
+    { value: 'cna',     label: 'CNA' },
+    { value: 'hha',     label: 'HHA' }
+  ];
 
   let ALL_JURISDICTIONS = ['CA','FL','US'];
   let ALL_TIER_REASONS  = ['State Floor','Competency'];
@@ -549,8 +554,8 @@
   const STATE_ORDER       = ['CA','FL','US'];
 
   const filterState = {
-    jurisdictions: new Set(ALL_JURISDICTIONS),
-    tierReasons:   new Set(ALL_TIER_REASONS),
+    jurisdictions: new Set(),
+    tierReasons:   new Set(),
     search: ''
   };
 
@@ -572,12 +577,28 @@
   function filterData() {
     const q = filterState.search.toLowerCase().trim();
     return DATA.filter(r => {
-      if (filterState.jurisdictions.size && !filterState.jurisdictions.has(r.state)) return false;
-      if (filterState.tierReasons.size   && !filterState.tierReasons.has(r.tier_reason)) return false;
+      if (!filterState.jurisdictions.has(r.state))     return false;
+      if (!filterState.tierReasons.has(r.tier_reason)) return false;
       if (q && !r.training_topic.toLowerCase().includes(q) &&
                !(r.tier_citation||'').toLowerCase().includes(q)) return false;
       return true;
     });
+  }
+
+  function groupByHstmSetting(rows) {
+    const map = {};
+    rows.forEach(r => {
+      const setting = r.hstm_setting || 'Other';
+      if (!map[r.state]) map[r.state] = {};
+      if (!map[r.state][setting]) map[r.state][setting] = [];
+      map[r.state][setting].push(r);
+    });
+    return STATE_ORDER.filter(s => map[s]).map(s => ({
+      state:    s,
+      name:     STATE_NAMES[s],
+      total:    rows.filter(r => r.state === s).length,
+      agencies: Object.entries(map[s])
+    }));
   }
 
   function groupData(rows) {
@@ -664,7 +685,8 @@
 
   // ─── Filter bar helpers ───
   function dropdownSummary(allValues, selectedSet) {
-    if (selectedSet.size === 0 || selectedSet.size === allValues.length) return 'All';
+    if (selectedSet.size === 0) return 'None';
+    if (selectedSet.size === allValues.length) return 'All';
     if (selectedSet.size === 1) return [...selectedSet][0] === 'US' ? 'US / National' : [...selectedSet][0];
     return `${selectedSet.size} selected`;
   }
@@ -675,7 +697,7 @@
     const isOpen   = openDropdown === id;
     const options  = allValues.map(v => {
       const display = v === 'US' ? 'US / National' : v;
-      const checked = selectedSet.size === 0 || selectedSet.has(v);
+      const checked = selectedSet.has(v);
       return `<div class="multi-select-option${checked ? ' checked' : ''}" data-dropdown="${id}" data-value="${esc(v)}">
         <span class="custom-checkbox">${checked ? checkSvg : ''}</span>
         <span>${esc(display)}</span>
@@ -734,13 +756,17 @@
     if (!panel) return;
 
     if (activeSection === 'care-settings') {
-      panel.innerHTML = `<div class="main-content"><div class="empty-state">
-        <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-        </svg>
-        <p class="empty-state-title">No care setting data loaded yet</p>
-        <p class="empty-state-text">ALF, SNF, and Home Health coming soon.</p>
-      </div></div>`;
+      const groups = groupByHstmSetting(CARE_DATA);
+      const body = groups.length
+        ? groups.map(renderJurisdiction).join('')
+        : `<div class="empty-state">
+             <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+             </svg>
+             <p class="empty-state-title">No care setting data available</p>
+             <p class="empty-state-text">ALF, SNF, and Home Health coming soon.</p>
+           </div>`;
+      panel.innerHTML = `<div class="main-content">${body}</div>`;
       return;
     }
 
@@ -752,6 +778,17 @@
         </svg>
         <p class="empty-state-title">Select a role to get started</p>
         <p class="empty-state-text">Choose a role from the dropdown above to view regulatory requirements.</p>
+      </div></div>`;
+      return;
+    }
+
+    if (selectedRole !== 'lpn-lvn') {
+      panel.innerHTML = renderFilterBar(true) + `<div class="main-content"><div class="empty-state">
+        <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+        </svg>
+        <p class="empty-state-title">Coming soon</p>
+        <p class="empty-state-text">No regulatory data loaded for this role yet.</p>
       </div></div>`;
       return;
     }
@@ -803,8 +840,7 @@
       const val = opt.dataset.value;
       const allMap = { jurisdictions: ALL_JURISDICTIONS, tierReasons: ALL_TIER_REASONS };
       const s = filterState[dim];
-      if (s.size === 0 || s.size === allMap[dim].length) allMap[dim].forEach(v => s.add(v));
-      if (s.has(val)) { s.delete(val); if (!s.size) allMap[dim].forEach(v => s.add(v)); }
+      if (s.has(val)) s.delete(val);
       else s.add(val);
       render();
       return;
@@ -825,7 +861,6 @@
       const dim = clearBtn.dataset.dropdownClear;
       const allMap = { jurisdictions: ALL_JURISDICTIONS, tierReasons: ALL_TIER_REASONS };
       filterState[dim].clear();
-      allMap[dim].forEach(v => filterState[dim].add(v));
       render();
       e.stopPropagation();
       return;
@@ -892,32 +927,30 @@
   async function loadData() {
     const res = await fetch('data.json');
     const json = await res.json();
-    DATA = (json.LPN || []).map(r => ({
-      state: r['Jurisdiction'],
-      hstm_role: r['HSTM Role'],
-      hstm_setting: r['HSTM Setting'],
+    const normalizeRow = r => ({
+      state:               r['Jurisdiction'],
+      hstm_role:           r['HSTM Role'],
+      hstm_setting:        r['HSTM Setting'],
       jurisdictional_name: r['Jurisdiction Role'],
-      oversight_agency: r['Oversight / Professional Agency'],
-      tier: Number(r['Tier']) || 0,
-      tier_priority: r['Tier Priority'],
-      tier_reason: r['Requirement Level'],
-      tier_citation: r['Citation'],
-      type: r['Purpose'],
-      training_topic: r['Training Topic / Competency Item'],
-      approval_required: r['Approval Required'],
-      hours_required: Number(r['Hours Required']) || 0,
-      frequency: r['Frequency'],
-      notes: r['Notes / Research Flags'] === 'None' ? '' : r['Notes / Research Flags'],
-      source_url: r['Source URL']
-    }));
+      oversight_agency:    r['Oversight / Professional Agency'],
+      tier:                Number(r['Tier']) || 0,
+      tier_priority:       r['Tier Priority'],
+      tier_reason:         r['Requirement Level'],
+      tier_citation:       r['Citation'],
+      type:                r['Purpose'],
+      training_topic:      r['Training Topic / Competency Item'],
+      approval_required:   r['Approval Required'],
+      hours_required:      Number(r['Hours Required']) || 0,
+      frequency:           r['Frequency'],
+      notes:               r['Notes / Research Flags'] === 'None' ? '' : (r['Notes / Research Flags'] || ''),
+      source_url:          r['Source URL']
+    });
+    DATA      = (json.LPN || []).map(normalizeRow);
+    CARE_DATA = [...(json.ALF || []), ...(json.SNF || [])].map(normalizeRow);
   }
 
   // ─── Init ───
-  loadData().then(() => {
-    DATA.forEach(r => openCitations.add(r.state + '||' + r.oversight_agency));
-    STATE_ORDER.forEach(s => openJurisdictions.add(s));
-    render();
-  });
+  loadData().then(() => { render(); });
   </script>
 </body>
 </html>
