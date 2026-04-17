@@ -532,173 +532,7 @@
   const NALPN_AGENCY = 'National Association of Licensed Practical Nurses';
 
   // ─── Data ───
-  const DATA = [
-    // ── California (3) ──
-    {state:'CA',tier_priority:'CRITICAL',tier_reason:'State Floor',tier_citation:'16 CCR §2540.1',type:'Renewal',
-     training_topic:'Total CE Hours Requirement: 30 contact hours per biennial renewal',
-     approval_required:'Yes',hours_required:30,frequency:'Biennial',
-     oversight_agency:'Board of Vocational Nurse and Psychiatric Technicians',
-     notes:'All 30 hrs are elective — licensee selects topics relevant to scope of practice. No state-mandated topic list except implicit bias. First-renewal exemption applies.',
-     source_url:'https://govt.westlaw.com/calregs/Browse/Home/California/CaliforniaCodeofRegulations?guid=I0BE9BD904C8211EC89E5000D3A7C4BC3'},
-    {state:'CA',tier_priority:'CRITICAL',tier_reason:'State Floor',tier_citation:'16 CCR §2540.2',type:'Renewal',
-     training_topic:'CE Scope Relevance Requirement: All hours must be relevant to LVN scope of practice. Acceptable subjects include clinical skills, pharmacology, patient care, health assessment, and any healthcare topic applicable to vocational nursing practice.',
-     approval_required:null,hours_required:0,frequency:'Biennial',
-     oversight_agency:'Board of Vocational Nurse and Psychiatric Technicians',
-     notes:'Not a topic list — a scope eligibility filter. Content must be relevant to LVN practice per 16 CCR §2540.2. Key constraint for content development and catalog positioning.',
-     source_url:'https://govt.westlaw.com/calregs/Browse/Home/California/CaliforniaCodeofRegulations?guid=I0BE9BD904C8211EC89E5000D3A7C4BC3'},
-    {state:'CA',tier_priority:'CRITICAL',tier_reason:'State Floor',tier_citation:'BPC §2892; AB 1407 (Ch. 445, Stats. 2021)',type:'Renewal',
-     training_topic:'Implicit Bias Training: 1 hour of direct participation in an implicit bias course from a BRN-approved provider',
-     approval_required:'Yes',hours_required:1,frequency:'Once',
-     oversight_agency:'Board of Vocational Nurse and Psychiatric Technicians',
-     notes:'Only hard-topic mandate in CA LVN CE framework. Required for first-renewal licensees only. Must be from BRN-approved CE provider. Does not count toward the 30-hr elective requirement for first renewers.',
-     source_url:'https://leginfo.legislature.ca.gov/faces/billTextClient.xhtml?bill_id=202120220AB1407'},
-
-    // ── Florida (8) ──
-    {state:'FL',tier_priority:'CRITICAL',tier_reason:'State Floor',tier_citation:'64B9-5.002 FAC',type:'Renewal',
-     training_topic:'Total CE Hours Requirement: 24 contact hours per biennial renewal (16 elective + mandatory topics below)',
-     approval_required:'Yes',hours_required:24,frequency:'Biennial',
-     oversight_agency:'Board of Nursing',
-     notes:'First-biennium exemption: LPNs initially licensed by examination or endorsement during current biennium are exempt from CE for that first renewal period except for any applicable mandatory topics already completed.',
-     source_url:'https://flrules.org/gateway/ChapterHome.asp?Chapter=64B9-5'},
-    {state:'FL',tier_priority:'CRITICAL',tier_reason:'State Floor',tier_citation:'64B9-5 FAC',type:'Renewal - Mandatory Topic',
-     training_topic:'Medical Error Prevention: includes study of root-cause analysis, error reduction and prevention, and patient safety',
-     approval_required:'Yes',hours_required:2,frequency:'Every renewal',
-     oversight_agency:'Board of Nursing',
-     notes:'Hard mandate. Must specifically include root-cause analysis methodology, error reduction strategies, and patient safety systems. Included within the 24-hr total.',
-     source_url:'https://flrules.org/gateway/ChapterHome.asp?Chapter=64B9-5'},
-    {state:'FL',tier_priority:'CRITICAL',tier_reason:'State Floor',tier_citation:'64B9-5.013 FAC',type:'Renewal - Mandatory Topic',
-     training_topic:'Nursing Laws and Rules: current text of Florida Statutes Chapter 464 (Nurse Practice Act), Chapter 456 (Health Professions), and Chapter 64B9 of the Florida Administrative Code',
-     approval_required:'Yes',hours_required:2,frequency:'Every renewal',
-     oversight_agency:'Board of Nursing',
-     notes:'Hard mandate. Course must cover the current statutory and administrative code text governing nursing practice in Florida. Included within the 24-hr total.',
-     source_url:'https://flrules.org/gateway/ChapterHome.asp?Chapter=64B9-5'},
-    {state:'FL',tier_priority:'CRITICAL',tier_reason:'State Floor',tier_citation:'64B9-5 FAC',type:'Renewal - Mandatory Topic',
-     training_topic:'Human Trafficking: identification of victims, reporting obligations, and available resources',
-     approval_required:'Yes',hours_required:2,frequency:'Every renewal',
-     oversight_agency:'Board of Nursing',
-     notes:'Hard mandate. Applies to RNs, LPNs, and APRNs every renewal cycle. Included within the 24-hr total.',
-     source_url:'https://flrules.org/gateway/ChapterHome.asp?Chapter=64B9-5'},
-    {state:'FL',tier_priority:'CRITICAL',tier_reason:'State Floor',tier_citation:'64B9-5 FAC',type:'Renewal - Mandatory Topic',
-     training_topic:'Recognizing Impairment in the Workplace',
-     approval_required:'Yes',hours_required:2,frequency:'Every other renewal (every 4 years)',
-     oversight_agency:'Board of Nursing',
-     notes:'Alternating-cycle mandate. Applies every other biennial renewal. Included within the 24-hr total when applicable.',
-     source_url:'https://flrules.org/gateway/ChapterHome.asp?Chapter=64B9-5'},
-    {state:'FL',tier_priority:'CRITICAL',tier_reason:'State Floor',tier_citation:'64B9-5 FAC',type:'Renewal - Mandatory Topic',
-     training_topic:'Domestic Violence: identification, intervention, and best practices for managing domestic violence situations',
-     approval_required:'Yes',hours_required:2,frequency:'Every 3rd renewal (every 6 years)',
-     oversight_agency:'Board of Nursing',
-     notes:'Lower-frequency mandate. Adds 2 hrs above the base 24-hr requirement in the applicable cycle, bringing total to 26 hrs that renewal period.',
-     source_url:'https://flrules.org/gateway/ChapterHome.asp?Chapter=64B9-5'},
-    {state:'FL',tier_priority:'CRITICAL',tier_reason:'State Floor',tier_citation:'§ 381.0035 F.S.',type:'Renewal - One-Time Mandatory',
-     training_topic:'HIV/AIDS: current Florida laws on AIDS and its impact on testing; confidentiality of test results; treatment of patients; protocols and procedures applicable to HIV counseling and testing, reporting, offering of HIV testing to pregnant women, and partner notification',
-     approval_required:'Yes',hours_required:1,frequency:'One-time (prior to first renewal)',
-     oversight_agency:'Board of Nursing',
-     notes:'One-time requirement. Must cover FL-specific law under §381.0035. Content scope explicitly defined in statute.',
-     source_url:'https://www.flsenate.gov/Laws/Statutes/2022/0381.0035'},
-    {state:'FL',tier_priority:'CRITICAL',tier_reason:'State Floor',tier_citation:'64B9-5.002 FAC',type:'Renewal - Elective',
-     training_topic:'General elective continuing education: any course relevant to the practice of nursing, provided by a Florida Board of Nursing-approved or ANCC-accredited provider',
-     approval_required:'Yes',hours_required:16,frequency:'Biennial',
-     oversight_agency:'Board of Nursing',
-     notes:'Elective hours fill the balance of the 24-hr requirement after mandatory topics are satisfied. Content must be appropriate continuing education as defined by Ch. 64B9-5 FAC. CE Broker reporting required.',
-     source_url:'https://flrules.org/gateway/ChapterHome.asp?Chapter=64B9-5'},
-
-    // ── NALPN — Code (7) ──
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Code',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Know the Scope of Practice to maximize utilization of the LPN/LVN, as specified by the Nursing Practice Act, and function within this Scope of Practice'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Code',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Provide health care to all patients regardless of race, creed, cultural background, disease, or lifestyle'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Code',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'In personal appearance, language, dress, and demeanor, uphold the highest standards'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Code',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Accept the responsibility for safe nursing by keeping mentally and physically fit and up to date educationally to practice safely'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Code',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Stay informed about issues affecting the practice of nursing and the delivery of health care; where appropriate, participate in government and policy decisions'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Code',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Accept responsibility of membership in NALPN; participate to maintain the Nurse Practice Standards and employment of policies which lead to quality patient care'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Code',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Safeguard confidential information about the patient acquired from any source'},
-
-    // ── NALPN — Education (3) ──
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Education',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Complete an educational program approved by the state nursing authority in practical nursing'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Education',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Successfully pass the National Council Licensure Examination for Practical Nurses (NCLEX-PN)'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Education',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Participate in the employing institution\'s initial orientation upon hire'},
-
-    // ── NALPN — Legal & Ethical (6) ──
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Legal & Ethical',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Recognize and have a commitment to meet the moral and ethical obligations of nursing practice'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Legal & Ethical',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Not perform or accept professional responsibilities or duties which the LPN/LVN knows they are not competent to perform'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Legal & Ethical',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Take responsibility for actions in situations where unprofessional conduct by a peer or other health care provider arises'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Legal & Ethical',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Hold a current LPN/LVN license to practice nursing in accordance with the law of their employment state'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Legal & Ethical',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Know and practice within the scope of nursing practice established by the Nursing Practice Act in their employment state'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Legal & Ethical',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Maintain a personal commitment to conform to the legal responsibilities essential for good nursing practice'},
-
-    // ── NALPN — Practice: Planning (3) ──
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Practice: Planning',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Assessment and data collection of health status of the patient, the family, and community groups'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Practice: Planning',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Reporting information received from assessment to appropriate members of the health care team'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Practice: Planning',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Identifying health goals in collaboration with the health care team'},
-
-    // ── NALPN — Practice: Implementation (4) ──
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Practice: Implementation',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Observing, reporting, and recording significant changes which require different goals or intervention'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Practice: Implementation',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Apply nursing skills and knowledge to help promote and maintain health, prevent disease and disability, and optimize functional capabilities of a patient'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Practice: Implementation',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Encourage self-care as appropriate and assist the patient and family with activities of daily living'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Practice: Implementation',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Carry out therapeutic protocols and regimens prescribed by authorized personnel in conjunction with state law'},
-
-    // ── NALPN — Practice: Evaluation (6) ──
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Practice: Evaluation',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Assess the relevancy of current goals in relation to the progress of the patient'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Practice: Evaluation',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Ensure the recipient\'s involvement in the care evaluation process'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Practice: Evaluation',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Evaluate the quality of nursing actions in the implementation of the care plan'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Practice: Evaluation',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Establish new goals or change care plan priorities as warranted by patient progress'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Practice: Evaluation',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Participate in peer review and other evaluation processes'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Practice: Evaluation',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Participate in the development of policies concerning the health and nursing needs of society, and the roles and functions of the LPN/LVN'},
-
-    // ── NALPN — Continuing Education (4) ──
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Continuing Education',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Seek and participate in continuing education activities that are accredited and offered by NALPN or other accredited organizations'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Continuing Education',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Take advantage of continuing education and/or certification opportunities which lead to professional development and personal growth'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Continuing Education',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Regularly review career goals and choose continuing education activities that help achieve those goals'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Continuing Education',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Be responsible for maintaining the highest possible level of professional capacity at all times'},
-
-    // ── NALPN — Specialized Practice (7) ──
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Specialized Practice',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Meet all general Nurse Practice Standards as set forth in the NALPN document'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Specialized Practice',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'For practice in a chosen specialized nursing area, present personal qualifications that demonstrate potential abilities'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Specialized Practice',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'At the staff level, have had at least one year of nursing experience prior to entering a specialized practice area'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Specialized Practice',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'An accountable member of the health care team, shall accept assigned responsibilities'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Specialized Practice',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Shall function within the limits of educational preparation and experience'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Specialized Practice',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Shall function in promotion of and maintenance of good health; aide in preventing disease and disability; care for and rehabilitate individuals experiencing an altered state of health; contribute to the ultimate quality of life until death'},
-    {state:'US',tier_priority:'HIGH',tier_reason:'Competency',tier_citation:'NALPN Standards - Specialized Practice',type:'Ongoing',hours_required:0,frequency:'Discretionary',approval_required:'No',oversight_agency:NALPN_AGENCY,notes:NALPN_NOTE,source_url:NALPN_SRC,
-     training_topic:'Provide documentation of completion of an approved agency course or program providing the knowledge and skills necessary for adequate nursing services in the specialized field'},
-  ];
+  let DATA = [];
 
   // ─── UI state ───
   let sidebarOpen   = true;
@@ -709,8 +543,8 @@
 
   const ROLES = [{ value: 'lpn-lvn', label: 'LPN / LVN' }];
 
-  const ALL_JURISDICTIONS = ['CA','FL','US'];
-  const ALL_TIER_REASONS  = ['State Floor','Competency'];
+  let ALL_JURISDICTIONS = ['CA','FL','US'];
+  let ALL_TIER_REASONS  = ['State Floor','Competency'];
   const STATE_NAMES       = {CA:'California', FL:'Florida', US:'United States'};
   const STATE_ORDER       = ['CA','FL','US'];
 
@@ -1054,10 +888,36 @@
     });
   });
 
+  // ─── Data loader ───
+  async function loadData() {
+    const res = await fetch('data.json');
+    const json = await res.json();
+    DATA = (json.LPN || []).map(r => ({
+      state: r['Jurisdiction'],
+      hstm_role: r['HSTM Role'],
+      hstm_setting: r['HSTM Setting'],
+      jurisdictional_name: r['Jurisdiction Role'],
+      oversight_agency: r['Oversight / Professional Agency'],
+      tier: Number(r['Tier']) || 0,
+      tier_priority: r['Tier Priority'],
+      tier_reason: r['Requirement Level'],
+      tier_citation: r['Citation'],
+      type: r['Purpose'],
+      training_topic: r['Training Topic / Competency Item'],
+      approval_required: r['Approval Required'],
+      hours_required: Number(r['Hours Required']) || 0,
+      frequency: r['Frequency'],
+      notes: r['Notes / Research Flags'] === 'None' ? '' : r['Notes / Research Flags'],
+      source_url: r['Source URL']
+    }));
+  }
+
   // ─── Init ───
-  DATA.forEach(r => openCitations.add(r.state + '||' + r.oversight_agency));
-  STATE_ORDER.forEach(s => openJurisdictions.add(s));
-  render();
+  loadData().then(() => {
+    DATA.forEach(r => openCitations.add(r.state + '||' + r.oversight_agency));
+    STATE_ORDER.forEach(s => openJurisdictions.add(s));
+    render();
+  });
   </script>
 </body>
 </html>
