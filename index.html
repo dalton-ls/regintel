@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RegWatch Dashboard</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <button class="icon-btn menu-btn" aria-label="Toggle menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <line x1="3" y1="12" x2="21" y2="12"/>
+            <line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+        <div class="user-avatar">DS</div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item">
+          <span class="nav-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 10v11M12 10v11M16 10v11"/>
+            </svg>
+          </span>
+          <span class="nav-label">Regulatory Bodies</span>
+        </a>
+        <a href="#" class="nav-item">
+          <span class="nav-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="7" width="20" height="14" rx="2"/>
+              <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+            </svg>
+          </span>
+          <span class="nav-label">Care Settings</span>
+        </a>
+        <a href="#" class="nav-item active">
+          <span class="nav-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          </span>
+          <span class="nav-label">Watchers</span>
+        </a>
+        <a href="#" class="nav-item">
+          <span class="nav-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </span>
+          <span class="nav-label">Structure Review</span>
+        </a>
+        <a href="#" class="nav-item">
+          <span class="nav-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </span>
+          <span class="nav-label">Metadata Export</span>
+          <span class="nav-badge">2</span>
+        </a>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+      <div class="dashboard-card">
+        <div class="dashboard-header">
+          <div>
+            <h1 class="dashboard-title">RegWatch Dashboard</h1>
+            <p class="dashboard-subtitle">Monitor regulation watchers and their status across different states</p>
+          </div>
+        </div>
+
+        <!-- Filters Row -->
+        <div class="filters-row">
+          <div class="search-wrapper">
+            <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input type="text" class="search-input" placeholder="Search Watchers" />
+          </div>
+
+          <select class="filter-select">
+            <option value="">Regulatory Body</option>
+            <option>Hawaii Department of Health</option>
+            <option>Delaware Department of Health and Social Services</option>
+          </select>
+
+          <select class="filter-select">
+            <option value="">Filter by Jurisdiction</option>
+            <option>Hawaii</option>
+            <option>Delaware</option>
+            <option>North Dakota</option>
+            <option>Montana</option>
+            <option>Maine</option>
+          </select>
+
+          <select class="filter-select">
+            <option value="">Last Run Status</option>
+            <option>Draft</option>
+            <option>Active</option>
+            <option>Error</option>
+          </select>
+
+          <button class="btn btn-outline">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"/>
+              <polyline points="1 20 1 14 7 14"/>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+            </svg>
+            Refresh
+          </button>
+
+          <button class="btn btn-primary">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add Watcher
+          </button>
+        </div>
+
+        <!-- Table -->
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Nickname</th>
+                <th>Regulatory Body</th>
+                <th>Jurisdiction</th>
+                <th>Last Run Status</th>
+                <th>Last Run Date</th>
+                <th>Refresh Frequency</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="row-draft">
+                <td class="nickname-cell">
+                  <span class="nickname">HI-HOS</span>
+                  <span class="badge badge-draft">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    Draft
+                  </span>
+                </td>
+                <td>Hawaii Department of Health</td>
+                <td>Hawaii</td>
+                <td><span class="badge badge-draft">Draft</span></td>
+                <td>-</td>
+                <td>120 days</td>
+                <td class="action-cell">
+                  <button class="icon-btn edit-btn" aria-label="Edit">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+              <tr class="row-draft">
+                <td class="nickname-cell">
+                  <span class="nickname">DE-HOS</span>
+                  <span class="badge badge-draft">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    Draft
+                  </span>
+                </td>
+                <td>Delaware Department of Health and Social Services</td>
+                <td>Delaware</td>
+                <td><span class="badge badge-draft">Draft</span></td>
+                <td>-</td>
+                <td>120 days</td>
+                <td class="action-cell">
+                  <button class="icon-btn edit-btn" aria-label="Edit">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+              <tr class="row-draft">
+                <td class="nickname-cell">
+                  <span class="nickname">ND-HOS</span>
+                  <span class="badge badge-draft">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    Draft
+                  </span>
+                </td>
+                <td>North Dakota Department of Health and Human Services</td>
+                <td>North Dakota</td>
+                <td><span class="badge badge-draft">Draft</span></td>
+                <td>-</td>
+                <td>120 days</td>
+                <td class="action-cell">
+                  <button class="icon-btn edit-btn" aria-label="Edit">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+              <tr class="row-draft">
+                <td class="nickname-cell">
+                  <span class="nickname">MT-HOS</span>
+                  <span class="badge badge-draft">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    Draft
+                  </span>
+                </td>
+                <td>Montana Department of Public Health and Human Services</td>
+                <td>Montana</td>
+                <td><span class="badge badge-draft">Draft</span></td>
+                <td>-</td>
+                <td>120 days</td>
+                <td class="action-cell">
+                  <button class="icon-btn edit-btn" aria-label="Edit">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+              <tr class="row-draft">
+                <td class="nickname-cell">
+                  <span class="nickname">ME-HOS</span>
+                  <span class="badge badge-draft">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    Draft
+                  </span>
+                </td>
+                <td>Maine Department of Health and Human Services</td>
+                <td>Maine</td>
+                <td><span class="badge badge-draft">Draft</span></td>
+                <td>-</td>
+                <td>120 days</td>
+                <td class="action-cell">
+                  <button class="icon-btn edit-btn" aria-label="Edit">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
