@@ -291,10 +291,10 @@ body {
 
 .row-draft {
   background: #fffbf0;
-  border-left: 3px solid #f59e0b;
 }
 
 .row-draft td:first-child {
+  border-left: 3px solid #f59e0b;
   padding-left: 13px;
 }
 
