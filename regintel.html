@@ -543,9 +543,15 @@
   let openDropdown  = null;
 
   const ROLES = [
-    { value: 'lpn-lvn', label: 'LPN / LVN' },
-    { value: 'cna',     label: 'CNA' },
-    { value: 'hha',     label: 'HHA' }
+    { value: 'lpn-lvn', label: 'Licensed Practical Nurse / Licensed Vocational Nurse' },
+    { value: 'cna',     label: 'Certified Nursing Assistant' },
+    { value: 'hha',     label: 'Home Health Aide' }
+  ];
+
+  const CARE_SETTINGS_LIST = [
+    { value: 'Assisted Living Facility', label: 'Assisted Living Facility' },
+    { value: 'Skilled Nursing Facility', label: 'Skilled Nursing Facility' },
+    { value: 'Home Health',              label: 'Home Health' }
   ];
 
   let ALL_JURISDICTIONS = ['CA','FL','US'];
@@ -736,10 +742,9 @@
   }
 
   function renderCareSettingDropdown() {
-    const CARE_SETTINGS = [...new Set(CARE_DATA.map(r => r.hstm_setting).filter(Boolean))].sort();
     const isOpen   = openDropdown === 'care-setting';
-    const selLabel = selectedCareSetting || null;
-    const options  = CARE_SETTINGS.map(s => `<div class="role-select-option${selectedCareSetting === s ? ' selected' : ''}" data-care-select="${esc(s)}">${esc(s)}</div>`).join('');
+    const selLabel = selectedCareSetting ? CARE_SETTINGS_LIST.find(s => s.value === selectedCareSetting)?.label : null;
+    const options  = CARE_SETTINGS_LIST.map(s => `<div class="role-select-option${selectedCareSetting === s.value ? ' selected' : ''}" data-care-select="${esc(s.value)}">${esc(s.label)}</div>`).join('');
     return `<div class="filter-group">
   <button type="button" class="multi-select-trigger${isOpen ? ' open' : ''}" data-dropdown-trigger="care-setting">
     <span class="trigger-label">Care Setting</span>
@@ -794,6 +799,16 @@
           </svg>
           <p class="empty-state-title">Select a care setting to get started</p>
           <p class="empty-state-text">Choose a care setting from the dropdown above to view regulatory requirements.</p>
+        </div></div>`;
+        return;
+      }
+      if (selectedCareSetting !== 'Assisted Living Facility') {
+        panel.innerHTML = renderCareFilterBar(true) + `<div class="main-content"><div class="empty-state">
+          <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <p class="empty-state-title">Coming soon</p>
+          <p class="empty-state-text">No regulatory data loaded for this care setting yet.</p>
         </div></div>`;
         return;
       }
