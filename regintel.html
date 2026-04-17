@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RegIntel — LPN/LVN Content Development Framework</title>
+  <title>Regulatory Intelligence Research</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -84,12 +84,6 @@
       text-overflow: ellipsis;
     }
 
-    .row-counter {
-      font-size: 12px;
-      color: rgba(255,255,255,0.55);
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
 
     /* ── Body layout ── */
     .body-row {
@@ -302,11 +296,10 @@
 
     .accordion-header-left { display: flex; align-items: center; gap: 8px; }
 
-    .accordion-citation {
-      font-size: 12px;
+    .accordion-label {
+      font-size: 13px;
       font-weight: 600;
       color: #1a2332;
-      font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
     }
 
     .accordion-count {
@@ -491,10 +484,9 @@
       <div class="header-brand">
         <span class="logo-text">RegIntel</span>
         <span class="header-sep">|</span>
-        <span class="header-subtitle">LPN / LVN — Content Development Framework</span>
+        <span class="header-subtitle">Regulatory Intelligence Research</span>
       </div>
     </div>
-    <span class="row-counter" id="rowCounter">Showing 51 of 51 items</span>
   </header>
 
   <!-- ── Body ── -->
@@ -717,14 +709,12 @@
   const ROLES = [{ value: 'lpn-lvn', label: 'LPN / LVN' }];
 
   const ALL_JURISDICTIONS = ['CA','FL','US'];
-  const ALL_PRIORITIES    = ['CRITICAL','HIGH'];
   const ALL_TIER_REASONS  = ['State Floor','Competency'];
   const STATE_NAMES       = {CA:'California', FL:'Florida', US:'United States'};
   const STATE_ORDER       = ['CA','FL','US'];
 
   const filterState = {
     jurisdictions: new Set(ALL_JURISDICTIONS),
-    priorities:    new Set(ALL_PRIORITIES),
     tierReasons:   new Set(ALL_TIER_REASONS),
     search: ''
   };
@@ -748,7 +738,6 @@
     const q = filterState.search.toLowerCase().trim();
     return DATA.filter(r => {
       if (filterState.jurisdictions.size && !filterState.jurisdictions.has(r.state)) return false;
-      if (filterState.priorities.size    && !filterState.priorities.has(r.tier_priority)) return false;
       if (filterState.tierReasons.size   && !filterState.tierReasons.has(r.tier_reason)) return false;
       if (q && !r.training_topic.toLowerCase().includes(q) &&
                !(r.tier_citation||'').toLowerCase().includes(q)) return false;
@@ -760,14 +749,14 @@
     const map = {};
     rows.forEach(r => {
       if (!map[r.state]) map[r.state] = {};
-      if (!map[r.state][r.tier_citation]) map[r.state][r.tier_citation] = [];
-      map[r.state][r.tier_citation].push(r);
+      if (!map[r.state][r.oversight_agency]) map[r.state][r.oversight_agency] = [];
+      map[r.state][r.oversight_agency].push(r);
     });
     return STATE_ORDER.filter(s => map[s]).map(s => ({
       state: s,
       name:  STATE_NAMES[s],
       total: rows.filter(r => r.state === s).length,
-      citations: Object.entries(map[s])
+      agencies: Object.entries(map[s])
     }));
   }
 
@@ -805,13 +794,13 @@
   }
 
   // ─── Accordion ───
-  function renderAccordion(citation, rows, state) {
-    const key    = state + '||' + citation;
+  function renderAccordion(label, rows, state) {
+    const key    = state + '||' + label;
     const isOpen = openCitations.has(key);
     return `<div class="accordion ${isOpen ? 'open' : 'closed'}" data-cit-key="${esc(key)}">
   <div class="accordion-header">
     <div class="accordion-header-left">
-      <span class="accordion-citation">${esc(citation)}</span>
+      <span class="accordion-label">${esc(label)}</span>
       <span class="accordion-count">${rows.length}</span>
     </div>
     <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
@@ -824,7 +813,7 @@
   function renderJurisdiction(group) {
     const key    = group.state;
     const isOpen = openJurisdictions.has(key);
-    const subs   = group.citations.map(([cit, rows]) => renderAccordion(cit, rows, group.state)).join('');
+    const subs   = group.agencies.map(([agency, rows]) => renderAccordion(agency, rows, group.state)).join('');
     return `<div class="jurisdiction-accordion ${isOpen ? 'open' : 'closed'}" data-juris-key="${esc(key)}">
   <div class="jurisdiction-header">
     <div class="accordion-header-left">
@@ -857,15 +846,15 @@
       </div>`;
     }).join('');
     return `<div class="filter-group">
-  <button class="multi-select-trigger${isActive ? ' active-filter' : ''}${isOpen ? ' open' : ''}" data-dropdown-trigger="${id}">
+  <button type="button" class="multi-select-trigger${isActive ? ' active-filter' : ''}${isOpen ? ' open' : ''}" data-dropdown-trigger="${id}">
     <span class="trigger-label">${esc(label)}</span>
     <span class="trigger-value">${esc(summary)}</span>
     <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
   </button>
   <div class="multi-select-panel${isOpen ? ' open' : ''}" data-dropdown-panel="${id}">
     <div class="panel-action">
-      <button data-dropdown-all="${id}">Select all</button>
-      <button data-dropdown-clear="${id}">Clear</button>
+      <button type="button" data-dropdown-all="${id}">Select all</button>
+      <button type="button" data-dropdown-clear="${id}">Clear</button>
     </div>
     ${options}
   </div>
@@ -877,7 +866,7 @@
     const selLabel = selectedRole ? ROLES.find(r => r.value === selectedRole)?.label : null;
     const options  = ROLES.map(r => `<div class="role-select-option${selectedRole === r.value ? ' selected' : ''}" data-role-select="${esc(r.value)}">${esc(r.label)}</div>`).join('');
     return `<div class="filter-group">
-  <button class="multi-select-trigger${isOpen ? ' open' : ''}" data-dropdown-trigger="role">
+  <button type="button" class="multi-select-trigger${isOpen ? ' open' : ''}" data-dropdown-trigger="role">
     <span class="trigger-label">Role</span>
     <span class="trigger-value${selLabel === null ? ' role-placeholder-value' : ''}">${selLabel === null ? 'Select a role' : esc(selLabel)}</span>
     <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
@@ -894,23 +883,13 @@
     if (roleOnly) return `<div class="filter-bar">${roleDD}</div>`;
     return `<div class="filter-bar">
   ${roleDD}
-  ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
-  ${renderDropdown('priorities',    'Priority',     ALL_PRIORITIES,    filterState.priorities)}
-  ${renderDropdown('tierReasons',   'Tier Reason',  ALL_TIER_REASONS,  filterState.tierReasons)}
+  ${renderDropdown('jurisdictions', 'Jurisdiction',       ALL_JURISDICTIONS, filterState.jurisdictions)}
+  ${renderDropdown('tierReasons',   'Requirement Level', ALL_TIER_REASONS,  filterState.tierReasons)}
   <div class="search-wrapper">
     <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     <input type="text" class="search-input" id="searchInput" placeholder="Search topics or citations…" value="${esc(filterState.search)}">
   </div>
 </div>`;
-  }
-
-  // ─── Counter ───
-  function updateCounter(n) {
-    const el = document.getElementById('rowCounter');
-    if (!el) return;
-    if (selectedRole === null) { el.textContent = '—'; return; }
-    if (activeSection === 'care-settings') { el.textContent = '0 items'; return; }
-    el.textContent = `Showing ${n} of ${DATA.length} items`;
   }
 
   // ─── Main render ───
@@ -926,7 +905,6 @@
         <p class="empty-state-title">No care setting data loaded yet</p>
         <p class="empty-state-text">ALF, SNF, and Home Health coming soon.</p>
       </div></div>`;
-      updateCounter(0);
       return;
     }
 
@@ -939,7 +917,6 @@
         <p class="empty-state-title">Select a role to get started</p>
         <p class="empty-state-text">Choose a role from the dropdown above to view regulatory requirements.</p>
       </div></div>`;
-      updateCounter(0);
       return;
     }
 
@@ -954,7 +931,6 @@
          </div>`;
 
     panel.innerHTML = renderFilterBar() + `<div class="main-content">${body}</div>`;
-    updateCounter(filtered.length);
   }
 
   // ─── Event delegation on content panel ───
@@ -989,7 +965,7 @@
     if (opt) {
       const dim = opt.dataset.dropdown;
       const val = opt.dataset.value;
-      const allMap = { jurisdictions: ALL_JURISDICTIONS, priorities: ALL_PRIORITIES, tierReasons: ALL_TIER_REASONS };
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, tierReasons: ALL_TIER_REASONS };
       const s = filterState[dim];
       if (s.size === 0 || s.size === allMap[dim].length) allMap[dim].forEach(v => s.add(v));
       if (s.has(val)) { s.delete(val); if (!s.size) allMap[dim].forEach(v => s.add(v)); }
@@ -1001,19 +977,21 @@
     const allBtn = e.target.closest('[data-dropdown-all]');
     if (allBtn) {
       const dim = allBtn.dataset.dropdownAll;
-      const allMap = { jurisdictions: ALL_JURISDICTIONS, priorities: ALL_PRIORITIES, tierReasons: ALL_TIER_REASONS };
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, tierReasons: ALL_TIER_REASONS };
       allMap[dim].forEach(v => filterState[dim].add(v));
       render();
+      e.stopPropagation();
       return;
     }
     // Clear
     const clearBtn = e.target.closest('[data-dropdown-clear]');
     if (clearBtn) {
       const dim = clearBtn.dataset.dropdownClear;
-      const allMap = { jurisdictions: ALL_JURISDICTIONS, priorities: ALL_PRIORITIES, tierReasons: ALL_TIER_REASONS };
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, tierReasons: ALL_TIER_REASONS };
       filterState[dim].clear();
       allMap[dim].forEach(v => filterState[dim].add(v));
       render();
+      e.stopPropagation();
       return;
     }
     // Citation accordion header
@@ -1075,7 +1053,7 @@
   });
 
   // ─── Init ───
-  DATA.forEach(r => openCitations.add(r.state + '||' + r.tier_citation));
+  DATA.forEach(r => openCitations.add(r.state + '||' + r.oversight_agency));
   STATE_ORDER.forEach(s => openJurisdictions.add(s));
   render();
   </script>
