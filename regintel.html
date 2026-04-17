@@ -539,7 +539,8 @@
   let sidebarOpen   = true;
   let activeSection = 'roles';
   let searchTimer   = null;
-  let selectedRole  = null;
+  let selectedRole        = null;
+  let selectedCareSetting = null;
   let openDropdown  = null;
 
   const ROLES = [
@@ -735,6 +736,37 @@
 </div>`;
   }
 
+  function renderCareSettingDropdown() {
+    const CARE_SETTINGS = [...new Set(CARE_DATA.map(r => r.hstm_setting).filter(Boolean))].sort();
+    const isOpen   = openDropdown === 'care-setting';
+    const selLabel = selectedCareSetting || null;
+    const options  = CARE_SETTINGS.map(s => `<div class="role-select-option${selectedCareSetting === s ? ' selected' : ''}" data-care-select="${esc(s)}">${esc(s)}</div>`).join('');
+    return `<div class="filter-group">
+  <button type="button" class="multi-select-trigger${isOpen ? ' open' : ''}" data-dropdown-trigger="care-setting">
+    <span class="trigger-label">Care Setting</span>
+    <span class="trigger-value${selLabel === null ? ' role-placeholder-value' : ''}">${selLabel === null ? 'Select a setting' : esc(selLabel)}</span>
+    <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
+  <div class="multi-select-panel${isOpen ? ' open' : ''}" data-dropdown-panel="care-setting">
+    ${options}
+  </div>
+</div>`;
+  }
+
+  function renderCareFilterBar(settingOnly = false) {
+    const settingDD = renderCareSettingDropdown();
+    if (settingOnly) return `<div class="filter-bar">${settingDD}</div>`;
+    return `<div class="filter-bar">
+  ${settingDD}
+  ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
+  ${renderDropdown('tierReasons',   'Requirement Level', ALL_TIER_REASONS, filterState.tierReasons)}
+  <div class="search-wrapper">
+    <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" class="search-input" id="searchInput" placeholder="Search topics or citations…" value="${esc(filterState.search)}">
+  </div>
+</div>`;
+  }
+
   // ─── Filter bar ───
   function renderFilterBar(roleOnly = false) {
     const roleDD = renderRoleDropdown();
@@ -756,17 +788,34 @@
     if (!panel) return;
 
     if (activeSection === 'care-settings') {
-      const groups = groupByHstmSetting(CARE_DATA);
+      if (selectedCareSetting === null) {
+        panel.innerHTML = renderCareFilterBar(true) + `<div class="main-content"><div class="empty-state">
+          <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <p class="empty-state-title">Select a care setting to get started</p>
+          <p class="empty-state-text">Choose a care setting from the dropdown above to view regulatory requirements.</p>
+        </div></div>`;
+        return;
+      }
+      const careFiltered = CARE_DATA.filter(r => {
+        if (r.hstm_setting !== selectedCareSetting) return false;
+        if (!filterState.jurisdictions.has(r.state))     return false;
+        if (!filterState.tierReasons.has(r.tier_reason)) return false;
+        const q = filterState.search.toLowerCase().trim();
+        if (q && !r.training_topic.toLowerCase().includes(q) &&
+                 !(r.tier_citation||'').toLowerCase().includes(q)) return false;
+        return true;
+      });
+      const groups = groupByHstmSetting(careFiltered);
       const body = groups.length
         ? groups.map(renderJurisdiction).join('')
         : `<div class="empty-state">
-             <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-               <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-             </svg>
-             <p class="empty-state-title">No care setting data available</p>
-             <p class="empty-state-text">ALF, SNF, and Home Health coming soon.</p>
+             <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+             <p class="empty-state-title">No results</p>
+             <p class="empty-state-text">Try adjusting your filters or search query.</p>
            </div>`;
-      panel.innerHTML = `<div class="main-content">${body}</div>`;
+      panel.innerHTML = renderCareFilterBar() + `<div class="main-content">${body}</div>`;
       return;
     }
 
@@ -829,6 +878,14 @@
     const roleOpt = e.target.closest('[data-role-select]');
     if (roleOpt) {
       selectedRole = roleOpt.dataset.roleSelect;
+      openDropdown = null;
+      render();
+      return;
+    }
+    // Care setting option
+    const careOpt = e.target.closest('[data-care-select]');
+    if (careOpt) {
+      selectedCareSetting = careOpt.dataset.careSelect;
       openDropdown = null;
       render();
       return;
