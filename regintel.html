@@ -507,7 +507,7 @@
   ];
 
   let ALL_JURISDICTIONS = ['CA','FL','US'];
-  let ALL_TIER_REASONS  = ['State Floor','Competency'];
+  let ALL_TIER_REASONS  = ['Federal Floor','State Floor','Competency'];
   const STATE_NAMES       = {CA:'California', FL:'Florida', US:'United States'};
   const STATE_ORDER       = ['CA','FL','US'];
 
@@ -778,7 +778,7 @@
         updateDrawer();
         return;
       }
-      if (selectedCareSetting !== 'Assisted Living Facility') {
+      if (selectedCareSetting === 'Home Health') {
         panel.innerHTML = renderCareFilterBar(true) + `<div class="main-content"><div class="empty-state">
           <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
@@ -995,8 +995,8 @@
       notes:               r['Notes / Research Flags'] === 'None' ? '' : (r['Notes / Research Flags'] || ''),
       source_url:          r['Source URL']
     });
-    DATA      = (json.LPN || []).map(normalizeRow);
-    CARE_DATA = [...(json.ALF || []), ...(json.SNF || [])].map(normalizeRow);
+    DATA      = (json['R LPN'] || []).map(normalizeRow);
+    CARE_DATA = [...(json['CS ALF'] || []), ...(json['CS SNF'] || [])].map(normalizeRow);
   }
 
   // ─── Init ───
