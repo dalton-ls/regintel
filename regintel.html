@@ -274,63 +274,6 @@
 
     .state-hr { border: none; border-top: 1.5px solid #e8ecf0; margin-bottom: 14px; }
 
-    /* ── Accordions ── */
-    .accordion {
-      margin-bottom: 8px;
-      border: 1px solid #e8ecf0;
-      border-radius: 8px;
-      overflow: hidden;
-    }
-
-    .accordion-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 14px;
-      background: #f5f7fa;
-      cursor: pointer;
-      user-select: none;
-      transition: background 0.15s;
-    }
-    .accordion-header:hover { background: #eef3fb; }
-
-    .accordion-header-left { display: flex; align-items: center; gap: 8px; }
-
-    .accordion-label {
-      font-size: 13px;
-      font-weight: 600;
-      color: #1a2332;
-    }
-
-    .accordion-count {
-      font-size: 11px;
-      color: #6b7a99;
-      background: #e8ecf0;
-      border-radius: 10px;
-      padding: 1px 7px;
-    }
-
-    .accordion-chevron {
-      color: #6b7a99;
-      transition: transform 200ms ease;
-      flex-shrink: 0;
-    }
-    .accordion.open .accordion-chevron { transform: rotate(180deg); }
-
-    .accordion-body {
-      display: grid;
-      grid-template-rows: 1fr;
-      transition: grid-template-rows 200ms ease;
-    }
-    .accordion.closed .accordion-body { grid-template-rows: 0fr; }
-
-    .accordion-body-inner {
-      overflow: hidden;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
 
     /* ── Jurisdiction accordions ── */
     .jurisdiction-accordion { margin-bottom: 16px; border: 1px solid #e8ecf0; border-radius: 10px; overflow: hidden; }
@@ -340,111 +283,119 @@
     .jurisdiction-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 200ms ease; }
     .jurisdiction-accordion.closed .jurisdiction-body { grid-template-rows: 0fr; }
     .jurisdiction-body-inner { overflow: hidden; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .jurisdiction-accordion .accordion-chevron { color: #6b7a99; transition: transform 200ms ease; flex-shrink: 0; }
+    .jurisdiction-accordion.open .accordion-chevron { transform: rotate(180deg); }
 
-    /* ── Cards ── */
-    .card {
+    /* ── Flat rows ── */
+    .req-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px;
       background: #fff;
-      border: 1px solid #e8ecf0;
-      border-left-width: 3px;
-      border-radius: 6px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-      overflow: hidden;
-    }
-    .card.critical { border-left-color: #dc2626; }
-    .card.high     { border-left-color: #16a34a; }
-
-    .card-top {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 13px 14px;
+      border-left: 3px solid transparent;
+      border-bottom: 1px solid #f0f2f5;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background 0.12s;
     }
-    .card-top:hover { background: #f8fafc; }
+    .req-row:last-child { border-bottom: none; }
+    .req-row:hover { background: #f8fafc; }
+    .req-row.selected { background: #eef3fb; border-left-color: #2463eb !important; }
+    .req-row.critical { border-left-color: #dc2626; }
+    .req-row.high     { border-left-color: #16a34a; }
 
-    .card-topic {
-      font-size: 13.5px;
-      color: #1a2332;
-      line-height: 1.55;
+    .req-topic { flex: 1; font-size: 13px; color: #1a2332; line-height: 1.45; min-width: 0; }
+    .req-badges { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: nowrap; }
+    .req-arrow { color: #b0b8cc; flex-shrink: 0; }
+
+    /* ── Group header (static agency/setting label) ── */
+    .group-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 14px 6px;
+      background: #f5f7fa;
+      border-bottom: 1px solid #e8ecf0;
     }
+    .group-header-label { font-size: 12px; font-weight: 600; color: #6b7a99; }
+    .group-header-count { font-size: 11px; color: #6b7a99; background: #e8ecf0; border-radius: 10px; padding: 1px 7px; }
 
-    .card-badges {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px;
-    }
+    /* ── Row list container ── */
+    .req-list { border: 1px solid #e8ecf0; border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
 
+    /* ── Badges ── */
     .badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 2px 9px;
-      border-radius: 20px;
-      font-size: 11px;
-      font-weight: 600;
-      white-space: nowrap;
-      line-height: 1.6;
+      display: inline-flex; align-items: center;
+      padding: 2px 9px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; white-space: nowrap; line-height: 1.6;
     }
-    .badge-critical  { background: #dc2626; color: #fff; }
-    .badge-high      { background: #16a34a; color: #fff; }
     .badge-hours     { background: #e0e7ff; color: #3730a3; }
-    .badge-voluntary { background: #f1f5f9; color: #6b7a99; border: 1px solid #e8ecf0; }
     .badge-type      { background: #f1f5f9; color: #4a5568; border: 1px solid #e8ecf0; }
-    .badge-citation  { background: #e8ecf0; color: #4a5568; font-family: ui-monospace, "SFMono-Regular", Consolas, monospace; font-size: 10px; }
     .badge-source    { background: #eef3fb; color: #2463eb; border: 1px solid #c7d7f8; text-decoration: none; }
     .badge-source:hover { background: #dce8fb; }
 
-
-    /* ── Card detail zone ── */
-    .card-body-wrapper {
-      display: grid;
-      grid-template-rows: 0fr;
-      transition: grid-template-rows 200ms ease;
+    /* ── Drawer ── */
+    .drawer-overlay {
+      position: fixed; inset: 0; z-index: 140;
+      background: rgba(0,0,0,0.18);
+      opacity: 0; pointer-events: none;
+      transition: opacity 200ms ease;
     }
-    .card-body-wrapper.open { grid-template-rows: 1fr; }
+    .drawer-overlay.open { opacity: 1; pointer-events: all; }
 
-    .card-bottom { overflow: hidden; }
-
-    .card-bottom-inner {
-      padding: 12px 14px 14px;
-      border-top: 1px solid #f0f2f5;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    .drawer-panel {
+      position: fixed; top: 60px; right: 0; bottom: 0;
+      width: 380px; z-index: 150;
+      background: #fff; border-left: 1px solid #e8ecf0;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.10);
+      display: flex; flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 220ms ease;
     }
+    .drawer-panel.open { transform: translateX(0); }
 
-    .detail-row {
-      display: grid;
-      grid-template-columns: 130px 1fr;
-      gap: 6px;
-      align-items: baseline;
+    .drawer-header {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 16px 16px 12px;
+      border-bottom: 1px solid #e8ecf0;
+      flex-shrink: 0;
     }
-
-    .detail-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: #6b7a99;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      padding-top: 1px;
+    .drawer-title { flex: 1; font-size: 13.5px; font-weight: 600; color: #1a2332; line-height: 1.45; min-width: 0; }
+    .drawer-close {
+      flex-shrink: 0; background: none; border: none; cursor: pointer;
+      color: #6b7a99; padding: 2px; border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.12s, color 0.12s;
     }
+    .drawer-close:hover { background: #f0f2f5; color: #1a2332; }
 
-    .detail-value { color: #1a2332; line-height: 1.5; font-size: 13px; }
+    .drawer-tabs { display: flex; border-bottom: 1px solid #e8ecf0; flex-shrink: 0; }
+    .drawer-tab {
+      flex: 1; padding: 10px 0; text-align: center;
+      font-size: 12px; font-weight: 600; color: #6b7a99;
+      cursor: pointer; border-bottom: 2px solid transparent;
+      background: none; border-top: none; border-left: none; border-right: none;
+      font-family: inherit; transition: color 0.12s, border-color 0.12s;
+    }
+    .drawer-tab:hover { color: #1a2332; }
+    .drawer-tab.active { color: #2463eb; border-bottom-color: #2463eb; }
+
+    .drawer-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+
+    .drawer-row { display: grid; grid-template-columns: 110px 1fr; gap: 4px; align-items: baseline; }
+    .drawer-label { font-size: 11px; font-weight: 600; color: #6b7a99; text-transform: uppercase; letter-spacing: 0.04em; }
+    .drawer-value { font-size: 13px; color: #1a2332; line-height: 1.5; }
 
     .notes-box {
-      background: #fffbf0;
-      border: 1px solid #fde68a;
-      border-radius: 4px;
-      padding: 8px 10px;
-      font-size: 13px;
-      line-height: 1.55;
-      color: #1a2332;
+      background: #fffbf0; border: 1px solid #fde68a;
+      border-radius: 4px; padding: 8px 10px;
+      font-size: 13px; line-height: 1.55; color: #1a2332;
     }
-
     .source-link { color: #2463eb; text-decoration: none; font-size: 12px; word-break: break-all; }
     .source-link:hover { text-decoration: underline; }
+
+    /* ── Accordion count badge (jurisdiction) ── */
+    .accordion-count {
+      font-size: 11px; color: #6b7a99; background: #e8ecf0;
+      border-radius: 10px; padding: 1px 7px;
+    }
+
 
     /* ── Empty state ── */
     .empty-state {
@@ -522,6 +473,7 @@
     <div class="content-panel" id="contentPanel">
 
     </div><!-- /content-panel -->
+    <div id="drawer"></div>
   </div><!-- /body-row -->
 
   <script>
@@ -565,9 +517,10 @@
     search: ''
   };
 
-  const openCitations     = new Set();
-  const expandedCards     = new Set();
   const openJurisdictions = new Set();
+  let selectedCardKey = null;
+  let drawerTab = 'overview';
+  let rowMap = {};
 
   const checkSvg = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`;
 
@@ -622,53 +575,31 @@
     }));
   }
 
-  // ─── Card ───
-  function renderCard(row) {
-    const key    = cardKey(row);
-    const isOpen = expandedCards.has(key);
-    const cls    = row.tier_priority === 'CRITICAL' ? 'critical' : 'high';
-    const approval = row.approval_required != null ? esc(String(row.approval_required)) : '—';
+  // ─── Flat row ───
+  function renderRow(row) {
+    const key = cardKey(row);
+    const cls = row.tier_priority === 'CRITICAL' ? 'critical' : 'high';
+    const isSelected = selectedCardKey === key;
     const srcHref = row.source_url ? esc(row.source_url) : null;
-    const src = row.source_url
-      ? `<a href="${esc(row.source_url)}" target="_blank" rel="noopener" class="source-link">${esc(truncUrl(row.source_url))}</a>`
-      : '—';
-    return `<div class="card ${cls}" data-card-key="${esc(key)}">
-  <div class="card-top">
-    <span class="card-topic">${esc(row.training_topic)}</span>
-    <div class="card-badges">
-      ${row.tier_citation ? `<span class="badge badge-citation">${esc(row.tier_citation)}</span>` : ''}
-      ${row.hours_required > 0 ? `<span class="badge badge-hours">${row.hours_required} hr${row.hours_required !== 1 ? 's' : ''}</span>` : ''}
-      ${row.type      ? `<span class="badge badge-type">${esc(row.type)}</span>` : ''}
-      ${row.tier_reason === 'Competency' ? `<span class="badge badge-voluntary">Voluntary</span>` : ''}
-      ${srcHref ? `<a href="${srcHref}" target="_blank" rel="noopener" class="badge badge-source" onclick="event.stopPropagation()">Source ↗</a>` : ''}
-    </div>
+    return `<div class="req-row ${cls}${isSelected ? ' selected' : ''}" data-card-key="${esc(key)}">
+  <span class="req-topic">${esc(row.training_topic)}</span>
+  <div class="req-badges">
+    ${row.hours_required > 0 ? `<span class="badge badge-hours">${row.hours_required} hr${row.hours_required !== 1 ? 's' : ''}</span>` : ''}
+    ${row.type ? `<span class="badge badge-type">${esc(row.type)}</span>` : ''}
+    ${srcHref ? `<a href="${srcHref}" target="_blank" rel="noopener" class="badge badge-source" onclick="event.stopPropagation()">Source ↗</a>` : ''}
   </div>
-  <div class="card-body-wrapper${isOpen ? ' open' : ''}">
-    <div class="card-bottom"><div class="card-bottom-inner">
-      <div class="detail-row"><span class="detail-label">Agency</span><span class="detail-value">${esc(row.oversight_agency)}</span></div>
-      <div class="detail-row"><span class="detail-label">Citation</span><span class="detail-value">${esc(row.tier_citation)}</span></div>
-      ${row.frequency ? `<div class="detail-row"><span class="detail-label">Frequency</span><span class="detail-value">${esc(row.frequency)}</span></div>` : ''}
-      <div class="detail-row"><span class="detail-label">Approval</span><span class="detail-value">${approval}</span></div>
-      <div class="detail-row"><span class="detail-label">Notes</span><span class="detail-value"><div class="notes-box">${esc(row.notes)}</div></span></div>
-      <div class="detail-row"><span class="detail-label">Source</span><span class="detail-value">${src}</span></div>
-    </div></div>
-  </div>
+  <svg class="req-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
 </div>`;
   }
 
-  // ─── Accordion ───
-  function renderAccordion(label, rows, state) {
-    const key    = state + '||' + label;
-    const isOpen = openCitations.has(key);
-    return `<div class="accordion ${isOpen ? 'open' : 'closed'}" data-cit-key="${esc(key)}">
-  <div class="accordion-header">
-    <div class="accordion-header-left">
-      <span class="accordion-label">${esc(label)}</span>
-      <span class="accordion-count">${rows.length}</span>
-    </div>
-    <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+  // ─── Group section (static header + flat rows) ───
+  function renderGroupSection(label, rows) {
+    return `<div class="req-list">
+  <div class="group-header">
+    <span class="group-header-label">${esc(label)}</span>
+    <span class="group-header-count">${rows.length}</span>
   </div>
-  <div class="accordion-body"><div class="accordion-body-inner">${rows.map(renderCard).join('')}</div></div>
+  ${rows.map(renderRow).join('')}
 </div>`;
   }
 
@@ -676,10 +607,10 @@
   function renderJurisdiction(group) {
     const key    = group.state;
     const isOpen = openJurisdictions.has(key);
-    const subs   = group.agencies.map(([agency, rows]) => renderAccordion(agency, rows, group.state)).join('');
+    const subs   = group.agencies.map(([agency, rows]) => renderGroupSection(agency, rows)).join('');
     return `<div class="jurisdiction-accordion ${isOpen ? 'open' : 'closed'}" data-juris-key="${esc(key)}">
   <div class="jurisdiction-header">
-    <div class="accordion-header-left">
+    <div style="display:flex;align-items:center;gap:8px;">
       <span class="jurisdiction-title">${esc(group.name)}</span>
       <span class="accordion-count">${group.total}</span>
     </div>
@@ -687,6 +618,50 @@
   </div>
   <div class="jurisdiction-body"><div class="jurisdiction-body-inner">${subs}</div></div>
 </div>`;
+  }
+
+  // ─── Drawer ───
+  function renderDrawer() {
+    const isOpen = selectedCardKey !== null;
+    const row = isOpen ? rowMap[selectedCardKey] : null;
+    const approval = row && row.approval_required != null ? esc(String(row.approval_required)) : '—';
+    const src = row && row.source_url
+      ? `<a href="${esc(row.source_url)}" target="_blank" rel="noopener" class="source-link">${esc(truncUrl(row.source_url))}</a>`
+      : '—';
+    const overviewContent = row ? `
+      ${row.hours_required > 0 ? `<div class="drawer-row"><span class="drawer-label">Hours</span><span class="drawer-value">${row.hours_required} hr${row.hours_required !== 1 ? 's' : ''}</span></div>` : ''}
+      ${row.frequency ? `<div class="drawer-row"><span class="drawer-label">Frequency</span><span class="drawer-value">${esc(row.frequency)}</span></div>` : ''}
+      ${row.type ? `<div class="drawer-row"><span class="drawer-label">Type</span><span class="drawer-value">${esc(row.type)}</span></div>` : ''}
+      <div class="drawer-row"><span class="drawer-label">Requirement</span><span class="drawer-value">${esc(row.tier_reason || '—')}</span></div>
+      <div class="drawer-row"><span class="drawer-label">Priority</span><span class="drawer-value">${esc(row.tier_priority || '—')}</span></div>
+    ` : '';
+    const metaContent = row ? `
+      <div class="drawer-row"><span class="drawer-label">Agency</span><span class="drawer-value">${esc(row.oversight_agency)}</span></div>
+      <div class="drawer-row"><span class="drawer-label">Citation</span><span class="drawer-value">${esc(row.tier_citation)}</span></div>
+      <div class="drawer-row"><span class="drawer-label">Approval</span><span class="drawer-value">${approval}</span></div>
+      ${row.notes ? `<div class="drawer-row"><span class="drawer-label">Notes</span><span class="drawer-value"><div class="notes-box">${esc(row.notes)}</div></span></div>` : ''}
+      <div class="drawer-row"><span class="drawer-label">Source</span><span class="drawer-value">${src}</span></div>
+    ` : '';
+    return `
+      <div class="drawer-overlay${isOpen ? ' open' : ''}" id="drawerOverlay"></div>
+      <div class="drawer-panel${isOpen ? ' open' : ''}" id="drawerPanel">
+        <div class="drawer-header">
+          <span class="drawer-title">${row ? esc(row.training_topic) : ''}</span>
+          <button type="button" class="drawer-close" id="drawerClose">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <div class="drawer-tabs">
+          <button type="button" class="drawer-tab${drawerTab === 'overview' ? ' active' : ''}" data-drawer-tab="overview">Overview</button>
+          <button type="button" class="drawer-tab${drawerTab === 'metadata' ? ' active' : ''}" data-drawer-tab="metadata">Metadata</button>
+        </div>
+        <div class="drawer-body">${drawerTab === 'overview' ? overviewContent : metaContent}</div>
+      </div>`;
+  }
+
+  function updateDrawer() {
+    const el = document.getElementById('drawer');
+    if (el) el.innerHTML = renderDrawer();
   }
 
   // ─── Filter bar helpers ───
@@ -800,6 +775,7 @@
           <p class="empty-state-title">Select a care setting to get started</p>
           <p class="empty-state-text">Choose a care setting from the dropdown above to view regulatory requirements.</p>
         </div></div>`;
+        updateDrawer();
         return;
       }
       if (selectedCareSetting !== 'Assisted Living Facility') {
@@ -810,6 +786,7 @@
           <p class="empty-state-title">Coming soon</p>
           <p class="empty-state-text">No regulatory data loaded for this care setting yet.</p>
         </div></div>`;
+        updateDrawer();
         return;
       }
       const careFiltered = CARE_DATA.filter(r => {
@@ -830,6 +807,7 @@
              <p class="empty-state-text">Try adjusting your filters or search query.</p>
            </div>`;
       panel.innerHTML = renderCareFilterBar() + `<div class="main-content">${body}</div>`;
+      updateDrawer();
       return;
     }
 
@@ -842,6 +820,7 @@
         <p class="empty-state-title">Select a role to get started</p>
         <p class="empty-state-text">Choose a role from the dropdown above to view regulatory requirements.</p>
       </div></div>`;
+      updateDrawer();
       return;
     }
 
@@ -853,6 +832,7 @@
         <p class="empty-state-title">Coming soon</p>
         <p class="empty-state-text">No regulatory data loaded for this role yet.</p>
       </div></div>`;
+      updateDrawer();
       return;
     }
 
@@ -867,6 +847,7 @@
          </div>`;
 
     panel.innerHTML = renderFilterBar() + `<div class="main-content">${body}</div>`;
+    updateDrawer();
   }
 
   // ─── Event delegation on content panel ───
@@ -936,23 +917,13 @@
       e.stopPropagation();
       return;
     }
-    // Citation accordion header
-    const accHeader = e.target.closest('.accordion-header');
-    if (accHeader) {
-      const acc = accHeader.closest('.accordion');
-      const key = acc.dataset.citKey;
-      if (openCitations.has(key)) { openCitations.delete(key); acc.classList.replace('open', 'closed'); }
-      else                        { openCitations.add(key);    acc.classList.replace('closed', 'open'); }
+    // Row click → open/close drawer
+    const reqRow = e.target.closest('.req-row');
+    if (reqRow && !e.target.closest('.badge-source')) {
+      const key = reqRow.dataset.cardKey;
+      selectedCardKey = selectedCardKey === key ? null : key;
+      render();
       return;
-    }
-    // Card expand
-    const cardTop = e.target.closest('.card-top');
-    if (cardTop) {
-      const card    = cardTop.closest('.card');
-      const key     = card.dataset.cardKey;
-      const wrapper = card.querySelector('.card-body-wrapper');
-      if (expandedCards.has(key)) { expandedCards.delete(key); wrapper.classList.remove('open'); }
-      else                        { expandedCards.add(key);    wrapper.classList.add('open'); }
     }
   });
 
@@ -963,8 +934,16 @@
     }
   });
 
-  // ─── Click outside closes dropdown ───
+  // ─── Click outside closes dropdown; drawer controls ───
   document.addEventListener('click', e => {
+    // Drawer overlay → close drawer
+    if (e.target.id === 'drawerOverlay') { selectedCardKey = null; render(); return; }
+    // Drawer close button
+    if (e.target.closest('#drawerClose')) { selectedCardKey = null; render(); return; }
+    // Drawer tab switch
+    const tab = e.target.closest('[data-drawer-tab]');
+    if (tab) { drawerTab = tab.dataset.drawerTab; updateDrawer(); return; }
+    // Click outside filter group → close dropdown
     if (openDropdown !== null && !e.target.closest('.filter-group')) {
       openDropdown = null;
       render();
@@ -1021,7 +1000,11 @@
   }
 
   // ─── Init ───
-  loadData().then(() => { render(); });
+  loadData().then(() => {
+    rowMap = {};
+    [...DATA, ...CARE_DATA].forEach(r => { rowMap[cardKey(r)] = r; });
+    render();
+  });
   </script>
 </body>
 </html>
