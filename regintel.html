@@ -301,6 +301,9 @@
     .req-row.selected { background: #eef3fb; border-left-color: #2463eb !important; }
     .req-row.critical { border-left-color: #dc2626; }
     .req-row.high     { border-left-color: #16a34a; }
+    .req-row.sub-topic { border-left-color: #e8ecf0 !important; padding-left: 26px; background: #fafbfc; }
+    .req-row.sub-topic .req-topic { color: #4a5568; font-size: 12.5px; }
+    .req-row.sub-topic:hover { background: #f5f7fa; }
 
     .req-topic { flex: 1; font-size: 13px; color: #1a2332; line-height: 1.45; min-width: 0; }
     .req-badges { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: nowrap; }
@@ -547,10 +550,9 @@
   function groupByHstmSetting(rows) {
     const map = {};
     rows.forEach(r => {
-      const setting = r.hstm_setting || 'Other';
       if (!map[r.state]) map[r.state] = {};
-      if (!map[r.state][setting]) map[r.state][setting] = [];
-      map[r.state][setting].push(r);
+      if (!map[r.state][r.oversight_agency]) map[r.state][r.oversight_agency] = [];
+      map[r.state][r.oversight_agency].push(r);
     });
     return STATE_ORDER.filter(s => map[s]).map(s => ({
       state:    s,
@@ -575,13 +577,22 @@
     }));
   }
 
+  // ─── Sub-topic detection (data-driven) ───
+  function isSubTopic(row) {
+    const h = (row.hours_raw || '').toLowerCase();
+    if (h.includes('included in')) return true;
+    if (!row.hours_raw && row.hours_required === 0) return true;
+    return false;
+  }
+
   // ─── Flat row ───
   function renderRow(row) {
     const key = cardKey(row);
     const cls = row.tier_priority === 'CRITICAL' ? 'critical' : 'high';
+    const sub = isSubTopic(row) ? ' sub-topic' : '';
     const isSelected = selectedCardKey === key;
     const srcHref = row.source_url ? esc(row.source_url) : null;
-    return `<div class="req-row ${cls}${isSelected ? ' selected' : ''}" data-card-key="${esc(key)}">
+    return `<div class="req-row ${cls}${sub}${isSelected ? ' selected' : ''}" data-card-key="${esc(key)}">
   <span class="req-topic">${esc(row.training_topic)}</span>
   <div class="req-badges">
     ${row.hours_required > 0 ? `<span class="badge badge-hours">${row.hours_required} hr${row.hours_required !== 1 ? 's' : ''}</span>` : ''}
@@ -991,6 +1002,7 @@
       training_topic:      r['Training Topic / Competency Item'],
       approval_required:   r['Approval Required'],
       hours_required:      Number(r['Hours Required']) || 0,
+      hours_raw:           String(r['Hours Required'] || ''),
       frequency:           r['Frequency'],
       notes:               r['Notes / Research Flags'] === 'None' ? '' : (r['Notes / Research Flags'] || ''),
       source_url:          r['Source URL']
