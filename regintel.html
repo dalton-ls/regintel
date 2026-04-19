@@ -415,6 +415,85 @@
     .empty-state-title { font-size: 15px; font-weight: 600; color: #4a5568; }
     .empty-state-text { font-size: 14px; color: #6b7a99; max-width: 320px; line-height: 1.6; }
 
+    /* ── Workforce Readiness ── */
+    .wf-context-bar {
+      display: flex; align-items: center; gap: 10px;
+      padding: 0 0 18px;
+      border-bottom: 1px solid #e8ecf0;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .wf-context-label {
+      font-size: 11px; font-weight: 700; color: #6b7a99;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .wf-context-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #eef3fb; color: #2463eb;
+      font-size: 12px; font-weight: 600;
+      padding: 3px 10px; border-radius: 20px;
+      border: 1px solid #c7d7f8;
+    }
+    .wf-context-sep { color: #b0b8cc; font-size: 16px; }
+
+    .wf-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 16px;
+    }
+
+    .wf-card {
+      background: #fff;
+      border: 1px solid #e8ecf0;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .wf-card-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 13px 16px 11px;
+      border-bottom: 1px solid #f0f2f5;
+      background: #fafbfc;
+    }
+    .wf-card-icon {
+      width: 28px; height: 28px; border-radius: 7px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .wf-card-icon.blue   { background: #eef3fb; color: #2463eb; }
+    .wf-card-icon.green  { background: #f0fdf4; color: #16a34a; }
+    .wf-card-icon.amber  { background: #fffbeb; color: #d97706; }
+    .wf-card-icon.purple { background: #f5f3ff; color: #7c3aed; }
+
+    .wf-card-title { font-size: 13px; font-weight: 700; color: #1a2332; }
+
+    .wf-card-body { padding: 14px 16px; }
+
+    .wf-chips {
+      display: flex; flex-wrap: wrap; gap: 7px;
+    }
+    .wf-chip {
+      display: inline-flex; align-items: center;
+      background: #f1f5f9; color: #1a2332;
+      font-size: 11.5px; font-weight: 500;
+      padding: 4px 10px; border-radius: 20px;
+      border: 1px solid #e8ecf0;
+      white-space: nowrap;
+    }
+
+    .wf-list {
+      list-style: none; display: flex; flex-direction: column; gap: 8px;
+    }
+    .wf-list-item {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 13px; color: #1a2332; line-height: 1.5;
+    }
+    .wf-list-item::before {
+      content: ''; display: block;
+      width: 5px; height: 5px; border-radius: 50%;
+      background: #b0b8cc; flex-shrink: 0; margin-top: 7px;
+    }
+
     /* ── Responsive ── */
     @media (max-width: 600px) {
       .header-subtitle { display: none; }
@@ -469,6 +548,14 @@
           </span>
           <span class="nav-label">Care Settings</span>
         </a>
+        <a href="#" class="nav-item" data-section="workforce">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </span>
+          <span class="nav-label">Workforce Readiness</span>
+        </a>
       </nav>
     </aside>
 
@@ -495,7 +582,42 @@
   let searchTimer   = null;
   let selectedRole        = null;
   let selectedCareSetting = null;
+  let selectedWFRole      = null;
+  let selectedWFSetting   = null;
   let openDropdown  = null;
+
+  const WORKFORCE_DATA = {
+    'lpn-lvn||Assisted Living Facility': {
+      competencyDomains: ['Medication Management','Delegation & Supervision','Dementia Care','Documentation','Change in Condition','Resident Rights','Wound Care','Nutrition & Hydration','Infection Control'],
+      practiceBoosters: ['Polypharmacy risk recognition in older adults','Family communication and conflict de-escalation','Falls prevention and post-fall assessment','Behavioral symptom management without chemical restraint','Medication refusal documentation and escalation'],
+      transitionGaps: ['Adjusting from hospital pace to residential care model','Limited on-site supervision compared to acute settings','Greater clinical autonomy and escalation responsibility','ALF scope differs significantly from hospital LPN practice','Documentation is narrative-based rather than order-driven'],
+      regulatoryConsiderations: ['LPN scope of practice in ALF varies significantly by state','ALF licensure governed separately from Board of Nursing','Delegation authority and permitted tasks differ by state','Some states restrict medication administration protocols in ALF','California RCFE rules are distinct from SNF regulations']
+    },
+    'lpn-lvn||Skilled Nursing Facility': {
+      competencyDomains: ['Wound Care & Skin Integrity','Infection Control','MDS / Care Planning','Medication Administration','Change in Condition Recognition','Restorative Care','End-of-Life Care','Rehabilitation Support','Catheter & Tube Management'],
+      practiceBoosters: ['Pressure injury staging and prevention protocols','RAI / MDS documentation accuracy','Antibiotic stewardship and MDRO precautions','Post-acute transition care coordination','SBAR communication for physician notification'],
+      transitionGaps: ['Documentation complexity: MDS, care plans, and skilled notes','Survey readiness and F-tag compliance awareness','Multidisciplinary team coordination in rehab settings','Longer-term resident relationships than acute care','CMS conditions of participation vs. state-specific rules'],
+      regulatoryConsiderations: ['CMS federal floor requirements apply nationally','State survey agency enforces compliance independently','OBRA regulations govern resident rights and care planning','SNF participation requires compliance with 42 CFR Part 483','Staffing ratios and LPN supervisory role vary by state']
+    },
+    'cna||Assisted Living Facility': {
+      competencyDomains: ['Activities of Daily Living','Resident Rights','Safety & Emergency Response','Dementia Care','Nutrition Assistance','Personal Care Skills','Observation & Reporting','Mobility & Transfer'],
+      practiceBoosters: ['Person-centered care and individualized preferences','Communicating with residents experiencing cognitive decline','Recognizing and reporting signs of abuse or neglect','Accurate observation reporting to nursing staff','Dignity preservation during personal care'],
+      transitionGaps: ['Greater resident independence than SNF environment','Social engagement is a core part of the ALF role','Less acute clinical intensity but higher autonomy','Supervision structure differs from hospital or SNF','Scope of tasks permitted for CNAs varies by state in ALF'],
+      regulatoryConsiderations: ['CNA scope in ALF governed separately from SNF regulations','Some states have distinct aide classifications for ALF settings','Certification requirements may differ from the SNF pathway','ALF staffing ratios and training hours vary significantly by state','Florida and California have distinct ALF aide training requirements']
+    },
+    'cna||Skilled Nursing Facility': {
+      competencyDomains: ['Personal Care & Hygiene','Vital Signs','Nutrition & Feeding Assistance','Mobility & Restorative Techniques','Infection Control','Resident Rights','Skin Observation','Emergency Procedures','Documentation & Reporting'],
+      practiceBoosters: ['Pressure injury observation and early reporting','Safe patient handling and transfer techniques','Feeding assistance for residents with dysphagia risk','Recognizing acute change in condition','Infection control compliance during outbreaks'],
+      transitionGaps: ['High acuity and medical complexity relative to community settings','Multi-step care protocols and care plan compliance','Frequent documentation and accountability requirements','Shift-to-shift handoff accuracy and continuity','Navigating family dynamics in long-term care'],
+      regulatoryConsiderations: ['Federal NATCEP requirements set minimum 75-hour training standard','State nurse aide registries track competency and abuse findings','CMS F-tags directly impact aide training and supervision','12-month competency evaluation requirement under OBRA','Paid feeding assistant is a separate certification pathway']
+    },
+    'hha||Home Health': {
+      competencyDomains: ['Personal Care in Home Setting','Medication Reminders','Safety Assessment','Mobility Assistance','Nutrition & Meal Preparation','Infection Control','Client Rights','Caregiver Communication','Emergency Response'],
+      practiceBoosters: ['Home environment safety screening and fall risk','Working independently without on-site supervision','Client and family caregiver education','Recognizing and escalating change in condition','Cultural competency in diverse home settings'],
+      transitionGaps: ['Sole caregiver responsibility with no immediate clinical backup','Variable home environments vs. structured facility settings','Client self-determination and refusal of care management','Documentation via mobile systems rather than facility EHR','Boundary management in private residential settings'],
+      regulatoryConsiderations: ['CMS Conditions of Participation apply to Medicare-certified agencies','State home health aide training requirements vary widely','HHA scope differs from home care aide and personal care aide','Federal minimum 75-hour training requirement for Medicare HHAs','Some states require separate certification beyond federal minimums']
+    }
+  };
 
   const ROLES = [
     { value: 'lpn-lvn', label: 'Licensed Practical Nurse' },
@@ -772,10 +894,115 @@
 </div>`;
   }
 
+  // ─── Workforce Readiness dropdowns ───
+  function renderWFSingleSelect(id, label, options, selectedValue, dataAttr) {
+    const isOpen = openDropdown === id;
+    const selLabel = selectedValue ? options.find(o => o.value === selectedValue)?.label : null;
+    const opts = options.map(o => `<div class="role-select-option${selectedValue === o.value ? ' selected' : ''}" ${dataAttr}="${esc(o.value)}">${esc(o.label)}</div>`).join('');
+    return `<div class="filter-group">
+  <button type="button" class="multi-select-trigger${isOpen ? ' open' : ''}" data-dropdown-trigger="${id}">
+    <span class="trigger-label">${esc(label)}</span>
+    <span class="trigger-value${!selLabel ? ' role-placeholder-value' : ''}">${selLabel ? esc(selLabel) : 'Select…'}</span>
+    <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
+  <div class="multi-select-panel${isOpen ? ' open' : ''}" data-dropdown-panel="${id}">${opts}</div>
+</div>`;
+  }
+
+  function renderWFFilterBar() {
+    return `<div class="filter-bar">
+  ${renderWFSingleSelect('wf-setting', 'Care Setting', CARE_SETTINGS_LIST, selectedWFSetting, 'data-wf-setting-select')}
+  ${renderWFSingleSelect('wf-role',    'Role',         ROLES,              selectedWFRole,    'data-wf-role-select')}
+</div>`;
+  }
+
+  function renderWorkforce() {
+    if (!selectedWFSetting || !selectedWFRole) {
+      const missingBoth = !selectedWFSetting && !selectedWFRole;
+      const msg = missingBoth ? 'Select a care setting and role to view workforce intelligence.' : !selectedWFSetting ? 'Select a care setting above.' : 'Select a role above.';
+      return renderWFFilterBar() + `<div class="main-content"><div class="empty-state">
+        <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+        <p class="empty-state-title">Workforce Readiness Intelligence</p>
+        <p class="empty-state-text">${msg}</p>
+      </div></div>`;
+    }
+
+    const key = selectedWFRole + '||' + selectedWFSetting;
+    const data = WORKFORCE_DATA[key];
+    if (!data) {
+      const rolLabel = ROLES.find(r => r.value === selectedWFRole)?.label || selectedWFRole;
+      return renderWFFilterBar() + `<div class="main-content"><div class="empty-state">
+        <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+        <p class="empty-state-title">Coming soon</p>
+        <p class="empty-state-text">Workforce intelligence for ${esc(rolLabel)} in ${esc(selectedWFSetting)} is being prepared.</p>
+      </div></div>`;
+    }
+
+    const rolLabel  = ROLES.find(r => r.value === selectedWFRole)?.label || selectedWFRole;
+    const chipsHtml = data.competencyDomains.map(d => `<span class="wf-chip">${esc(d)}</span>`).join('');
+    const listHtml  = items => items.map(i => `<li class="wf-list-item">${esc(i)}</li>`).join('');
+
+    const contextBar = `<div class="wf-context-bar">
+      <span class="wf-context-label">Viewing</span>
+      <span class="wf-context-chip">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        ${esc(rolLabel)}
+      </span>
+      <span class="wf-context-sep">→</span>
+      <span class="wf-context-chip">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        ${esc(selectedWFSetting)}
+      </span>
+    </div>`;
+
+    const grid = `<div class="wf-grid">
+      <div class="wf-card">
+        <div class="wf-card-header">
+          <span class="wf-card-icon blue"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+          <span class="wf-card-title">Core Competency Domains</span>
+        </div>
+        <div class="wf-card-body"><div class="wf-chips">${chipsHtml}</div></div>
+      </div>
+      <div class="wf-card">
+        <div class="wf-card-header">
+          <span class="wf-card-icon green"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
+          <span class="wf-card-title">Practice Boosters</span>
+        </div>
+        <div class="wf-card-body"><ul class="wf-list">${listHtml(data.practiceBoosters)}</ul></div>
+      </div>
+      <div class="wf-card">
+        <div class="wf-card-header">
+          <span class="wf-card-icon amber"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+          <span class="wf-card-title">Common Transition Gaps</span>
+        </div>
+        <div class="wf-card-body"><ul class="wf-list">${listHtml(data.transitionGaps)}</ul></div>
+      </div>
+      <div class="wf-card">
+        <div class="wf-card-header">
+          <span class="wf-card-icon purple"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
+          <span class="wf-card-title">Regulatory Considerations</span>
+        </div>
+        <div class="wf-card-body"><ul class="wf-list">${listHtml(data.regulatoryConsiderations)}</ul></div>
+      </div>
+    </div>`;
+
+    return renderWFFilterBar() + `<div class="main-content">${contextBar}${grid}</div>`;
+  }
+
   // ─── Main render ───
   function render() {
     const panel = document.getElementById('contentPanel');
     if (!panel) return;
+
+    if (activeSection === 'workforce') {
+      panel.innerHTML = renderWorkforce();
+      updateDrawer();
+      return;
+    }
 
     if (activeSection === 'care-settings') {
       if (selectedCareSetting === null) {
@@ -892,6 +1119,22 @@
     const careOpt = e.target.closest('[data-care-select]');
     if (careOpt) {
       selectedCareSetting = careOpt.dataset.careSelect;
+      openDropdown = null;
+      render();
+      return;
+    }
+    // Workforce role select
+    const wfRoleOpt = e.target.closest('[data-wf-role-select]');
+    if (wfRoleOpt) {
+      selectedWFRole = wfRoleOpt.dataset.wfRoleSelect;
+      openDropdown = null;
+      render();
+      return;
+    }
+    // Workforce setting select
+    const wfSettingOpt = e.target.closest('[data-wf-setting-select]');
+    if (wfSettingOpt) {
+      selectedWFSetting = wfSettingOpt.dataset.wfSettingSelect;
       openDropdown = null;
       render();
       return;
