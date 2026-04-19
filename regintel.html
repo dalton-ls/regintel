@@ -703,7 +703,7 @@
   function isSubTopic(row) {
     const h = (row.hours_raw || '').toLowerCase();
     if (h.includes('included in')) return true;
-    if (!row.hours_raw && row.hours_required === 0) return true;
+    if ((!row.hours_raw || row.hours_raw === '0') && row.hours_required === 0) return true;
     return false;
   }
 
