@@ -586,38 +586,37 @@
   let selectedWFSetting   = null;
   let openDropdown  = null;
 
-  const WORKFORCE_DATA = {
-    'lpn-lvn||Assisted Living Facility': {
-      competencyDomains: ['Medication Management','Delegation & Supervision','Dementia Care','Documentation','Change in Condition','Resident Rights','Wound Care','Nutrition & Hydration','Infection Control'],
-      practiceBoosters: ['Polypharmacy risk recognition in older adults','Family communication and conflict de-escalation','Falls prevention and post-fall assessment','Behavioral symptom management without chemical restraint','Medication refusal documentation and escalation'],
-      transitionGaps: ['Adjusting from hospital pace to residential care model','Limited on-site supervision compared to acute settings','Greater clinical autonomy and escalation responsibility','ALF scope differs significantly from hospital LPN practice','Documentation is narrative-based rather than order-driven'],
-      regulatoryConsiderations: ['LPN scope of practice in ALF varies significantly by state','ALF licensure governed separately from Board of Nursing','Delegation authority and permitted tasks differ by state','Some states restrict medication administration protocols in ALF','California RCFE rules are distinct from SNF regulations']
-    },
-    'lpn-lvn||Skilled Nursing Facility': {
-      competencyDomains: ['Wound Care & Skin Integrity','Infection Control','MDS / Care Planning','Medication Administration','Change in Condition Recognition','Restorative Care','End-of-Life Care','Rehabilitation Support','Catheter & Tube Management'],
-      practiceBoosters: ['Pressure injury staging and prevention protocols','RAI / MDS documentation accuracy','Antibiotic stewardship and MDRO precautions','Post-acute transition care coordination','SBAR communication for physician notification'],
-      transitionGaps: ['Documentation complexity: MDS, care plans, and skilled notes','Survey readiness and F-tag compliance awareness','Multidisciplinary team coordination in rehab settings','Longer-term resident relationships than acute care','CMS conditions of participation vs. state-specific rules'],
-      regulatoryConsiderations: ['CMS federal floor requirements apply nationally','State survey agency enforces compliance independently','OBRA regulations govern resident rights and care planning','SNF participation requires compliance with 42 CFR Part 483','Staffing ratios and LPN supervisory role vary by state']
-    },
-    'cna||Assisted Living Facility': {
-      competencyDomains: ['Activities of Daily Living','Resident Rights','Safety & Emergency Response','Dementia Care','Nutrition Assistance','Personal Care Skills','Observation & Reporting','Mobility & Transfer'],
-      practiceBoosters: ['Person-centered care and individualized preferences','Communicating with residents experiencing cognitive decline','Recognizing and reporting signs of abuse or neglect','Accurate observation reporting to nursing staff','Dignity preservation during personal care'],
-      transitionGaps: ['Greater resident independence than SNF environment','Social engagement is a core part of the ALF role','Less acute clinical intensity but higher autonomy','Supervision structure differs from hospital or SNF','Scope of tasks permitted for CNAs varies by state in ALF'],
-      regulatoryConsiderations: ['CNA scope in ALF governed separately from SNF regulations','Some states have distinct aide classifications for ALF settings','Certification requirements may differ from the SNF pathway','ALF staffing ratios and training hours vary significantly by state','Florida and California have distinct ALF aide training requirements']
-    },
-    'cna||Skilled Nursing Facility': {
-      competencyDomains: ['Personal Care & Hygiene','Vital Signs','Nutrition & Feeding Assistance','Mobility & Restorative Techniques','Infection Control','Resident Rights','Skin Observation','Emergency Procedures','Documentation & Reporting'],
-      practiceBoosters: ['Pressure injury observation and early reporting','Safe patient handling and transfer techniques','Feeding assistance for residents with dysphagia risk','Recognizing acute change in condition','Infection control compliance during outbreaks'],
-      transitionGaps: ['High acuity and medical complexity relative to community settings','Multi-step care protocols and care plan compliance','Frequent documentation and accountability requirements','Shift-to-shift handoff accuracy and continuity','Navigating family dynamics in long-term care'],
-      regulatoryConsiderations: ['Federal NATCEP requirements set minimum 75-hour training standard','State nurse aide registries track competency and abuse findings','CMS F-tags directly impact aide training and supervision','12-month competency evaluation requirement under OBRA','Paid feeding assistant is a separate certification pathway']
-    },
-    'hha||Home Health': {
-      competencyDomains: ['Personal Care in Home Setting','Medication Reminders','Safety Assessment','Mobility Assistance','Nutrition & Meal Preparation','Infection Control','Client Rights','Caregiver Communication','Emergency Response'],
-      practiceBoosters: ['Home environment safety screening and fall risk','Working independently without on-site supervision','Client and family caregiver education','Recognizing and escalating change in condition','Cultural competency in diverse home settings'],
-      transitionGaps: ['Sole caregiver responsibility with no immediate clinical backup','Variable home environments vs. structured facility settings','Client self-determination and refusal of care management','Documentation via mobile systems rather than facility EHR','Boundary management in private residential settings'],
-      regulatoryConsiderations: ['CMS Conditions of Participation apply to Medicare-certified agencies','State home health aide training requirements vary widely','HHA scope differs from home care aide and personal care aide','Federal minimum 75-hour training requirement for Medicare HHAs','Some states require separate certification beyond federal minimums']
+  function buildWFData(role, setting) {
+    let rows = [];
+    if (role === 'lpn-lvn') {
+      rows = DATA;
+    } else if (setting === 'Assisted Living Facility') {
+      rows = CARE_DATA.filter(r => r.hstm_setting === 'Assisted Living Facility');
+    } else if (setting === 'Skilled Nursing Facility') {
+      rows = CARE_DATA.filter(r => r.hstm_setting === 'Skilled Nursing Facility');
     }
-  };
+    if (!rows.length) return null;
+
+    const trunc = s => s && s.length > 80 ? s.slice(0, 78) + '…' : (s || '');
+    const uniq  = arr => [...new Set(arr.filter(Boolean))];
+
+    const competency = rows.filter(r => r.tier_reason === 'Competency');
+    const stateFloor = rows.filter(r => r.tier_reason === 'State Floor' && r.tier_priority === 'CRITICAL' && r.row_type !== 'Child');
+    const ongoing    = competency.filter(r => r.type && r.type.toLowerCase().includes('ongoing') && r.row_type !== 'Child');
+    const gaps       = competency.filter(r => r.row_type === 'Child');
+
+    const domainRows = competency.filter(r => r.row_type !== 'Child');
+
+    return {
+      competencyDomains:        uniq(domainRows.map(r => trunc(r.training_topic))).slice(0, 10),
+      practiceBoosters:         uniq(ongoing.map(r => trunc(r.training_topic))).slice(0, 8),
+      transitionGaps:           uniq(gaps.map(r => trunc(r.training_topic))).slice(0, 8),
+      regulatoryConsiderations: uniq(stateFloor.map(r => {
+        const topic = trunc(r.training_topic);
+        return r.tier_citation ? `${topic} (${r.tier_citation})` : topic;
+      })).slice(0, 8),
+    };
+  }
 
   const ROLES = [
     { value: 'lpn-lvn', label: 'Licensed Practical Nurse' },
@@ -701,6 +700,7 @@
 
   // ─── Sub-topic detection (data-driven) ───
   function isSubTopic(row) {
+    if (row.row_type === 'Child') return true;
     const h = (row.hours_raw || '').toLowerCase();
     if (h.includes('included in')) return true;
     if ((!row.hours_raw || row.hours_raw === '0') && row.hours_required === 0) return true;
@@ -929,8 +929,7 @@
       </div></div>`;
     }
 
-    const key = selectedWFRole + '||' + selectedWFSetting;
-    const data = WORKFORCE_DATA[key];
+    const data = buildWFData(selectedWFRole, selectedWFSetting);
     if (!data) {
       const rolLabel = ROLES.find(r => r.value === selectedWFRole)?.label || selectedWFRole;
       return renderWFFilterBar() + `<div class="main-content"><div class="empty-state">
@@ -1248,7 +1247,8 @@
       hours_raw:           String(r['Hours Required'] || ''),
       frequency:           r['Frequency'],
       notes:               r['Notes / Research Flags'] === 'None' ? '' : (r['Notes / Research Flags'] || ''),
-      source_url:          r['Source URL']
+      source_url:          r['Source URL'],
+      row_type:            r['Relationship'] || ''
     });
     DATA      = (json['R LPN'] || []).map(normalizeRow);
     CARE_DATA = [...(json['CS ALF'] || []), ...(json['CS SNF'] || [])].map(normalizeRow);
