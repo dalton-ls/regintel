@@ -494,6 +494,49 @@
       background: #b0b8cc; flex-shrink: 0; margin-top: 7px;
     }
 
+    .wf-context-meta { font-size: 12px; color: #6b7280; font-weight: 500; }
+
+    .wf-domain-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+      gap: 16px; margin-top: 16px;
+    }
+    .wf-domain-card {
+      background: #fff; border: 1px solid #e8ecf0; border-radius: 8px;
+      overflow: hidden;
+    }
+    .wf-domain-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 16px; background: #f7f9fc;
+      border-bottom: 1px solid #e8ecf0;
+    }
+    .wf-domain-num {
+      display: flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: 6px;
+      background: #2463eb; color: #fff;
+      font-size: 12px; font-weight: 700; flex-shrink: 0;
+    }
+    .wf-domain-title {
+      font-size: 13px; font-weight: 700; color: #1a2332; line-height: 1.35;
+    }
+    .wf-ksa-list {
+      list-style: none; margin: 0; padding: 12px 16px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .wf-ksa-item {
+      display: flex; align-items: flex-start; gap: 8px;
+      font-size: 12.5px; color: #2d3748; line-height: 1.5;
+    }
+    .wf-ksa-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.3px;
+      padding: 2px 7px; border-radius: 4px;
+      flex-shrink: 0; margin-top: 1px; text-transform: uppercase;
+    }
+    .wf-ksa-badge.knowledge { background: #eef3fb; color: #2463eb; }
+    .wf-ksa-badge.skill     { background: #f0fdf4; color: #16a34a; }
+    .wf-ksa-badge.ability   { background: #f5f3ff; color: #7c3aed; }
+    .wf-ksa-text { flex: 1; }
+
     /* ── Responsive ── */
     @media (max-width: 600px) {
       .header-subtitle { display: none; }
@@ -575,6 +618,7 @@
   // ─── Data ───
   let DATA = [];
   let CARE_DATA = [];
+  let WR_DATA = [];
 
   // ─── UI state ───
   let sidebarOpen   = true;
@@ -586,36 +630,35 @@
   let selectedWFSetting   = null;
   let openDropdown  = null;
 
-  function buildWFData(role, setting) {
-    let rows = [];
-    if (role === 'lpn-lvn') {
-      rows = DATA;
-    } else if (setting === 'Assisted Living Facility') {
-      rows = CARE_DATA.filter(r => r.hstm_setting === 'Assisted Living Facility');
-    } else if (setting === 'Skilled Nursing Facility') {
-      rows = CARE_DATA.filter(r => r.hstm_setting === 'Skilled Nursing Facility');
-    }
+  const WF_ROLE_MATCH = {
+    'lpn-lvn': ['Licensed Practical Nurse', 'Licensed Vocational Nurse'],
+    'cna':     ['Certified Nursing Assistant', 'Nurse Assistant'],
+    'hha':     ['Home Health Aide']
+  };
+
+  function buildWFDomains(role, setting) {
+    const roleMatches = WF_ROLE_MATCH[role] || [];
+    const rows = WR_DATA.filter(r =>
+      roleMatches.includes(r.hstm_role) && r.hstm_setting === setting
+    );
     if (!rows.length) return null;
 
-    const trunc = s => s && s.length > 80 ? s.slice(0, 78) + '…' : (s || '');
-    const uniq  = arr => [...new Set(arr.filter(Boolean))];
-
-    const competency = rows.filter(r => r.tier_reason === 'Competency');
-    const stateFloor = rows.filter(r => r.tier_reason === 'State Floor' && r.tier_priority === 'CRITICAL' && r.row_type !== 'Child');
-    const ongoing    = competency.filter(r => r.type && r.type.toLowerCase().includes('ongoing') && r.row_type !== 'Child');
-    const gaps       = competency.filter(r => r.row_type === 'Child');
-
-    const domainRows = competency.filter(r => r.row_type !== 'Child');
-
-    return {
-      competencyDomains:        uniq(domainRows.map(r => trunc(r.training_topic))).slice(0, 10),
-      practiceBoosters:         uniq(ongoing.map(r => trunc(r.training_topic))).slice(0, 8),
-      transitionGaps:           uniq(gaps.map(r => trunc(r.training_topic))).slice(0, 8),
-      regulatoryConsiderations: uniq(stateFloor.map(r => {
-        const topic = trunc(r.training_topic);
-        return r.tier_citation ? `${topic} (${r.tier_citation})` : topic;
-      })).slice(0, 8),
-    };
+    const domains = [];
+    let current = null;
+    rows.forEach(r => {
+      if (r.row_type === 'Parent') {
+        current = { title: r.training_topic, ksas: [] };
+        domains.push(current);
+      } else if (r.row_type === 'Child' && current) {
+        const m = r.training_topic.match(/^(Knowledge|Skill|Ability)\s*:\s*(.*)$/i);
+        if (m) {
+          current.ksas.push({ type: m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase(), text: m[2] });
+        } else {
+          current.ksas.push({ type: '', text: r.training_topic });
+        }
+      }
+    });
+    return domains;
   }
 
   const ROLES = [
@@ -929,8 +972,8 @@
       </div></div>`;
     }
 
-    const data = buildWFData(selectedWFRole, selectedWFSetting);
-    if (!data) {
+    const domains = buildWFDomains(selectedWFRole, selectedWFSetting);
+    if (!domains || !domains.length) {
       const rolLabel = ROLES.find(r => r.value === selectedWFRole)?.label || selectedWFRole;
       return renderWFFilterBar() + `<div class="main-content"><div class="empty-state">
         <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -941,9 +984,7 @@
       </div></div>`;
     }
 
-    const rolLabel  = ROLES.find(r => r.value === selectedWFRole)?.label || selectedWFRole;
-    const chipsHtml = data.competencyDomains.map(d => `<span class="wf-chip">${esc(d)}</span>`).join('');
-    const listHtml  = items => items.map(i => `<li class="wf-list-item">${esc(i)}</li>`).join('');
+    const rolLabel = ROLES.find(r => r.value === selectedWFRole)?.label || selectedWFRole;
 
     const contextBar = `<div class="wf-context-bar">
       <span class="wf-context-label">Viewing</span>
@@ -956,40 +997,29 @@
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
         ${esc(selectedWFSetting)}
       </span>
+      <span class="wf-context-sep">·</span>
+      <span class="wf-context-meta">${domains.length} domain${domains.length === 1 ? '' : 's'}</span>
     </div>`;
 
-    const grid = `<div class="wf-grid">
-      <div class="wf-card">
-        <div class="wf-card-header">
-          <span class="wf-card-icon blue"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
-          <span class="wf-card-title">Core Competency Domains</span>
-        </div>
-        <div class="wf-card-body"><div class="wf-chips">${chipsHtml}</div></div>
-      </div>
-      <div class="wf-card">
-        <div class="wf-card-header">
-          <span class="wf-card-icon green"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span>
-          <span class="wf-card-title">Practice Boosters</span>
-        </div>
-        <div class="wf-card-body"><ul class="wf-list">${listHtml(data.practiceBoosters)}</ul></div>
-      </div>
-      <div class="wf-card">
-        <div class="wf-card-header">
-          <span class="wf-card-icon amber"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
-          <span class="wf-card-title">Common Transition Gaps</span>
-        </div>
-        <div class="wf-card-body"><ul class="wf-list">${listHtml(data.transitionGaps)}</ul></div>
-      </div>
-      <div class="wf-card">
-        <div class="wf-card-header">
-          <span class="wf-card-icon purple"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
-          <span class="wf-card-title">Regulatory Considerations</span>
-        </div>
-        <div class="wf-card-body"><ul class="wf-list">${listHtml(data.regulatoryConsiderations)}</ul></div>
-      </div>
-    </div>`;
+    const ksaBadge = type => {
+      if (!type) return '';
+      const cls = type.toLowerCase();
+      return `<span class="wf-ksa-badge ${cls}">${esc(type)}</span>`;
+    };
 
-    return renderWFFilterBar() + `<div class="main-content">${contextBar}${grid}</div>`;
+    const domainCards = domains.map((d, i) => `
+      <div class="wf-domain-card">
+        <div class="wf-domain-header">
+          <span class="wf-domain-num">${i + 1}</span>
+          <span class="wf-domain-title">${esc(d.title.replace(/^Domain\s+\d+:\s*/i, ''))}</span>
+        </div>
+        <ul class="wf-ksa-list">
+          ${d.ksas.map(k => `<li class="wf-ksa-item">${ksaBadge(k.type)}<span class="wf-ksa-text">${esc(k.text)}</span></li>`).join('')}
+        </ul>
+      </div>
+    `).join('');
+
+    return renderWFFilterBar() + `<div class="main-content">${contextBar}<div class="wf-domain-grid">${domainCards}</div></div>`;
   }
 
   // ─── Main render ───
@@ -1252,6 +1282,10 @@
     });
     DATA      = (json['R LPN'] || []).map(normalizeRow);
     CARE_DATA = [...(json['CS ALF'] || []), ...(json['CS SNF'] || [])].map(normalizeRow);
+    WR_DATA   = [];
+    Object.keys(json).forEach(k => {
+      if (k.startsWith('WR ')) (json[k] || []).forEach(r => WR_DATA.push(normalizeRow(r)));
+    });
   }
 
   // ─── Init ───

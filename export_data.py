@@ -27,10 +27,15 @@ SHEETS = [
     "R LPN",
     "CS ALF",
     "CS SNF",
+    "WR LPN_ALF",
     # Add future sheets here as they are built out, e.g.:
     # "CS Home Health",
     # "CS Hospice",
     # "CS CAH",
+    # "WR LPN_SNF",
+    # "WR CNA_ALF",
+    # "WR CNA_SNF",
+    # "WR HHA_HH",
 ]
 
 # Columns where blank cells should export as null (not 0 or empty string).
