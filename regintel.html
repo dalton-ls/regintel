@@ -1282,19 +1282,21 @@
       row_type:            r['Relationship'] || ''
     });
     DATA      = (json['R LPN'] || []).map(normalizeRow);
-    CARE_DATA = [...(json['CS ALF'] || []), ...(json['CS SNF'] || [])].map(normalizeRow);
-    WR_DATA   = (...(json['WR ALF_LPN'] ||[]).map(normalizeRow);
-    Object.keys(json).forEach(k => {
-      if (k.startsWith('WR ')) (json[k] || []).forEach(r => WR_DATA.push(normalizeRow(r)));
-    });
-  }
 
-  // ─── Init ───
-  loadData().then(() => {
-    rowMap = {};
-    [...DATA, ...CARE_DATA].forEach(r => { rowMap[cardKey(r)] = r; });
-    render();
-  });
+CARE_DATA = [
+  ...(json['CS ALF'] || []),
+  ...(json['CS SNF'] || [])
+].map(normalizeRow);
+
+WR_DATA = [
+  ...(json['WR ALF_LPN'] || []).map(normalizeRow)
+];
+
+Object.keys(json).forEach(k => {
+  if (k.startsWith('WR ')) {
+    (json[k] || []).forEach(r => WR_DATA.push(normalizeRow(r)));
+  }
+});
   </script>
 </body>
 </html>
