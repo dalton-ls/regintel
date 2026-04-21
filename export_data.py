@@ -6,10 +6,16 @@ Converts RegIntel_PoC.xlsx → data.json for the RegIntel web tool.
 Usage:
     python export_data.py                          # uses default filename below
     python export_data.py my_matrix.xlsx           # specify a different file
-    python export_data.py my_matrix.xlsx out.json  # specify both input and output
+    python export_data.py my_matrix.xlsx out.json  # specify both
 
 Run this script any time you update the Excel file.
 The website reads data.json automatically — no other changes needed.
+
+HSTM Role handling:
+    The "HSTM Role" column now supports multiple audiences separated by " | ".
+    In the JSON output, HSTM Role is always an array (even for single values).
+    Example: "Clinical, Non-Medication Dispensing | Managerial Staff"
+         →   ["Clinical, Non-Medication Dispensing", "Managerial Staff"]
 """
 
 import sys
@@ -21,54 +27,40 @@ from pathlib import Path
 DEFAULT_INPUT  = "RegIntel_PoC.xlsx"
 DEFAULT_OUTPUT = "data.json"
 
-# Sheets to export. Add sheet names here as you build them out.
-# Sheets listed here but not found in the workbook are silently skipped.
 SHEETS = [
     "R LPN",
     "CS ALF",
     "CS SNF",
-    "WR LPN_ALF",
-    # Add future sheets here as they are built out, e.g.:
-    # "CS Home Health",
-    # "CS Hospice",
-    # "CS CAH",
-    # "WR LPN_SNF",
-    # "WR CNA_ALF",
-    # "WR CNA_SNF",
-    # "WR HHA_HH",
+    "Home Health",
+    "Hospice",
+    "CAH",
 ]
 
-# Columns where blank cells should export as null (not 0 or empty string).
+# Columns where blank cells should export as null
 NULLABLE_COLUMNS = [
-    "Jurisdiction",
-    "Jurisdiction Role",
     "Jurisdiction Setting",
-    "Oversight / Professional Agency",
-    "HSTM Role",
     "HSTM Setting",
-    "Tier Priority",
-    "Requirement Level",
-    "Citation",
-    "Training Topic / Competency Item",
-    "Purpose",
+    "Jurisdiction Role",
+    "HSTM Role",          # still nullable if completely empty
     "Approval Required",
-    "Hours Required",
-    "Frequency",
-    "Explicit Training",
-    "Relationship",
     "Notes / Research Flags",
-    "Source URL",
+    "Citation",
+    "Purpose",
 ]
 
-# Columns that should always export as integers when non-null.
-# NOTE: Hours Required is intentionally excluded — values like "160 hrs" are
-# mixed strings that cannot be cleanly cast. Keep it in NULLABLE_COLUMNS above.
+# Columns that export as integers when non-null
 INTEGER_COLUMNS = [
     "Tier",
+    "Hours Required",
 ]
 
+# Columns that export as arrays (pipe-delimited in Excel)
+ARRAY_COLUMNS = [
+    "HSTM Role",          # may contain "Audience A | Audience B | Audience C"
+]
 
-# ── Helpers ────────────────────────────────────────────────────────────────────
+PIPE_NULL = {"nan", "NaN", "None", "none", ""}
+
 
 def clean_value(val):
     """Convert a single cell value to a JSON-safe Python type."""
@@ -77,6 +69,22 @@ def clean_value(val):
     if hasattr(val, "item"):
         return val.item()
     return val
+
+
+def to_array(raw):
+    """
+    Parse a pipe-delimited string into a cleaned array.
+    'Clinical, Non-Medication Dispensing | Managerial Staff'
+    → ['Clinical, Non-Medication Dispensing', 'Managerial Staff']
+    Returns None if value is empty/null.
+    """
+    if raw is None:
+        return None
+    s = str(raw).strip()
+    if s in PIPE_NULL:
+        return None
+    parts = [p.strip() for p in s.split("|") if p.strip() and p.strip() not in PIPE_NULL]
+    return parts if parts else None
 
 
 def export_sheet(df, sheet_name):
@@ -92,11 +100,18 @@ def export_sheet(df, sheet_name):
         for col in df.columns:
             val = row[col]
 
-            if col in NULLABLE_COLUMNS:
-                s = str(val).strip() if val is not None else None
-                record[col] = None if s in (None, "", "nan", "NaN", "None") else s
+            # Array columns — parse pipe-delimited into list
+            if col in ARRAY_COLUMNS:
+                record[col] = to_array(val)
                 continue
 
+            # Nullable string columns
+            if col in NULLABLE_COLUMNS:
+                s = str(val).strip() if val is not None else None
+                record[col] = None if s in (None,) or s in PIPE_NULL else s
+                continue
+
+            # Integer columns
             if col in INTEGER_COLUMNS:
                 try:
                     record[col] = None if val is None else int(float(val))
@@ -111,8 +126,6 @@ def export_sheet(df, sheet_name):
     print(f"  OK  {sheet_name}: {len(records)} rows, {len(df.columns)} columns")
     return records
 
-
-# ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
     input_path  = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(DEFAULT_INPUT)
