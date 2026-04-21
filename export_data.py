@@ -170,7 +170,26 @@ def main():
 
     total_rows = sum(len(v) for v in output.values())
     print(f"\nWritten:  {output_path}")
-    print(f"Summary:  {len(output)} sheet(s), {total_rows} total rows\n")
+    print(f"Summary:  {len(output)} sheet(s), {total_rows} total rows")
+
+    # Embed data inline in regintel.html so it works without a web server
+    html_path = Path("regintel.html")
+    if html_path.exists():
+        html = html_path.read_text(encoding="utf-8")
+        begin_marker = "/* DATA_BEGIN */"
+        end_marker   = "/* DATA_END */"
+        start = html.find(begin_marker)
+        end   = html.find(end_marker)
+        if start != -1 and end != -1:
+            json_str = json.dumps(output, indent=2, ensure_ascii=False, default=str)
+            new_block = f"{begin_marker}\n  const RAW_DATA = {json_str};\n  {end_marker}"
+            html = html[:start] + new_block + html[end + len(end_marker):]
+            html_path.write_text(html, encoding="utf-8")
+            print(f"Updated:  {html_path} (RAW_DATA block refreshed)\n")
+        else:
+            print(f"NOTE: DATA_BEGIN/DATA_END markers not found in {html_path} — inline embed skipped\n")
+    else:
+        print()
 
 
 if __name__ == "__main__":
