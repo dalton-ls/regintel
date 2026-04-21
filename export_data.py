@@ -31,6 +31,7 @@ SHEETS = [
     "R LPN",
     "CS ALF",
     "CS SNF",
+    "WR LPN_ALF",
     "Home Health",
     "Hospice",
     "CAH",
