@@ -657,7 +657,7 @@
   <div class="modal-overlay" id="importModal">
     <div class="modal-box">
       <div class="modal-title">Import regulatory data</div>
-      <div class="modal-subtitle">Drop a JSON file exported from the Monthly Ingest or WR Ingest tools. Records will be merged into the current dataset — duplicates (same citation + topic + jurisdiction) are skipped.</div>
+      <div class="modal-subtitle">Drop a JSON file exported from the Reg Parser or WR Ingest tools. Records will be merged into the current dataset — duplicates (same citation + topic + jurisdiction) are skipped.</div>
       <div class="modal-dropzone" id="importDropzone" onclick="document.getElementById('importFileInput').click()">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:8px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         <div>Drop JSON file here or click to browse</div>
@@ -708,14 +708,6 @@
         </a>
         <div id="adminNav" style="display:none">
           <div style="border-top:1px solid #e8ecf0;margin:12px 0;"></div>
-          <a href="ingest-recurring.html" class="nav-item" style="color:#6b7a99;">
-            <span class="nav-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-              </svg>
-            </span>
-            <span class="nav-label">Monthly Ingest</span>
-          </a>
           <a href="ingest.html" class="nav-item" style="color:#6b7a99;">
             <span class="nav-icon">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
