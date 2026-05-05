@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RegIntel — Source Ingest</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; color: #1a2332; background: #f0f2f5; }
+    .app-header { position: sticky; top: 0; z-index: 200; height: 60px; background: #1a2e5a; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .header-brand { display: flex; align-items: center; gap: 10px; }
+    .logo-text { font-size: 17px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+    .header-sep { color: rgba(255,255,255,0.25); font-size: 20px; font-weight: 200; }
+    .header-subtitle { font-size: 12px; color: rgba(255,255,255,0.6); }
+    .back-link { font-size: 12px; color: rgba(255,255,255,0.5); text-decoration: none; font-weight: 500; }
+    .back-link:hover { color: rgba(255,255,255,0.85); }
+
+    .page-wrap { max-width: 1000px; margin: 0 auto; padding: 32px 24px 80px; }
+    .page-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .page-desc { font-size: 14px; color: #6b7a99; line-height: 1.6; margin-bottom: 24px; }
+
+    /* Ingest area */
+    .ingest-zone { border: 2px dashed #dde1ea; border-radius: 12px; padding: 40px; text-align: center; color: #6b7a99; font-size: 13px; cursor: pointer; transition: border-color 0.2s, background 0.2s; margin-bottom: 24px; }
+    .ingest-zone:hover, .ingest-zone.dragover { border-color: #2463eb; background: #eef3fb; }
+    .ingest-zone textarea { width: 100%; height: 120px; margin-top: 12px; border: 1px solid #dde1ea; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 11px; resize: vertical; }
+
+    /* Source card */
+    .source-card { background: #fff; border: 1px solid #e8ecf0; border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+    .source-header { padding: 16px; border-bottom: 1px solid #e8ecf0; background: #f7f9fc; }
+    .source-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .source-path { font-size: 11px; color: #6b7a99; font-family: monospace; }
+    .source-meta { display: flex; gap: 16px; margin-top: 8px; flex-wrap: wrap; }
+    .source-meta-item { font-size: 12px; color: #4a5568; }
+    .source-meta-item strong { font-weight: 600; color: #1a2332; }
+    .source-ancestors { font-size: 12px; color: #6b7a99; margin-top: 6px; }
+    .source-ancestors span { color: #2463eb; }
+
+    /* Section list */
+    .section-list { padding: 0; }
+    .section-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 16px; border-bottom: 1px solid #f0f2f5; transition: background 0.1s; }
+    .section-item:last-child { border-bottom: none; }
+    .section-item:hover { background: #fafbfc; }
+    .section-item.skipped { opacity: 0.4; }
+    .section-item.accepted { background: #f0fdf4; }
+
+    .section-check { flex-shrink: 0; margin-top: 2px; }
+    .section-body { flex: 1; min-width: 0; }
+    .section-name { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+    .section-cite { font-size: 11px; color: #6b7a99; font-family: monospace; }
+
+    .section-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .action-btn { height: 28px; padding: 0 10px; border-radius: 6px; font-size: 11px; font-weight: 600; font-family: inherit; cursor: pointer; border: 1px solid #dde1ea; background: #fff; color: #4a5568; transition: all 0.15s; display: flex; align-items: center; gap: 4px; }
+    .action-btn:hover { background: #f5f7fa; }
+    .action-btn.accept { border-color: #16a34a; color: #16a34a; }
+    .action-btn.accept:hover { background: #f0fdf4; }
+    .action-btn.accept.active { background: #16a34a; color: #fff; }
+    .action-btn.skip { border-color: #dc2626; color: #dc2626; }
+    .action-btn.skip:hover { background: #fef2f2; }
+    .action-btn.skip.active { background: #dc2626; color: #fff; }
+    .action-btn.enrich { border-color: #2463eb; color: #2463eb; }
+    .action-btn.enrich:hover { background: #eef3fb; }
+
+    /* Enrichment panel */
+    .enrich-panel { display: none; background: #fafbfc; border: 1px solid #e8ecf0; border-radius: 8px; padding: 14px; margin-top: 10px; }
+    .enrich-panel.open { display: block; }
+    .enrich-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .enrich-group { display: flex; flex-direction: column; gap: 3px; }
+    .enrich-group.full { grid-column: 1 / -1; }
+    .enrich-label { font-size: 11px; font-weight: 600; color: #6b7a99; }
+    .enrich-input, .enrich-select, .enrich-textarea { height: 32px; padding: 0 8px; border: 1px solid #dde1ea; border-radius: 6px; font-size: 12px; color: #1a2332; background: #fff; font-family: inherit; outline: none; }
+    .enrich-input:focus, .enrich-select:focus, .enrich-textarea:focus { border-color: #2463eb; }
+    .enrich-select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%236b7a99' stroke-width='2.5' xmlns='http://www.w3.org/2000/svg'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px; }
+    .enrich-textarea { height: 60px; padding: 6px 8px; resize: vertical; }
+
+    /* Bottom bar */
+    .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #e8ecf0; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; z-index: 100; box-shadow: 0 -2px 8px rgba(0,0,0,0.05); }
+    .bottom-stats { display: flex; gap: 16px; font-size: 12px; color: #6b7a99; }
+    .bottom-stats strong { color: #1a2332; }
+    .btn-row { display: flex; gap: 8px; }
+    .btn { display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; border: 1px solid #dde1ea; background: #fff; color: #4a5568; transition: background 0.15s; }
+    .btn:hover { background: #f5f7fa; }
+    .btn.primary { background: #2463eb; color: #fff; border-color: #2463eb; }
+    .btn.primary:hover { background: #1d4ed8; }
+    .btn.success { background: #16a34a; color: #fff; border-color: #16a34a; }
+    .btn.success:hover { background: #15803d; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .toast { position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); background: #1a2332; color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 999; box-shadow: 0 4px 20px rgba(0,0,0,0.25); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+
+    .bulk-bar { display: flex; gap: 8px; align-items: center; padding: 10px 16px; background: #eef3fb; border-bottom: 1px solid #c7d7f8; font-size: 12px; color: #1e40af; }
+    .bulk-bar select, .bulk-bar input { height: 28px; padding: 0 8px; border: 1px solid #c7d7f8; border-radius: 6px; font-size: 11px; font-family: inherit; background: #fff; }
+    .bulk-bar .action-btn { height: 26px; font-size: 10px; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-brand">
+      <span class="logo-text">RegIntel</span>
+      <span class="header-sep">|</span>
+      <span class="header-subtitle">Source Ingest</span>
+    </div>
+    <a href="regintel.html" class="back-link">&larr; Back to research view</a>
+  </header>
+
+  <div class="page-wrap" id="pageWrap">
+    <h1 class="page-title">Regulatory source ingest</h1>
+    <p class="page-desc">Paste or upload OpenLaws JSON. The tool auto-extracts citations, jurisdiction, and section structure, then lets you triage each section — accept sections with training implications, skip the rest, and enrich accepted records with HSTM role/setting mapping.</p>
+
+    <div class="ingest-zone" id="ingestZone">
+      <div style="margin-bottom:8px"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></div>
+      <div>Drop OpenLaws JSON file, or paste JSON below</div>
+      <textarea id="jsonInput" placeholder='Paste OpenLaws JSON here (single object or array of objects)...' onclick="event.stopPropagation()"></textarea>
+      <input type="file" id="fileInput" accept=".json" style="display:none">
+      <div style="margin-top:10px">
+        <button class="btn primary" onclick="parseInput()" style="display:inline-flex">Parse &amp; load</button>
+        <button class="btn" onclick="document.getElementById('fileInput').click()" style="display:inline-flex;margin-left:6px">Upload file</button>
+      </div>
+    </div>
+
+    <div id="results"></div>
+  </div>
+
+  <div class="bottom-bar" id="bottomBar" style="display:none">
+    <div class="bottom-stats">
+      <span>Sections: <strong id="statTotal">0</strong></span>
+      <span>Accepted: <strong id="statAccepted" style="color:#16a34a">0</strong></span>
+      <span>Skipped: <strong id="statSkipped" style="color:#dc2626">0</strong></span>
+      <span>Pending: <strong id="statPending" style="color:#d97706">0</strong></span>
+    </div>
+    <div class="btn-row">
+      <button class="btn" onclick="exportAccepted()" id="exportBtn" disabled>Export accepted as RegIntel JSON</button>
+      <button class="btn success" onclick="exportAccepted()" id="exportBtnGo" disabled>Export</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+  let sources = [];    // parsed OpenLaws objects
+  let sections = [];   // flattened section list with triage state
+  let enrichOpen = {}; // which sections have enrichment panel open
+
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+  }
+
+  // ── Citation parser ──
+  function pathToCitation(path, divType, identifier) {
+    // "title_42.chapter_i.subchapter_d.part_54" → "42 CFR Part 54"
+    // "title_42...section_54_1" → "42 CFR §54.1"
+    const titleMatch = path.match(/title_(\d+)/);
+    const title = titleMatch ? titleMatch[1] : '??';
+    if (divType === 'section') {
+      const secMatch = identifier.match(/^(\d+)[\._](\d+.*)$/);
+      if (secMatch) return title + ' CFR §' + secMatch[1] + '.' + secMatch[2];
+      return title + ' CFR §' + identifier;
+    }
+    if (divType === 'part') return title + ' CFR Part ' + identifier;
+    if (divType === 'subpart') return title + ' CFR Subpart ' + identifier;
+    return title + ' CFR ' + divType + ' ' + identifier;
+  }
+
+  function jurisdictionFromKey(key) {
+    if (!key) return 'US';
+    if (key === 'FED') return 'US';
+    return key.toUpperCase();
+  }
+
+  // ── Parse input ──
+  function parseInput() {
+    const raw = document.getElementById('jsonInput').value.trim();
+    if (!raw) { showToast('Paste or upload JSON first'); return; }
+    try {
+      let data = JSON.parse(raw);
+      if (!Array.isArray(data)) data = [data];
+      sources = data;
+      sections = [];
+      enrichOpen = {};
+
+      data.forEach((src, si) => {
+        const juris = jurisdictionFromKey(src.jurisdiction_key);
+        const baseCite = pathToCitation(src.path, src.division_type, src.identifier);
+        const baseUrl = src.openlaws_web_url || '';
+        const authority = (src.annotations || '').split('\n')[0] || '';
+        const ancestors = (src.display_ancestors || []).map(a => a.display_name).join(' → ');
+
+        // Add parent-level record
+        sections.push({
+          id: 'src' + si + '_parent',
+          sourceIndex: si,
+          isParent: true,
+          name: src.display_name || src.name,
+          citation: baseCite,
+          path: src.path,
+          jurisdiction: juris,
+          sourceUrl: baseUrl,
+          authority: authority,
+          ancestors: ancestors,
+          status: 'pending', // pending | accepted | skipped
+          enrichment: {
+            hstmRole: '',
+            hstmSetting: '',
+            agency: '',
+            topic: src.name || '',
+            tier: juris === 'US' ? '1' : '2',
+            reqLevel: juris === 'US' ? 'Federal Floor' : 'State Floor',
+            priority: 'CRITICAL',
+            relationship: 'Parent',
+            purpose: '',
+            frequency: '',
+            hours: '0',
+            approval: '',
+            explicit: '',
+            notes: authority
+          }
+        });
+
+        // Add children as potential records
+        (src.display_children || []).forEach((child, ci) => {
+          const childIdMatch = child.path.match(/section_(.+)$/);
+          const childId = childIdMatch ? childIdMatch[1].replace(/_/g, '.') : child.path;
+          const childCite = pathToCitation(child.path, 'section', childId);
+          const childName = child.display_name.replace(/^Section\s+[\d.]+:\s*/, '');
+
+          sections.push({
+            id: 'src' + si + '_child' + ci,
+            sourceIndex: si,
+            isParent: false,
+            name: childName,
+            citation: childCite,
+            path: child.path,
+            jurisdiction: juris,
+            sourceUrl: baseUrl + '/' + child.path.split('.').pop(),
+            authority: '',
+            ancestors: '',
+            status: 'pending',
+            enrichment: {
+              hstmRole: '',
+              hstmSetting: '',
+              agency: '',
+              topic: childName,
+              tier: juris === 'US' ? '1' : '2',
+              reqLevel: juris === 'US' ? 'Federal Floor' : 'State Floor',
+              priority: 'HIGH',
+              relationship: 'Child',
+              purpose: '',
+              frequency: '',
+              hours: '0',
+              approval: '',
+              explicit: '',
+              notes: ''
+            }
+          });
+        });
+      });
+
+      renderResults();
+      document.getElementById('bottomBar').style.display = 'flex';
+      updateStats();
+      showToast('Loaded ' + sources.length + ' source(s), ' + sections.length + ' sections');
+    } catch(e) {
+      showToast('JSON parse error: ' + e.message);
+    }
+  }
+
+  // ── File upload ──
+  document.getElementById('fileInput').addEventListener('change', function() {
+    const file = this.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      document.getElementById('jsonInput').value = e.target.result;
+      parseInput();
+    };
+    reader.readAsText(file);
+  });
+
+  // ── Drag and drop ──
+  const zone = document.getElementById('ingestZone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = ev => { document.getElementById('jsonInput').value = ev.target.result; parseInput(); };
+      reader.readAsText(file);
+    }
+  });
+
+  // ── Rendering ──
+  function renderResults() {
+    const container = document.getElementById('results');
+    if (!sources.length) { container.innerHTML = ''; return; }
+
+    let html = '';
+    sources.forEach((src, si) => {
+      const juris = jurisdictionFromKey(src.jurisdiction_key);
+      const baseCite = pathToCitation(src.path, src.division_type, src.identifier);
+      const ancestors = (src.display_ancestors || []).map(a => a.display_name);
+      const mySections = sections.filter(s => s.sourceIndex === si);
+
+      html += '<div class="source-card">';
+      html += '<div class="source-header">';
+      html += '<div class="source-title">' + esc(src.display_name || src.name) + '</div>';
+      html += '<div class="source-path">' + esc(baseCite) + ' &middot; ' + esc(src.path) + '</div>';
+      html += '<div class="source-meta">';
+      html += '<div class="source-meta-item"><strong>Jurisdiction:</strong> ' + esc(juris) + '</div>';
+      html += '<div class="source-meta-item"><strong>Type:</strong> ' + esc(src.division_type) + '</div>';
+      html += '<div class="source-meta-item"><strong>Children:</strong> ' + (src.display_children || []).length + '</div>';
+      if (src.openlaws_web_url) html += '<div class="source-meta-item"><a href="' + esc(src.openlaws_web_url) + '" target="_blank" style="color:#2463eb;font-size:12px">View source &rarr;</a></div>';
+      html += '</div>';
+      if (ancestors.length) html += '<div class="source-ancestors">' + ancestors.map(a => '<span>' + esc(a) + '</span>').join(' &rarr; ') + '</div>';
+      html += '</div>';
+
+      // Bulk actions
+      html += '<div class="bulk-bar">';
+      html += '<span style="font-weight:600">Bulk assign:</span>';
+      html += '<select onchange="bulkAssign(' + si + ',\'hstmRole\',this.value)"><option value="">HSTM Role</option><option>Licensed Vocational Nurse</option><option>Certified Nursing Assistant</option><option>Home Health Aide</option><option>Registered Nurse</option><option>Medical Assistant</option></select>';
+      html += '<select onchange="bulkAssign(' + si + ',\'hstmSetting\',this.value)"><option value="">HSTM Setting</option><option>Assisted Living Facility</option><option>Skilled Nursing Facility</option><option>Home Health</option><option>Hospice</option><option>PACE</option></select>';
+      html += '<input placeholder="Agency" onchange="bulkAssign(' + si + ',\'agency\',this.value)" style="width:200px">';
+      html += '<button class="action-btn accept" onclick="bulkStatus(' + si + ',\'accepted\')">Accept all</button>';
+      html += '<button class="action-btn skip" onclick="bulkStatus(' + si + ',\'skipped\')">Skip all</button>';
+      html += '</div>';
+
+      // Sections
+      html += '<div class="section-list">';
+      mySections.forEach((sec, idx) => {
+        const globalIdx = sections.indexOf(sec);
+        html += renderSection(sec, globalIdx);
+      });
+      html += '</div></div>';
+    });
+
+    container.innerHTML = html;
+  }
+
+  function renderSection(sec, idx) {
+    const statusCls = sec.status === 'accepted' ? ' accepted' : sec.status === 'skipped' ? ' skipped' : '';
+    const isOpen = enrichOpen[sec.id];
+    const e = sec.enrichment;
+
+    let html = '<div class="section-item' + statusCls + '" id="sec-' + idx + '">';
+    html += '<div class="section-body">';
+    html += '<div class="section-name">' + (sec.isParent ? '&#9632; ' : '&ensp;&#9643; ') + esc(sec.name) + '</div>';
+    html += '<div class="section-cite">' + esc(sec.citation) + '</div>';
+
+    // Enrichment panel
+    html += '<div class="enrich-panel' + (isOpen ? ' open' : '') + '" id="enrich-' + idx + '">';
+    html += '<div class="enrich-grid">';
+    html += enrichField('HSTM Role', 'select', 'hstmRole', idx, e.hstmRole, ['','Licensed Vocational Nurse','Certified Nursing Assistant','Home Health Aide','Registered Nurse','Medical Assistant']);
+    html += enrichField('HSTM Setting', 'select', 'hstmSetting', idx, e.hstmSetting, ['','Assisted Living Facility','Skilled Nursing Facility','Home Health','Hospice','PACE','Critical Access Hospital','Ambulatory Surgery Center','Behavioral Health']);
+    html += enrichField('Agency', 'text', 'agency', idx, e.agency);
+    html += enrichField('Tier', 'select', 'tier', idx, e.tier, ['1','2','3','4']);
+    html += enrichField('Req Level', 'select', 'reqLevel', idx, e.reqLevel, ['Federal Floor','State Floor','Accreditation','Competency']);
+    html += enrichField('Priority', 'select', 'priority', idx, e.priority, ['CRITICAL','HIGH']);
+    html += enrichField('Purpose', 'select', 'purpose', idx, e.purpose, ['','Renewal','Ongoing','Initial']);
+    html += enrichField('Frequency', 'select', 'frequency', idx, e.frequency, ['','Annual','Biennial','Once','Discretionary']);
+    html += enrichField('Hours', 'number', 'hours', idx, e.hours);
+    html += enrichField('Approval', 'select', 'approval', idx, e.approval, ['','Yes','No']);
+    html += '<div class="enrich-group full">' + '<label class="enrich-label">Training Topic</label>' + '<textarea class="enrich-textarea" onchange="updateEnrich(' + idx + ',\'topic\',this.value)">' + esc(e.topic) + '</textarea></div>';
+    html += '<div class="enrich-group full">' + '<label class="enrich-label">Notes</label>' + '<textarea class="enrich-textarea" onchange="updateEnrich(' + idx + ',\'notes\',this.value)">' + esc(e.notes) + '</textarea></div>';
+    html += '</div></div>';
+
+    html += '</div>'; // section-body
+    html += '<div class="section-actions">';
+    html += '<button class="action-btn enrich" onclick="toggleEnrich(' + idx + ')">Enrich</button>';
+    html += '<button class="action-btn accept' + (sec.status === 'accepted' ? ' active' : '') + '" onclick="setStatus(' + idx + ',\'accepted\')">Accept</button>';
+    html += '<button class="action-btn skip' + (sec.status === 'skipped' ? ' active' : '') + '" onclick="setStatus(' + idx + ',\'skipped\')">Skip</button>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function enrichField(label, type, field, idx, value, options) {
+    let input;
+    if (type === 'select') {
+      input = '<select class="enrich-select" onchange="updateEnrich(' + idx + ',\'' + field + '\',this.value)">';
+      options.forEach(o => { input += '<option' + (value === o ? ' selected' : '') + '>' + esc(o || '(none)') + '</option>'; });
+      input += '</select>';
+    } else if (type === 'number') {
+      input = '<input class="enrich-input" type="number" min="0" step="0.5" value="' + esc(value) + '" onchange="updateEnrich(' + idx + ',\'' + field + '\',this.value)">';
+    } else {
+      input = '<input class="enrich-input" value="' + esc(value) + '" onchange="updateEnrich(' + idx + ',\'' + field + '\',this.value)">';
+    }
+    return '<div class="enrich-group"><label class="enrich-label">' + label + '</label>' + input + '</div>';
+  }
+
+  // ── Actions ──
+  function setStatus(idx, status) {
+    sections[idx].status = sections[idx].status === status ? 'pending' : status;
+    renderResults();
+    updateStats();
+  }
+
+  function toggleEnrich(idx) {
+    const id = sections[idx].id;
+    enrichOpen[id] = !enrichOpen[id];
+    const panel = document.getElementById('enrich-' + idx);
+    if (panel) panel.classList.toggle('open');
+  }
+
+  function updateEnrich(idx, field, value) {
+    if (field === 'hstmRole' || field === 'hstmSetting' || field === 'reqLevel') {
+      // Clean "(none)" back to empty
+      if (value === '(none)') value = '';
+    }
+    sections[idx].enrichment[field] = value;
+  }
+
+  function bulkAssign(sourceIdx, field, value) {
+    if (!value || value === '(none)') return;
+    sections.filter(s => s.sourceIndex === sourceIdx).forEach(s => { s.enrichment[field] = value; });
+    renderResults();
+    showToast('Bulk assigned ' + field);
+  }
+
+  function bulkStatus(sourceIdx, status) {
+    sections.filter(s => s.sourceIndex === sourceIdx).forEach(s => { s.status = status; });
+    renderResults();
+    updateStats();
+  }
+
+  function updateStats() {
+    const total = sections.length;
+    const accepted = sections.filter(s => s.status === 'accepted').length;
+    const skipped = sections.filter(s => s.status === 'skipped').length;
+    document.getElementById('statTotal').textContent = total;
+    document.getElementById('statAccepted').textContent = accepted;
+    document.getElementById('statSkipped').textContent = skipped;
+    document.getElementById('statPending').textContent = total - accepted - skipped;
+    document.getElementById('exportBtn').disabled = accepted === 0;
+    document.getElementById('exportBtnGo').disabled = accepted === 0;
+  }
+
+  // ── Export ──
+  function exportAccepted() {
+    const accepted = sections.filter(s => s.status === 'accepted');
+    if (!accepted.length) { showToast('No accepted sections'); return; }
+
+    // Group by a generated sheet key
+    const grouped = {};
+    accepted.forEach(sec => {
+      const e = sec.enrichment;
+      const roleCodes = { 'Licensed Vocational Nurse': 'LPN', 'Certified Nursing Assistant': 'CNA', 'Home Health Aide': 'HHA', 'Registered Nurse': 'RN', 'Medical Assistant': 'MA' };
+      const settingCodes = { 'Assisted Living Facility': 'ALF', 'Skilled Nursing Facility': 'SNF', 'Home Health': 'HH', 'Hospice': 'HOSP', 'PACE': 'PACE', 'Critical Access Hospital': 'CAH', 'Ambulatory Surgery Center': 'ASC', 'Behavioral Health': 'BEH' };
+      let key;
+      if (e.hstmSetting && !e.hstmRole) key = 'CS ' + (settingCodes[e.hstmSetting] || 'GEN');
+      else if (e.hstmRole && !e.hstmSetting) key = 'R ' + (roleCodes[e.hstmRole] || 'GEN');
+      else if (e.hstmRole && e.hstmSetting) key = 'CS ' + (settingCodes[e.hstmSetting] || 'GEN');
+      else key = 'UNSORTED';
+
+      if (!grouped[key]) grouped[key] = [];
+      grouped[key].push({
+        'Jurisdiction': sec.jurisdiction,
+        'Jurisdiction Role': null,
+        'Jurisdiction Setting': null,
+        'Oversight / Professional Agency': e.agency || null,
+        'HSTM Role': e.hstmRole ? [e.hstmRole] : null,
+        'HSTM Setting': e.hstmSetting || null,
+        'Tier': parseInt(e.tier) || 1,
+        'Tier Priority': e.priority || 'HIGH',
+        'Requirement Level': e.reqLevel || 'Federal Floor',
+        'Citation': sec.citation,
+        'Training Topic / Competency Item': e.topic,
+        'Purpose': e.purpose || null,
+        'Approval Required': e.approval || null,
+        'Hours Required': parseFloat(e.hours) || 0,
+        'Frequency': e.frequency || null,
+        'Explicit Training': e.explicit || null,
+        'Relationship': e.relationship || 'Parent',
+        'Notes / Research Flags': e.notes || 'None',
+        'Source URL': sec.sourceUrl || null
+      });
+    });
+
+    const blob = new Blob([JSON.stringify(grouped, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'regintel-ingest-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Exported ' + accepted.length + ' records');
+  }
+
+  function esc(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  </script>
+</body>
+</html>
