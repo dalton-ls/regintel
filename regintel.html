@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>Regulatory Intelligence Research</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -105,6 +108,8 @@
     .sidebar.collapsed { width: 40px; }
 
     .sidebar-nav { padding: 16px 0; }
+    #adminNav { display: none !important; }
+    body.admin-on #adminNav { display: block !important; }
 
     .nav-item {
       display: flex;
@@ -11247,7 +11252,7 @@
       document.getElementById('adminToggle').classList.remove('active');
       document.getElementById('adminLabel').textContent = 'Admin';
       document.getElementById('adminBar').classList.remove('visible');
-      const an = document.getElementById('adminNav'); if (an) an.style.display = 'none';
+      document.body.classList.remove('admin-on');
       showToast('Admin mode deactivated');
       return;
     }
@@ -11258,7 +11263,7 @@
       document.getElementById('adminToggle').classList.add('active');
       document.getElementById('adminLabel').textContent = 'Active';
       document.getElementById('adminBar').classList.add('visible');
-      const an = document.getElementById('adminNav'); if (an) an.style.display = '';
+      document.body.classList.add('admin-on');
       showToast('Admin mode activated');
     } else {
       showToast('Incorrect passphrase');
