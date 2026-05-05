@@ -293,12 +293,34 @@
     const reader = new FileReader();
     reader.onload = e => {
       try {
-        files[type] = JSON.parse(e.target.result);
-        const labels = { ledger: 'ledgerLabel', prev: 'prevLabel', curr: 'currLabel' };
-        document.getElementById(labels[type]).classList.add('loaded');
-        document.getElementById(labels[type]).textContent = '✓ ' + file.name;
+        const parsed = JSON.parse(e.target.result);
+        files[type] = parsed;
+        const labelIds = { ledger: 'ledgerLabel', prev: 'prevLabel', curr: 'currLabel' };
+        const el = document.getElementById(labelIds[type]);
+        el.classList.add('loaded');
+        el.textContent = '✓ ' + file.name;
         updateFilesCount();
-        showToast(type + ' loaded (' + file.name + ')');
+
+        // Show section count for curr/prev so user can confirm structure was understood
+        if (type === 'curr' || type === 'prev') {
+          const secs = flattenToSections(parsed);
+          const diagId = type === 'curr' ? 'currDiag' : 'prevDiag';
+          let diag = document.getElementById(diagId);
+          if (!diag) {
+            diag = document.createElement('div');
+            diag.id = diagId;
+            diag.style.cssText = 'margin-top:8px;font-size:11px;color:#16a34a;font-weight:600';
+            el.parentElement.appendChild(diag);
+          }
+          if (secs.length) {
+            diag.style.color = '#16a34a';
+            diag.textContent = '✓ ' + secs.length + ' section' + (secs.length !== 1 ? 's' : '') + ' detected';
+          } else {
+            diag.style.color = '#dc2626';
+            diag.textContent = '⚠ No sections detected — check JSON structure';
+          }
+        }
+        showToast(type + ' loaded: ' + file.name);
       } catch(err) {
         showToast('JSON parse error: ' + err.message);
       }
@@ -333,55 +355,105 @@
     return (h >>> 0).toString(36);
   }
 
-  function extractSections(src) {
-    // Handle both array and object sources; try common OpenLaws section keys
-    return src.display_children || src.sections || src.children || [];
+  // Normalize any OpenLaws JSON shape into a flat array of section objects.
+  // Handles: single parent object with display_children/sections/children,
+  // array of parent objects, flat array of sections (each has a 'path'),
+  // and nested objects keyed by name.
+  function flattenToSections(data) {
+    if (!data || typeof data !== 'object') return [];
+    const items = Array.isArray(data) ? data : [data];
+    const out = [];
+
+    function processItem(item, parentJuris) {
+      if (!item || typeof item !== 'object') return;
+      const jurisRaw = item.jurisdiction_key || parentJuris || '';
+      const juris = jurisRaw === 'FED' ? 'US' : (jurisRaw || 'US');
+
+      // Try child arrays under common keys
+      const childKeys = ['display_children', 'sections', 'children'];
+      let foundChildren = false;
+      for (const k of childKeys) {
+        if (Array.isArray(item[k]) && item[k].length) {
+          item[k].forEach(c => {
+            if (c && typeof c === 'object') {
+              // Carry jurisdiction down if child doesn't have its own
+              out.push({ _juris: juris, ...c });
+            }
+          });
+          foundChildren = true;
+          break;
+        }
+      }
+
+      // If no children found but item has a path, treat item itself as a section
+      if (!foundChildren && item.path) {
+        out.push({ _juris: juris, ...item });
+        return;
+      }
+
+      // If no children AND no path, check if values are arrays of section-like objects
+      // (e.g. RegIntel-style { "CS SNF": [...] } uploaded by mistake — surface them anyway)
+      if (!foundChildren && !item.path) {
+        Object.values(item).forEach(v => {
+          if (Array.isArray(v)) {
+            v.forEach(r => { if (r && r.path) out.push({ _juris: juris, ...r }); });
+          }
+        });
+      }
+    }
+
+    items.forEach(item => processItem(item, ''));
+    return out;
   }
 
   function computeDiff() {
     if (!files.curr) { showToast('Load current OpenLaws export first'); return; }
-    const current  = Array.isArray(files.curr) ? files.curr : [files.curr];
-    const previous = files.prev ? (Array.isArray(files.prev) ? files.prev : [files.prev]) : [];
-    const ledger   = (files.ledger && !Array.isArray(files.ledger)) ? files.ledger : {};
+    const ledger = (files.ledger && !Array.isArray(files.ledger)) ? files.ledger : {};
+
+    const currSections = flattenToSections(files.curr);
+    const prevSections = files.prev ? flattenToSections(files.prev) : [];
+
+    if (!currSections.length) {
+      showToast('No sections found in the uploaded file — check the JSON structure');
+      return;
+    }
 
     const prevIndex = {};
-    previous.forEach(src => {
-      extractSections(src).forEach(child => {
-        prevIndex[child.path] = makeHash(child);
-      });
+    prevSections.forEach(child => {
+      if (child.path) prevIndex[child.path] = makeHash(child);
     });
 
     queue = [];
-    current.forEach(src => {
-      const juris = src.jurisdiction_key === 'FED' ? 'US' : (src.jurisdiction_key || 'US');
-      extractSections(src).forEach(child => {
-        const path      = child.path;
-        const hash      = makeHash(child);
-        const wasSeen   = path in prevIndex;
-        const changed   = wasSeen && prevIndex[path] !== hash;
-        const ledgerDec = ledger[path] || null;
+    currSections.forEach(child => {
+      const path      = child.path;
+      if (!path) return; // skip anything with no path
+      const hash      = makeHash(child);
+      const wasSeen   = path in prevIndex;
+      const changed   = wasSeen && prevIndex[path] !== hash;
+      const ledgerDec = ledger[path] || null;
+      const juris     = child._juris || 'US';
 
-        let status;
-        if (!wasSeen)       status = 'new';
-        else if (changed)   status = 'changed';
-        else if (ledgerDec) status = 'decided';
-        else                status = 'pending';
+      let status;
+      if (!wasSeen)       status = 'new';
+      else if (changed)   status = 'changed';
+      else if (ledgerDec) status = 'decided';
+      else                status = 'pending';
 
-        queue.push({
-          path,
-          name:       (child.display_name || child.name || path).replace(/^Section\s+[\d.]+:\s*/i, ''),
-          jurisdiction: juris,
-          hash,
-          status,
-          accepted:   false,
-          skipped:    false,
-          decision: ledgerDec ? { ...ledgerDec } : {
-            hstmRole: '', hstmSetting: '', agency: '',
-            citation: path.replace(/_/g, ' '),
-            topic: (child.display_name || child.name || '').replace(/^Section\s+[\d.]+:\s*/i, ''),
-            hours: '0', frequency: ''
-          }
-        });
+      queue.push({
+        path,
+        name:         (child.display_name || child.name || path).replace(/^Section\s+[\d.]+:\s*/i, ''),
+        jurisdiction: juris,
+        hash,
+        status,
+        accepted:     false,
+        skipped:      false,
+        decision: ledgerDec ? { ...ledgerDec } : {
+          hstmRole: '', hstmSetting: '', agency: '',
+          citation: path.replace(/_/g, ' '),
+          topic: (child.display_name || child.name || '').replace(/^Section\s+[\d.]+:\s*/i, ''),
+          hours: '0', frequency: ''
+        }
+      });
       });
     });
 
