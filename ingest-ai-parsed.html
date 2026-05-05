@@ -294,7 +294,7 @@
   const FREQUENCIES   = ['Annual','Biennial','Once','Ongoing','Discretionary','Per Admission','Initial'];
 
   let files        = { curr: null, prev: null, ledger: null };
-  let parsedData   = [];   // [{ path, name, jurisdiction, hash, ai, parseStatus }]
+  let parsedData   = [];   // [{ path, name, jurisdiction, hash, records, parseStatus }]
   let queue        = [];
   let currentFilter = 'all';
   let activeMode   = 'setup';
@@ -424,17 +424,17 @@
 
       document.getElementById('statCurrent').textContent = 'Reading: ' + name.slice(0, 60) + (name.length > 60 ? '…' : '');
 
-      let ai = null;
+      let records = null;
       let parseStatus = 'failed';
       try {
-        ai = await fetchAiSuggestion({ path, name, jurisdiction: juris, raw: child }, getApiKey());
+        records = await fetchAiSuggestion({ path, name, jurisdiction: juris, raw: child }, getApiKey());
         parseStatus = 'success';
         ok++;
       } catch (err) {
         fail++;
       }
 
-      parsedData.push({ path, name, jurisdiction: juris, hash, ai, parseStatus });
+      parsedData.push({ path, name, jurisdiction: juris, hash, records: records || [], parseStatus });
 
       const pct = Math.round((i + 1) / sections.length * 100);
       document.getElementById('progressFill').style.width = pct + '%';
@@ -465,27 +465,36 @@
     computeDiff();
   }
 
-  // ─── AI Fetch (same as ingest-recurring.html) ───
+  // ─── AI Fetch — returns array of RegIntel records (Parent + Children) ───
   async function fetchAiSuggestion(item, key) {
     const rawCtx = Object.entries(item.raw || {})
-      .filter(([, v]) => typeof v === 'string' && v.length > 0)
-      .map(([k, v]) => `${k}: ${v.slice(0, 800)}`)
+      .filter(([k, v]) => typeof v === 'string' && v.length > 0 && !k.startsWith('_'))
+      .map(([k, v]) => `${k}: ${v.slice(0, 600)}`)
       .join('\n')
       .slice(0, 2500);
 
-    const systemPrompt = `You are a regulatory metadata specialist for US healthcare training compliance.
-Given an OpenLaws regulatory section, respond ONLY with valid JSON (no markdown) with exactly these keys:
-{"topic":string,"hstmRole":string,"hstmSetting":string,"agency":string,"citation":string,"hours":number,"frequency":string,"confidence":{"hstmRole":"high"|"medium"|"low","hstmSetting":"high"|"medium"|"low","frequency":"high"|"medium"|"low"}}
-hstmRole MUST be one of these exact strings (pick the closest match; use "" only if truly none apply): ${HSTM_ROLES.join(' | ')}
-hstmSetting MUST be one of these exact strings (or "" for role-level only): ${HSTM_SETTINGS.join(' | ')}
-frequency MUST be one of these exact strings (or "" if unspecified): ${FREQUENCIES.join(' | ')}
-Default agency to "CMS" for federal 42 CFR sections. Extract hours from the text if stated. Format citation like "42 CFR §483.35(b)".`;
+    const systemPrompt = `You are a regulatory data parser for HealthStream. Given a single OpenLaws regulatory section, extract RegIntel metadata and return a JSON array of records.
+
+Rules:
+- For multi-topic regulations (multiple distinct training requirements), produce ONE Parent record for the umbrella requirement PLUS one Child record per distinct training topic.
+- For a single standalone training requirement, produce ONE Child record only (no Parent needed).
+- Default agency to "CMS" for federal 42 CFR sections. Use state agency names for state regulations.
+- HSTM Role MUST be exactly one of: ${HSTM_ROLES.join(' | ')} (or null if none apply)
+- HSTM Setting MUST be exactly one of: SNF | ALF | HH | HOSP (or null for role-level only)
+- Tier: 1=Federal/State mandate floor, 2=Accreditation, 3=Best Practice/Quality, 4=Emerging
+- Tier Priority: "CRITICAL" for top priority within tier, "HIGH" for secondary
+- Requirement Level: "Federal Floor" | "State Floor" | "Accreditation" | "Competency"
+- Frequency MUST be exactly one of: Annual | Biennial | Once | Ongoing | Discretionary | Per Admission | Initial (or null)
+- Output ONLY the JSON array — no markdown fences, no explanation, no preamble.
+
+Each record must have exactly these fields:
+{"Jurisdiction":string,"Jurisdiction Role":string|null,"Jurisdiction Setting":string|null,"Oversight / Professional Agency":string,"HSTM Role":string|null,"HSTM Setting":"SNF"|"ALF"|"HH"|"HOSP"|null,"Tier":1|2|3|4,"Tier Priority":"CRITICAL"|"HIGH","Requirement Level":string,"Citation":string,"Training Topic / Competency Item":string,"Purpose":"Initial"|"Renewal"|"Ongoing"|null,"Approval Required":"Yes"|"No"|null,"Hours Required":number|null,"Frequency":string|null,"Explicit Training":"Yes"|"No"|null,"Relationship":"Parent"|"Child","Notes / Research Flags":string|null,"Source URL":null}`;
 
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true', 'content-type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001', max_tokens: 512,
+        model: 'claude-haiku-4-5-20251001', max_tokens: 1024,
         system: systemPrompt,
         messages: [{ role: 'user', content: `Path: ${item.path}\nName: ${item.name}\nJurisdiction: ${item.jurisdiction}${rawCtx ? '\nContent:\n' + rawCtx : ''}` }]
       })
@@ -493,7 +502,8 @@ Default agency to "CMS" for federal 42 CFR sections. Extract hours from the text
     if (!resp.ok) { const b = await resp.text().catch(() => ''); throw new Error(resp.status + ': ' + b.slice(0,100)); }
     const data = await resp.json();
     const text = (data.content?.[0]?.text || '').replace(/^```json\s*/i,'').replace(/```\s*$/i,'').trim();
-    return JSON.parse(text);
+    const parsed = JSON.parse(text);
+    return Array.isArray(parsed) ? parsed : [parsed];
   }
 
   // ─── Diff & Queue Build ───
@@ -501,43 +511,51 @@ Default agency to "CMS" for federal 42 CFR sections. Extract hours from the text
     if (!parsedData.length) { showToast('Parse sections first'); return; }
     const ledger = (files.ledger && !Array.isArray(files.ledger)) ? files.ledger : {};
 
-    // Index previous Parsed JSON by path → hash
+    // Index previous Parsed JSON by section path → hash
     const prevIndex = {};
     if (files.prev && Array.isArray(files.prev)) {
       files.prev.forEach(item => { if (item.path) prevIndex[item.path] = item.hash; });
     }
 
     queue = [];
-    parsedData.forEach(item => {
-      const wasSeen   = item.path in prevIndex;
-      const changed   = wasSeen && prevIndex[item.path] !== item.hash;
-      const ledgerDec = ledger[item.path] || null;
-      const ai        = item.ai || {};
+    parsedData.forEach(section => {
+      const wasSeen = section.path in prevIndex;
+      const changed = wasSeen && prevIndex[section.path] !== section.hash;
 
-      let status;
-      if (item.parseStatus === 'failed') status = 'failed';
-      else if (!wasSeen)                 status = 'new';
-      else if (changed)                  status = 'changed';
-      else if (ledgerDec)                status = 'decided';
-      else                               status = 'pending';
+      if (section.parseStatus === 'failed') {
+        queue.push({ id: section.path + ':fail', sectionPath: section.path, sectionName: section.name, jurisdiction: section.jurisdiction, hash: section.hash, status: 'failed', parseStatus: 'failed', record: {}, accepted: false, skipped: false, _panelOpen: false });
+        return;
+      }
 
-      const decision = ledgerDec ? { ...ledgerDec } : {
-        hstmRole:    ai.hstmRole    || '',
-        hstmSetting: ai.hstmSetting || '',
-        agency:      ai.agency      || '',
-        citation:    ai.citation    || item.path.replace(/_/g, ' '),
-        topic:       ai.topic       || item.name,
-        hours:       String(ai.hours ?? 0),
-        frequency:   ai.frequency   || ''
-      };
+      (section.records || []).forEach((rec, idx) => {
+        const id = section.path + ':' + idx;
+        const ledgerDec = ledger[id] || null;
+        let status;
+        if (!wasSeen)       status = 'new';
+        else if (changed)   status = 'changed';
+        else if (ledgerDec) status = 'decided';
+        else                status = 'pending';
 
-      queue.push({ path: item.path, name: item.name, jurisdiction: item.jurisdiction, hash: item.hash, status, parseStatus: item.parseStatus, aiConf: ai.confidence || {}, accepted: false, skipped: false, decision });
+        queue.push({
+          id,
+          sectionPath: section.path,
+          sectionName: section.name,
+          jurisdiction: section.jurisdiction,
+          hash: section.hash,
+          status,
+          parseStatus: 'success',
+          record: ledgerDec ? { ...rec, ...ledgerDec } : { ...rec },
+          accepted: false,
+          skipped: false,
+          _panelOpen: false
+        });
+      });
     });
 
     document.getElementById('queueSize').textContent = queue.length;
     renderQueue();
     switchMode('triage');
-    showToast(queue.length + ' sections in triage queue');
+    showToast(queue.length + ' records in triage queue');
   }
 
   // ─── Queue Rendering ───
@@ -547,12 +565,10 @@ Default agency to "CMS" for federal 42 CFR sections. Extract hours from the text
     return item.status;
   }
 
-  function fieldClass(item, key) {
+  function fieldClass(item, schemaKey) {
     if (item.parseStatus === 'failed' || item.status === 'decided') return 'enrich-field';
-    const c = item.aiConf[key];
-    if (c === 'low') return 'enrich-field ai-low';
-    const v = item.decision[key];
-    if (v && v !== '' && v !== '0') return 'enrich-field ai-filled';
+    const v = item.record[schemaKey];
+    if (v != null && v !== '' && v !== 0) return 'enrich-field ai-filled';
     return 'enrich-field';
   }
 
@@ -560,74 +576,132 @@ Default agency to "CMS" for federal 42 CFR sections. Extract hours from the text
     const filtered = filterItems(queue);
     updateSummary();
     const list = document.getElementById('queueList');
-    if (!filtered.length) { list.innerHTML = '<div style="text-align:center;padding:40px;color:#a0aec0;font-size:13px">No sections match this filter.</div>'; return; }
+    if (!filtered.length) { list.innerHTML = '<div style="text-align:center;padding:40px;color:#a0aec0;font-size:13px">No records match this filter.</div>'; return; }
 
     list.innerHTML = filtered.map(item => {
       const es     = effectiveStatus(item);
-      const safeId = 'p_' + item.path.replace(/[^a-zA-Z0-9]/g, '_');
-      const dec    = item.decision;
+      const safeId = 'p_' + item.id.replace(/[^a-zA-Z0-9]/g, '_');
+      const rec    = item.record;
       const isOpen = item._panelOpen;
+      const rel    = rec['Relationship'] || '';
 
-      const metaLine = (es === 'decided' || es === 'accepted') && dec.hstmRole
-        ? `<div class="section-meta">${esc(dec.hstmRole)}${dec.hstmSetting ? ' · '+esc(dec.hstmSetting) : ''}${dec.hours && dec.hours !== '0' ? ' · '+esc(dec.hours)+'h' : ''}</div>`
+      const metaLine = (es === 'decided' || es === 'accepted') && rec['HSTM Role']
+        ? `<div class="section-meta">${esc(rec['HSTM Role'])}${rec['HSTM Setting'] ? ' · '+esc(rec['HSTM Setting']) : ''}${rec['Hours Required'] ? ' · '+rec['Hours Required']+'h' : ''}</div>`
         : '';
 
       const actionBtns = es === 'decided'
-        ? `<button class="section-btn" onclick="togglePanel('${esc(item.path)}')">Review</button>`
-        : `<button class="section-btn${isOpen ? ' open' : ''}" onclick="togglePanel('${esc(item.path)}')">${isOpen ? 'Close' : 'Review'}</button>
-           ${es !== 'skipped' ? `<button class="section-btn" onclick="skipItem('${esc(item.path)}')">Skip</button>` : `<button class="section-btn" onclick="unskipItem('${esc(item.path)}')">Undo skip</button>`}`;
+        ? `<button class="section-btn" onclick="togglePanel('${esc(item.id)}')">Review</button>`
+        : `<button class="section-btn${isOpen ? ' open' : ''}" onclick="togglePanel('${esc(item.id)}')">${isOpen ? 'Close' : 'Review'}</button>
+           ${es !== 'skipped' ? `<button class="section-btn" onclick="skipItem('${esc(item.id)}')">Skip</button>` : `<button class="section-btn" onclick="unskipItem('${esc(item.id)}')">Undo skip</button>`}`;
 
-      const panelHtml = isOpen ? `
-        <div class="enrich-panel open" id="${safeId}">
+      const relBadge = rel ? `<span class="section-badge" style="background:${rel==='Parent'?'#1a2332':'#6b7a99'};color:#fff;margin-left:2px;flex-shrink:0">${rel}</span>` : '';
+
+      const topicText = item.parseStatus === 'failed'
+        ? item.sectionName
+        : (rec['Training Topic / Competency Item'] || item.sectionName);
+
+      const panelHtml = isOpen ? (item.parseStatus === 'failed'
+        ? `<div class="enrich-panel open" style="color:#dc2626;font-size:12px">Parse failed for this section — skip it or reload and retry.</div>`
+        : `<div class="enrich-panel open" id="${safeId}">
           <div class="enrich-grid">
-            <div class="${fieldClass(item,'topic')} full" id="${safeId}_field_topic">
-              <label class="enrich-label">Training topic</label>
-              <textarea class="enrich-textarea" id="${safeId}_topic">${esc(dec.topic || item.name)}</textarea>
+            <div class="${fieldClass(item,'Training Topic / Competency Item')} full">
+              <label class="enrich-label">Training Topic / Competency Item</label>
+              <textarea class="enrich-textarea" id="${safeId}_topic" rows="3">${esc(rec['Training Topic / Competency Item'] || item.sectionName)}</textarea>
             </div>
-            <div class="${fieldClass(item,'hstmRole')}" id="${safeId}_field_role">
+            <div class="${fieldClass(item,'Relationship')}">
+              <label class="enrich-label">Relationship *</label>
+              <select class="enrich-select" id="${safeId}_rel">
+                <option value="Parent"${rec['Relationship']==='Parent'?' selected':''}>Parent</option>
+                <option value="Child"${rec['Relationship']!=='Parent'?' selected':''}>Child</option>
+              </select>
+            </div>
+            <div class="${fieldClass(item,'HSTM Role')}">
               <label class="enrich-label">HSTM Role *</label>
               <select class="enrich-select" id="${safeId}_role">
                 <option value="">Select role</option>
-                ${HSTM_ROLES.map(r => `<option value="${esc(r)}"${dec.hstmRole === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}
+                ${HSTM_ROLES.map(r => `<option value="${esc(r)}"${rec['HSTM Role']===r?' selected':''}>${esc(r)}</option>`).join('')}
               </select>
             </div>
-            <div class="${fieldClass(item,'hstmSetting')}" id="${safeId}_field_setting">
+            <div class="${fieldClass(item,'HSTM Setting')}">
               <label class="enrich-label">HSTM Setting</label>
               <select class="enrich-select" id="${safeId}_setting">
                 <option value="">Role-level only</option>
-                ${HSTM_SETTINGS.map(s => `<option value="${esc(s)}"${dec.hstmSetting === s ? ' selected' : ''}>${esc(s)}</option>`).join('')}
+                <option value="SNF"${rec['HSTM Setting']==='SNF'?' selected':''}>SNF</option>
+                <option value="ALF"${rec['HSTM Setting']==='ALF'?' selected':''}>ALF</option>
+                <option value="HH"${rec['HSTM Setting']==='HH'?' selected':''}>HH</option>
+                <option value="HOSP"${rec['HSTM Setting']==='HOSP'?' selected':''}>HOSP</option>
               </select>
             </div>
-            <div class="${fieldClass(item,'agency')}" id="${safeId}_field_agency">
+            <div class="${fieldClass(item,'Oversight / Professional Agency')}">
               <label class="enrich-label">Agency</label>
-              <input class="enrich-input" id="${safeId}_agency" value="${esc(dec.agency || 'CMS')}">
+              <input class="enrich-input" id="${safeId}_agency" value="${esc(rec['Oversight / Professional Agency'] || 'CMS')}">
             </div>
-            <div class="${fieldClass(item,'citation')}" id="${safeId}_field_citation">
+            <div class="${fieldClass(item,'Citation')}">
               <label class="enrich-label">Citation</label>
-              <input class="enrich-input" id="${safeId}_citation" value="${esc(dec.citation)}">
+              <input class="enrich-input" id="${safeId}_citation" value="${esc(rec['Citation'] || '')}">
             </div>
-            <div class="${fieldClass(item,'hours')}" id="${safeId}_field_hours">
-              <label class="enrich-label">Hours required</label>
-              <input class="enrich-input" id="${safeId}_hours" type="number" min="0" step="0.5" value="${esc(dec.hours || '0')}">
+            <div class="${fieldClass(item,'Tier')}">
+              <label class="enrich-label">Tier</label>
+              <select class="enrich-select" id="${safeId}_tier">
+                <option value="1"${(rec['Tier']||1)===1?' selected':''}>1 — Federal/State Mandate</option>
+                <option value="2"${rec['Tier']===2?' selected':''}>2 — Accreditation</option>
+                <option value="3"${rec['Tier']===3?' selected':''}>3 — Best Practice</option>
+                <option value="4"${rec['Tier']===4?' selected':''}>4 — Emerging</option>
+              </select>
             </div>
-            <div class="${fieldClass(item,'frequency')}" id="${safeId}_field_freq">
+            <div class="${fieldClass(item,'Requirement Level')}">
+              <label class="enrich-label">Requirement Level</label>
+              <select class="enrich-select" id="${safeId}_reqLevel">
+                <option value="">Select</option>
+                <option value="Federal Floor"${rec['Requirement Level']==='Federal Floor'?' selected':''}>Federal Floor</option>
+                <option value="State Floor"${rec['Requirement Level']==='State Floor'?' selected':''}>State Floor</option>
+                <option value="Accreditation"${rec['Requirement Level']==='Accreditation'?' selected':''}>Accreditation</option>
+                <option value="Competency"${rec['Requirement Level']==='Competency'?' selected':''}>Competency</option>
+              </select>
+            </div>
+            <div class="${fieldClass(item,'Purpose')}">
+              <label class="enrich-label">Purpose</label>
+              <select class="enrich-select" id="${safeId}_purpose">
+                <option value="">Select</option>
+                <option value="Initial"${rec['Purpose']==='Initial'?' selected':''}>Initial</option>
+                <option value="Renewal"${rec['Purpose']==='Renewal'?' selected':''}>Renewal</option>
+                <option value="Ongoing"${rec['Purpose']==='Ongoing'?' selected':''}>Ongoing</option>
+              </select>
+            </div>
+            <div class="${fieldClass(item,'Hours Required')}">
+              <label class="enrich-label">Hours Required</label>
+              <input class="enrich-input" id="${safeId}_hours" type="number" min="0" step="0.5" value="${rec['Hours Required']!=null?rec['Hours Required']:''}">
+            </div>
+            <div class="${fieldClass(item,'Frequency')}">
               <label class="enrich-label">Frequency</label>
               <select class="enrich-select" id="${safeId}_freq">
                 <option value="">Select</option>
-                ${FREQUENCIES.map(f => `<option value="${esc(f)}"${dec.frequency === f ? ' selected' : ''}>${esc(f)}</option>`).join('')}
+                ${FREQUENCIES.map(f => `<option value="${esc(f)}"${rec['Frequency']===f?' selected':''}>${esc(f)}</option>`).join('')}
               </select>
+            </div>
+            <div class="${fieldClass(item,'Explicit Training')}">
+              <label class="enrich-label">Explicit Training</label>
+              <select class="enrich-select" id="${safeId}_explicit">
+                <option value="">Unknown</option>
+                <option value="Yes"${rec['Explicit Training']==='Yes'?' selected':''}>Yes</option>
+                <option value="No"${rec['Explicit Training']==='No'?' selected':''}>No</option>
+              </select>
+            </div>
+            <div class="${fieldClass(item,'Notes / Research Flags')} full">
+              <label class="enrich-label">Notes / Research Flags</label>
+              <textarea class="enrich-textarea" id="${safeId}_notes">${esc(rec['Notes / Research Flags'] || '')}</textarea>
             </div>
           </div>
           <div class="enrich-actions">
-            <button class="btn success" onclick="acceptItem('${esc(item.path)}','${safeId}')">✓ Accept</button>
-            <button class="btn secondary" onclick="togglePanel('${esc(item.path)}')">Cancel</button>
+            <button class="btn success" onclick="acceptItem('${esc(item.id)}','${safeId}')">✓ Accept</button>
+            <button class="btn secondary" onclick="togglePanel('${esc(item.id)}')">Cancel</button>
           </div>
-        </div>` : '';
+        </div>`) : '';
 
       return `<div class="section-wrapper">
         <div class="section-item ${es}${isOpen ? ' open' : ''}">
-          <span class="section-badge ${es}">${es === 'failed' ? 'parse fail' : es}</span>
-          <div class="section-name">${esc(item.name)}<div class="section-meta">${esc(item.jurisdiction)}</div>${metaLine}</div>
+          <span class="section-badge ${es}">${es === 'failed' ? 'parse fail' : es}</span>${relBadge}
+          <div class="section-name">${esc(topicText)}<div class="section-meta">${esc(item.jurisdiction)} · ${esc(item.sectionName)}</div>${metaLine}</div>
           <div class="section-actions">${actionBtns}</div>
         </div>${panelHtml}
       </div>`;
@@ -666,44 +740,52 @@ Default agency to "CMS" for federal 42 CFR sections. Extract hours from the text
     renderQueue();
   }
 
-  function findItem(path) { return queue.find(i => i.path === path); }
+  function findItem(id) { return queue.find(i => i.id === id); }
 
-  function togglePanel(path) {
-    const item = findItem(path);
+  function togglePanel(id) {
+    const item = findItem(id);
     if (!item) return;
     item._panelOpen = !item._panelOpen;
     renderQueue();
   }
 
   // ─── Accept / Skip ───
-  function acceptItem(path, safeId) {
-    const item = findItem(path);
+  function acceptItem(id, safeId) {
+    const item = findItem(id);
     if (!item) return;
     const role = document.getElementById(safeId + '_role')?.value || '';
     if (!role) { showToast('Select an HSTM Role before accepting'); return; }
-    item.decision = {
-      hstmRole:    role,
-      hstmSetting: document.getElementById(safeId + '_setting')?.value || '',
-      agency:      document.getElementById(safeId + '_agency')?.value  || 'CMS',
-      citation:    document.getElementById(safeId + '_citation')?.value || '',
-      topic:       document.getElementById(safeId + '_topic')?.value    || item.name,
-      hours:       document.getElementById(safeId + '_hours')?.value    || '0',
-      frequency:   document.getElementById(safeId + '_freq')?.value     || ''
+    const hoursEl = document.getElementById(safeId + '_hours');
+    item.record = {
+      ...item.record,
+      'Training Topic / Competency Item': document.getElementById(safeId + '_topic')?.value    || item.record['Training Topic / Competency Item'],
+      'Relationship':                     document.getElementById(safeId + '_rel')?.value      || 'Child',
+      'HSTM Role':                        role,
+      'HSTM Setting':                     document.getElementById(safeId + '_setting')?.value  || null,
+      'Oversight / Professional Agency':  document.getElementById(safeId + '_agency')?.value   || 'CMS',
+      'Citation':                         document.getElementById(safeId + '_citation')?.value || null,
+      'Tier':                             parseInt(document.getElementById(safeId + '_tier')?.value) || 1,
+      'Requirement Level':                document.getElementById(safeId + '_reqLevel')?.value || null,
+      'Purpose':                          document.getElementById(safeId + '_purpose')?.value  || null,
+      'Hours Required':                   hoursEl?.value !== '' ? parseFloat(hoursEl.value) : null,
+      'Frequency':                        document.getElementById(safeId + '_freq')?.value     || null,
+      'Explicit Training':                document.getElementById(safeId + '_explicit')?.value || null,
+      'Notes / Research Flags':           document.getElementById(safeId + '_notes')?.value    || null,
     };
     item.accepted = true; item.skipped = false; item._panelOpen = false;
     renderQueue();
-    showToast('Accepted: ' + item.name.slice(0, 50));
+    showToast('Accepted: ' + (item.record['Training Topic / Competency Item'] || item.sectionName).slice(0, 50));
   }
 
-  function skipItem(path) {
-    const item = findItem(path);
+  function skipItem(id) {
+    const item = findItem(id);
     if (!item) return;
     item.skipped = true; item.accepted = false; item._panelOpen = false;
     renderQueue();
   }
 
-  function unskipItem(path) {
-    const item = findItem(path);
+  function unskipItem(id) {
+    const item = findItem(id);
     if (!item) return;
     item.skipped = false; item._panelOpen = false;
     renderQueue();
@@ -731,7 +813,7 @@ Default agency to "CMS" for federal 42 CFR sections. Extract hours from the text
     const out = {};
     queue.forEach(item => {
       if (item.accepted || item.skipped || item.status === 'decided')
-        out[item.path] = item.skipped ? { skip: true } : { ...item.decision };
+        out[item.id] = item.skipped ? { skip: true } : { ...item.record };
     });
     download(JSON.stringify(out, null, 2), 'triage-ledger-' + new Date().toISOString().slice(0,7) + '.json');
     showToast('Exported triage ledger (' + Object.keys(out).length + ' decisions)');
@@ -740,34 +822,46 @@ Default agency to "CMS" for federal 42 CFR sections. Extract hours from the text
   const ROLE_CODES    = { 'Licensed Vocational Nurse':'LVN','Licensed Practical Nurse':'LPN','Certified Nursing Assistant':'CNA','Home Health Aide':'HHA','Registered Nurse':'RN','Medical Assistant':'MA' };
   const SETTING_CODES = { 'Assisted Living Facility':'ALF','Skilled Nursing Facility':'SNF','Home Health':'HH','Hospice':'HOSP','PACE':'PACE','Critical Access Hospital':'CAH' };
 
-  function sheetKey(dec) {
-    if (dec.hstmSetting) return 'CS ' + (SETTING_CODES[dec.hstmSetting] || dec.hstmSetting.replace(/\s+/g,''));
-    return 'R ' + (ROLE_CODES[dec.hstmRole] || dec.hstmRole.replace(/\s+/g,'').slice(0,4).toUpperCase());
+  function sheetKey(rec) {
+    const setting = rec['HSTM Setting'];
+    const role    = rec['HSTM Role'];
+    if (setting) return 'CS ' + (SETTING_CODES[setting] || setting.replace(/\s+/g,'').slice(0,4).toUpperCase());
+    if (role)    return 'R '  + (ROLE_CODES[role]    || role.replace(/\s+/g,'').slice(0,4).toUpperCase());
+    return 'Other';
   }
 
   function exportRegIntel() {
-    const accepted = queue.filter(i => i.accepted && i.decision.hstmRole);
-    if (!accepted.length) { showToast('No accepted sections to export'); return; }
+    const accepted = queue.filter(i => i.accepted && i.record['HSTM Role']);
+    if (!accepted.length) { showToast('No accepted records to export'); return; }
     const out = {};
     accepted.forEach(item => {
-      const dec = item.decision;
-      const key = sheetKey(dec);
+      const rec = item.record;
+      const key = sheetKey(rec);
       if (!out[key]) out[key] = [];
       out[key].push({
-        'Jurisdiction': item.jurisdiction || 'US', 'Jurisdiction Role': null, 'Jurisdiction Setting': null,
-        'Oversight / Professional Agency': dec.agency || 'CMS',
-        'HSTM Role': [dec.hstmRole], 'HSTM Setting': dec.hstmSetting || null,
-        'Tier': item.jurisdiction === 'US' ? 1 : 2, 'Tier Priority': 'HIGH',
-        'Requirement Level': item.jurisdiction === 'US' ? 'Federal Floor' : 'State Floor',
-        'Citation': dec.citation || item.path,
-        'Training Topic / Competency Item': dec.topic || item.name,
-        'Purpose': 'Ongoing', 'Approval Required': null,
-        'Hours Required': parseFloat(dec.hours) || 0, 'Frequency': dec.frequency || null,
-        'Explicit Training': 'Yes', 'Relationship': 'Parent', 'Notes / Research Flags': 'None', 'Source URL': null
+        'Jurisdiction':                     rec['Jurisdiction'] || item.jurisdiction || 'US',
+        'Jurisdiction Role':                rec['Jurisdiction Role'] || null,
+        'Jurisdiction Setting':             rec['Jurisdiction Setting'] || null,
+        'Oversight / Professional Agency':  rec['Oversight / Professional Agency'] || 'CMS',
+        'HSTM Role':                        [rec['HSTM Role']],
+        'HSTM Setting':                     rec['HSTM Setting'] || null,
+        'Tier':                             rec['Tier'] || 1,
+        'Tier Priority':                    rec['Tier Priority'] || 'HIGH',
+        'Requirement Level':                rec['Requirement Level'] || null,
+        'Citation':                         rec['Citation'] || item.sectionPath,
+        'Training Topic / Competency Item': rec['Training Topic / Competency Item'] || item.sectionName,
+        'Purpose':                          rec['Purpose'] || null,
+        'Approval Required':                rec['Approval Required'] || null,
+        'Hours Required':                   rec['Hours Required'] ?? null,
+        'Frequency':                        rec['Frequency'] || null,
+        'Explicit Training':                rec['Explicit Training'] || null,
+        'Relationship':                     rec['Relationship'] || 'Child',
+        'Notes / Research Flags':           rec['Notes / Research Flags'] || null,
+        'Source URL':                       rec['Source URL'] || null,
       });
     });
     download(JSON.stringify(out, null, 2), 'regintel-openlaws-' + new Date().toISOString().slice(0,10) + '.json');
-    showToast('Exported ' + accepted.length + ' sections across ' + Object.keys(out).length + ' sheet(s)');
+    showToast('Exported ' + accepted.length + ' records across ' + Object.keys(out).length + ' sheet(s)');
   }
 
   function download(content, filename) {
