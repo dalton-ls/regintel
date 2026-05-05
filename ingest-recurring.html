@@ -24,7 +24,8 @@
     .mode-tab:hover:not(.active) { background: #f5f7fa; }
 
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
-    .col-card { background: #fff; border: 1px solid #e8ecf0; border-radius: 10px; padding: 20px; }
+    .col-card { background: #fff; border: 1px solid #e8ecf0; border-radius: 10px; padding: 20px; transition: border-color 0.15s, background 0.15s; }
+    .col-card.dragover { border-color: #2463eb; background: #eef3fb; }
     .col-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
     .col-desc { font-size: 12px; color: #6b7a99; line-height: 1.5; margin-bottom: 12px; }
 
@@ -156,7 +157,7 @@
           <input type="file" id="prevFile" accept=".json" onchange="loadFile('prev', this)">
         </div>
 
-        <div class="col-card">
+        <div class="col-card" id="cardCurr">
           <div class="col-title">Current OpenLaws export <span style="font-size:11px;font-weight:600;color:#16a34a">required</span></div>
           <div class="col-desc">This month's data. New and changed sections will be queued for triage.</div>
           <label class="file-label" id="currLabel" for="currFile">
@@ -719,6 +720,29 @@
     if (s == null) return '';
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
+
+  // ─── Card drag-and-drop ───
+  function wireCardDrop(cardId, fileInputId, type) {
+    const card = document.getElementById(cardId);
+    const input = document.getElementById(fileInputId);
+    if (!card || !input) return;
+    card.addEventListener('dragover', e => { e.preventDefault(); card.classList.add('dragover'); });
+    card.addEventListener('dragleave', e => { if (!card.contains(e.relatedTarget)) card.classList.remove('dragover'); });
+    card.addEventListener('drop', e => {
+      e.preventDefault();
+      card.classList.remove('dragover');
+      const file = e.dataTransfer.files[0];
+      if (!file) return;
+      const dt = new DataTransfer();
+      dt.items.add(file);
+      input.files = dt.files;
+      loadFile(type, input);
+    });
+  }
+
+  wireCardDrop('cardCurr',   'currFile',   'curr');
+  wireCardDrop('cardPrev',   'prevFile',   'prev');
+  wireCardDrop('cardLedger', 'ledgerFile', 'ledger');
   </script>
 </body>
 </html>
