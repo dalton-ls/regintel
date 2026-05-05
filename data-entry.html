@@ -67,9 +67,9 @@
     <h1 class="page-title">Regulatory data entry</h1>
     <p class="page-desc">Create structured regulatory records. Add to queue, then export as JSON for admin import.</p>
     <div class="target-pills" id="targetPills">
-      <button type="button" class="target-pill active" onclick="setTarget('role')">Role-based</button>
-      <button type="button" class="target-pill" onclick="setTarget('care-setting')">Care setting</button>
-      <button type="button" class="target-pill" onclick="setTarget('workforce')">Workforce readiness</button>
+      <button type="button" class="target-pill active" onclick="setTarget(event, 'role')">Role-based</button>
+      <button type="button" class="target-pill" onclick="setTarget(event, 'care-setting')">Care setting</button>
+      <button type="button" class="target-pill" onclick="setTarget(event, 'workforce')">Workforce readiness</button>
     </div>
     <form id="entryForm" onsubmit="addRecord(event)">
       <div class="section-label">Jurisdiction &amp; identity</div>
@@ -172,6 +172,7 @@
             <option value="Renewal">Renewal</option>
             <option value="Ongoing">Ongoing</option>
             <option value="Initial">Initial</option>
+            <option value="Workforce Readiness">Workforce Readiness</option>
           </select>
         </div>
         <div class="form-group">
@@ -240,10 +241,10 @@
   let queue = [];
   let currentTarget = 'role';
 
-  function setTarget(t) {
+  function setTarget(e, t) {
     currentTarget = t;
     document.querySelectorAll('.target-pill').forEach(p => p.classList.remove('active'));
-    event.target.classList.add('active');
+    e.target.classList.add('active');
   }
 
   function showToast(msg) {
@@ -264,9 +265,9 @@
       const codes = { 'Assisted Living Facility': 'ALF', 'Skilled Nursing Facility': 'SNF', 'Home Health': 'HH', 'Hospice': 'HOSP', 'PACE': 'PACE', 'Critical Access Hospital': 'CAH', 'Ambulatory Surgery Center': 'ASC', 'Behavioral Health': 'BEH' };
       return 'CS ' + (codes[setting] || 'GEN');
     }
-    const rc = { 'Licensed Vocational Nurse': 'LPN', 'Certified Nursing Assistant': 'CNA', 'Home Health Aide': 'HHA', 'Registered Nurse': 'RN', 'Medical Assistant': 'MA' };
+    const rc = { 'Licensed Vocational Nurse': 'LVN', 'Certified Nursing Assistant': 'CNA', 'Home Health Aide': 'HHA', 'Registered Nurse': 'RN', 'Medical Assistant': 'MA' };
     const sc = { 'Assisted Living Facility': 'ALF', 'Skilled Nursing Facility': 'SNF', 'Home Health': 'HH', 'Hospice': 'HOSP' };
-    return 'WR ' + (rc[role] || 'GEN') + ' ' + (sc[setting] || 'GEN');
+    return 'WR ' + (rc[role] || 'GEN') + '_' + (sc[setting] || 'GEN');
   }
 
   function addRecord(e) {
