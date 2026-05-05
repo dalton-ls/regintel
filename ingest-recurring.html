@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RegIntel — Recurring Ingest</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; color: #1a2332; background: #f0f2f5; }
+    .app-header { position: sticky; top: 0; z-index: 200; height: 60px; background: #1a2e5a; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .header-brand { display: flex; align-items: center; gap: 10px; color: #fff; }
+    .logo-text { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+    .header-sep { color: rgba(255,255,255,0.25); font-size: 20px; font-weight: 200; }
+    .header-subtitle { font-size: 12px; color: rgba(255,255,255,0.6); }
+    .back-link { font-size: 12px; color: rgba(255,255,255,0.5); text-decoration: none; font-weight: 500; }
+    .page-wrap { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+    .page-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .page-desc { font-size: 14px; color: #6b7a99; line-height: 1.6; margin-bottom: 24px; }
+
+    .mode-tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+    .mode-tab { padding: 8px 16px; border: 1px solid #dde1ea; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; font-weight: 600; color: #4a5568; transition: all 0.15s; }
+    .mode-tab.active { background: #2463eb; color: #fff; border-color: #2463eb; }
+    .mode-tab:hover { background: #f5f7fa; }
+
+    .upload-zone { border: 2px dashed #dde1ea; border-radius: 12px; padding: 40px; text-align: center; color: #6b7a99; margin-bottom: 24px; }
+    .upload-zone textarea { width: 100%; height: 100px; margin-top: 12px; border: 1px solid #dde1ea; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 11px; }
+
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+    .col-card { background: #fff; border: 1px solid #e8ecf0; border-radius: 10px; padding: 20px; }
+    .col-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+    .col-desc { font-size: 12px; color: #6b7a99; line-height: 1.5; margin-bottom: 12px; }
+    .col-actions { display: flex; flex-direction: column; gap: 8px; }
+
+    .btn { display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 8px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; border: 1px solid #dde1ea; background: #fff; color: #4a5568; transition: all 0.15s; justify-content: center; }
+    .btn:hover { background: #f5f7fa; }
+    .btn.primary { background: #2463eb; color: #fff; border-color: #2463eb; }
+    .btn.primary:hover { background: #1d4ed8; }
+    .btn.success { background: #16a34a; color: #fff; border-color: #16a34a; }
+    .btn.success:hover { background: #15803d; }
+    .btn.secondary { background: #f5f7fa; border-color: #dde1ea; color: #4a5568; }
+    .btn.secondary:hover { background: #f0f2f5; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .section-list { display: flex; flex-direction: column; gap: 8px; max-height: 600px; overflow-y: auto; }
+    .section-item { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #e8ecf0; border-radius: 8px; background: #fff; font-size: 13px; }
+    .section-item.new { background: #f0fdf4; border-color: #86efac; }
+    .section-item.changed { background: #fef3c7; border-color: #fde047; }
+    .section-item.decided { background: #eef3fb; border-color: #93c5fd; opacity: 0.6; }
+    .section-badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; flex-shrink: 0; white-space: nowrap; }
+    .section-badge.new { background: #86efac; color: #166534; }
+    .section-badge.changed { background: #fde047; color: #92400e; }
+    .section-badge.decided { background: #93c5fd; color: #0c4a6e; }
+    .section-name { flex: 1; min-width: 0; }
+    .section-actions { display: flex; gap: 4px; flex-shrink: 0; }
+    .section-btn { height: 24px; padding: 0 8px; font-size: 10px; border-radius: 4px; border: 1px solid #dde1ea; background: #fff; cursor: pointer; color: #4a5568; }
+    .section-btn:hover { background: #f5f7fa; }
+
+    .summary-bar { background: #eef3fb; border: 1px solid #c7d7f8; border-radius: 10px; padding: 14px; margin-bottom: 16px; font-size: 12px; color: #1e40af; display: flex; gap: 16px; align-items: center; }
+    .summary-stat { font-weight: 600; }
+
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a2332; color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 13px; z-index: 999; opacity: 0; transition: opacity 0.3s; }
+    .toast.show { opacity: 1; }
+
+    .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #e8ecf0; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; z-index: 100; box-shadow: 0 -2px 8px rgba(0,0,0,0.05); }
+
+    input[type=file] { display: none; }
+    .file-inputs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .file-input-group { position: relative; }
+    .file-label { display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid #dde1ea; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; background: #fff; color: #4a5568; }
+    .file-label:hover { background: #f5f7fa; }
+    .file-label.loaded { border-color: #16a34a; color: #16a34a; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-brand">
+      <span class="logo-text">RegIntel</span>
+      <span class="header-sep">|</span>
+      <span class="header-subtitle">Recurring Ingest (Monthly updates)</span>
+    </div>
+    <a href="regintel.html" class="back-link">&larr; Back</a>
+  </header>
+
+  <div class="page-wrap">
+    <h1 class="page-title">Recurring regulatory ingest</h1>
+    <p class="page-desc">Monthly workflow for syncing OpenLaws updates. Load current and previous dumps, the tool diffs them, shows only new/changed sections, and remembers your triage decisions.</p>
+
+    <div class="mode-tabs">
+      <button class="mode-tab active" onclick="switchMode('setup')">1. Setup</button>
+      <button class="mode-tab" onclick="switchMode('triage')">2. Triage queue</button>
+      <button class="mode-tab" onclick="switchMode('export')">3. Export</button>
+    </div>
+
+    <!-- SETUP MODE -->
+    <div id="modeSetup" class="mode-content">
+      <p style="font-size:13px;color:#6b7a99;margin-bottom:20px">Load three things: your triage decisions from last month, the previous OpenLaws dump, and today's new dump. The tool will detect what changed.</p>
+
+      <div class="two-col">
+        <div class="col-card">
+          <div class="col-title">Triage ledger</div>
+          <div class="col-desc">Your decisions from previous months. Decisions will be reused for unchanged sections.</div>
+          <label class="file-label" id="ledgerLabel"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Load ledger</label>
+          <input type="file" id="ledgerFile" accept=".json" onchange="loadFile('ledger', this)">
+        </div>
+
+        <div class="col-card">
+          <div class="col-title">Previous OpenLaws dump</div>
+          <div class="col-desc">Last month's data. Used to detect what's new or changed this month.</div>
+          <label class="file-label" id="prevLabel"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Load previous</label>
+          <input type="file" id="prevFile" accept=".json" onchange="loadFile('prev', this)">
+        </div>
+
+        <div class="col-card">
+          <div class="col-title">Current OpenLaws dump</div>
+          <div class="col-desc">This month's data. The new/updated sections will be queued for triage.</div>
+          <label class="file-label" id="currLabel"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Load current</label>
+          <input type="file" id="currFile" accept=".json" onchange="loadFile('curr', this)">
+        </div>
+
+        <div class="col-card">
+          <div class="col-title">Or paste JSON</div>
+          <div class="col-desc">Paste raw JSON from OpenLaws API, or paste the triage ledger JSON.</div>
+          <div style="font-size:11px;color:#a0aec0;margin-bottom:8px">Select which file to paste:</div>
+          <select id="pasteTarget" style="width:100%;height:32px;padding:0 8px;border:1px solid #dde1ea;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:12px">
+            <option value="curr">Current OpenLaws dump</option>
+            <option value="prev">Previous OpenLaws dump</option>
+            <option value="ledger">Triage ledger</option>
+          </select>
+          <textarea id="pasteArea" placeholder="Paste JSON here..." style="width:100%;height:120px;padding:8px;border:1px solid #dde1ea;border-radius:6px;font-family:monospace;font-size:11px;resize:vertical"></textarea>
+          <button class="btn primary" onclick="pasteJson()" style="width:100%;margin-top:8px">Load from paste</button>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-top:20px">
+        <button class="btn primary" onclick="computeDiff()">Analyze diff &amp; detect changes</button>
+      </div>
+    </div>
+
+    <!-- TRIAGE MODE -->
+    <div id="modeTriage" class="mode-content" style="display:none">
+      <div class="summary-bar" id="summaryBar"></div>
+
+      <div style="margin-bottom:16px">
+        <div style="font-size:13px;font-weight:600;margin-bottom:8px">Filter:</div>
+        <button class="btn secondary" onclick="filterQueue('all')">All</button>
+        <button class="btn secondary" onclick="filterQueue('new')">New only</button>
+        <button class="btn secondary" onclick="filterQueue('changed')">Changed only</button>
+        <button class="btn secondary" onclick="filterQueue('pending')">Pending triage</button>
+      </div>
+
+      <div class="section-list" id="queueList"></div>
+
+      <div style="text-align:center;margin-top:20px;color:#a0aec0;font-size:12px">
+        Scroll to see more. Click "Enrich" to expand a section's triage panel.
+      </div>
+    </div>
+
+    <!-- EXPORT MODE -->
+    <div id="modeExport" class="mode-content" style="display:none">
+      <p style="font-size:13px;color:#6b7a99;margin-bottom:20px">Export the merged triage ledger and RegIntel JSON ready for import into the main site.</p>
+
+      <div class="two-col">
+        <div class="col-card">
+          <div class="col-title">Updated triage ledger</div>
+          <div class="col-desc">Your triage decisions (reused + new) for all sections. Commit this to the repo.</div>
+          <button class="btn success" onclick="exportLedger()" style="width:100%">Export ledger.json</button>
+        </div>
+
+        <div class="col-card">
+          <div class="col-title">RegIntel data</div>
+          <div class="col-desc">Sections you triaged as "ACCEPT" in RegIntel JSON format, ready for admin import.</div>
+          <button class="btn success" onclick="exportRegIntel()" style="width:100%">Export RegIntel.json</button>
+        </div>
+      </div>
+
+      <div style="background:#fef9e7;border:1px solid #fde68a;border-radius:8px;padding:12px;margin-top:20px;font-size:12px;color:#854d0e">
+        <strong>Next steps:</strong> Commit the updated ledger to your repo. Upload the RegIntel JSON to the admin import on the main site. The ledger becomes the source of truth for future months.
+      </div>
+    </div>
+  </div>
+
+  <div class="bottom-bar">
+    <div style="font-size:12px;color:#6b7a99">
+      Files loaded: <strong id="filesLoaded">0</strong> / 3
+    </div>
+    <button class="btn" onclick="switchMode('setup')">Back to setup</button>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+  let files = { curr: null, prev: null, ledger: null };
+  let diff = null;
+  let queue = [];
+  let currentFilter = 'all';
+  let enrichOpen = {};
+
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+  }
+
+  function loadFile(type, input) {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        files[type] = JSON.parse(e.target.result);
+        const labels = { ledger: 'ledgerLabel', prev: 'prevLabel', curr: 'currLabel' };
+        document.getElementById(labels[type]).classList.add('loaded');
+        document.getElementById('filesLoaded').textContent = Object.values(files).filter(Boolean).length;
+        showToast(type + ' loaded');
+      } catch(err) {
+        showToast('JSON parse error: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function pasteJson() {
+    const target = document.getElementById('pasteTarget').value;
+    const raw = document.getElementById('pasteArea').value.trim();
+    if (!raw) { showToast('Paste JSON first'); return; }
+    try {
+      files[target] = JSON.parse(raw);
+      document.getElementById('filesLoaded').textContent = Object.values(files).filter(Boolean).length;
+      document.getElementById('pasteArea').value = '';
+      showToast(target + ' loaded from paste');
+    } catch(err) {
+      showToast('JSON parse error: ' + err.message);
+    }
+  }
+
+  function makeHash(obj) {
+    return Math.abs(obj ? obj.toString().split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0) : 0).toString(36);
+  }
+
+  function computeDiff() {
+    if (!files.curr) { showToast('Load current OpenLaws dump'); return; }
+    const current = Array.isArray(files.curr) ? files.curr : [files.curr];
+    const previous = files.prev ? (Array.isArray(files.prev) ? files.prev : [files.prev]) : [];
+    const ledger = files.ledger ? (Array.isArray(files.ledger) ? files.ledger : files.ledger) : {};
+
+    const prevIndex = {};
+    previous.forEach(src => {
+      (src.display_children || []).forEach(child => {
+        prevIndex[child.path] = makeHash(child);
+      });
+    });
+
+    queue = [];
+    current.forEach((src, si) => {
+      const juris = (src.jurisdiction_key === 'FED' ? 'US' : src.jurisdiction_key);
+      (src.display_children || []).forEach((child, ci) => {
+        const childPath = child.path;
+        const childHash = makeHash(child);
+        const wasSeen = childPath in prevIndex;
+        const hasChanged = wasSeen && prevIndex[childPath] !== childHash;
+        let status = wasSeen ? (hasChanged ? 'changed' : 'decided') : 'new';
+
+        let decision = ledger[childPath] || null;
+        if (status === 'decided' && decision) {
+          status = 'decided'; // keep reused
+        } else if (status !== 'new') {
+          status = status === 'changed' ? 'changed' : 'pending';
+        }
+
+        queue.push({
+          path: childPath,
+          name: child.display_name.replace(/^Section\s+[\d.]+:\s*/, ''),
+          source: src,
+          sourceIdx: si,
+          status: status,
+          jurisdiction: juris,
+          hash: childHash,
+          decision: decision || { hstmRole: '', hstmSetting: '', agency: '' }
+        });
+      });
+    });
+
+    renderQueue();
+    switchMode('triage');
+    showToast('Analyzed ' + queue.length + ' sections');
+  }
+
+  function renderQueue() {
+    const list = document.getElementById('queueList');
+    const filtered = currentFilter === 'all' ? queue : queue.filter(s => s.status === currentFilter || (currentFilter === 'pending' && (!s.decision.hstmRole && !s.decision.hstmSetting)));
+
+    const newCount = queue.filter(s => s.status === 'new').length;
+    const changedCount = queue.filter(s => s.status === 'changed').length;
+    const decidedCount = queue.filter(s => s.status === 'decided').length;
+    document.getElementById('summaryBar').innerHTML = `
+      <strong>Total:</strong> ${queue.length} sections
+      <span class="summary-stat" style="color:#16a34a">New: ${newCount}</span>
+      <span class="summary-stat" style="color:#d97706">Changed: ${changedCount}</span>
+      <span class="summary-stat" style="color:#2463eb">Decided: ${decidedCount}</span>
+      <span class="summary-stat">To review: ${newCount + changedCount}</span>
+    `;
+
+    list.innerHTML = filtered.map((item, idx) => {
+      const isOpen = enrichOpen[item.path];
+      const decideBtn = item.status === 'decided' ? '✓ Reusing' : 'Triage';
+      return `<div class="section-item ${item.status}">
+        <span class="section-badge ${item.status}">${item.status}</span>
+        <span class="section-name">${item.name}</span>
+        <button class="section-btn" onclick="enrichSection('${item.path.replace(/'/g, "\\'")}')">Enrich</button>
+      </div>`;
+    }).join('');
+  }
+
+  function filterQueue(f) {
+    currentFilter = f;
+    renderQueue();
+  }
+
+  function enrichSection(path) {
+    showToast('Enrich panel would open here');
+  }
+
+  function switchMode(mode) {
+    document.querySelectorAll('.mode-content').forEach(m => m.style.display = 'none');
+    document.getElementById('mode' + (mode === 'setup' ? 'Setup' : mode === 'triage' ? 'Triage' : 'Export')).style.display = 'block';
+    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+  }
+
+  function exportLedger() {
+    const ledgerOut = {};
+    queue.forEach(item => {
+      ledgerOut[item.path] = item.decision;
+    });
+    const blob = new Blob([JSON.stringify(ledgerOut, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'triage-ledger-' + new Date().toISOString().slice(0, 7) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Exported triage ledger');
+  }
+
+  function exportRegIntel() {
+    showToast('Export RegIntel JSON (not yet implemented)');
+  }
+
+  function esc(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  </script>
+</body>
+</html>
