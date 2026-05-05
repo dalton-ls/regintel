@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RegIntel — Recurring Ingest</title>
+  <title>RegIntel — Monthly OpenLaws Ingest</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; color: #1a2332; background: #f0f2f5; }
@@ -13,25 +13,22 @@
     .header-sep { color: rgba(255,255,255,0.25); font-size: 20px; font-weight: 200; }
     .header-subtitle { font-size: 12px; color: rgba(255,255,255,0.6); }
     .back-link { font-size: 12px; color: rgba(255,255,255,0.5); text-decoration: none; font-weight: 500; }
+    .back-link:hover { color: rgba(255,255,255,0.85); }
     .page-wrap { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
     .page-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
     .page-desc { font-size: 14px; color: #6b7a99; line-height: 1.6; margin-bottom: 24px; }
 
     .mode-tabs { display: flex; gap: 8px; margin-bottom: 24px; }
-    .mode-tab { padding: 8px 16px; border: 1px solid #dde1ea; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; font-weight: 600; color: #4a5568; transition: all 0.15s; }
+    .mode-tab { padding: 8px 16px; border: 1px solid #dde1ea; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; font-weight: 600; color: #4a5568; transition: all 0.15s; font-family: inherit; }
     .mode-tab.active { background: #2463eb; color: #fff; border-color: #2463eb; }
-    .mode-tab:hover { background: #f5f7fa; }
-
-    .upload-zone { border: 2px dashed #dde1ea; border-radius: 12px; padding: 40px; text-align: center; color: #6b7a99; margin-bottom: 24px; }
-    .upload-zone textarea { width: 100%; height: 100px; margin-top: 12px; border: 1px solid #dde1ea; border-radius: 8px; padding: 10px; font-family: monospace; font-size: 11px; }
+    .mode-tab:hover:not(.active) { background: #f5f7fa; }
 
     .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
     .col-card { background: #fff; border: 1px solid #e8ecf0; border-radius: 10px; padding: 20px; }
-    .col-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; }
+    .col-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
     .col-desc { font-size: 12px; color: #6b7a99; line-height: 1.5; margin-bottom: 12px; }
-    .col-actions { display: flex; flex-direction: column; gap: 8px; }
 
-    .btn { display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 8px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; border: 1px solid #dde1ea; background: #fff; color: #4a5568; transition: all 0.15s; justify-content: center; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 8px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; border: 1px solid #dde1ea; background: #fff; color: #4a5568; transition: all 0.15s; }
     .btn:hover { background: #f5f7fa; }
     .btn.primary { background: #2463eb; color: #fff; border-color: #2463eb; }
     .btn.primary:hover { background: #1d4ed8; }
@@ -39,36 +36,71 @@
     .btn.success:hover { background: #15803d; }
     .btn.secondary { background: #f5f7fa; border-color: #dde1ea; color: #4a5568; }
     .btn.secondary:hover { background: #f0f2f5; }
+    .btn.danger { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
+    .btn.danger:hover { background: #fee2e2; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .section-list { display: flex; flex-direction: column; gap: 8px; max-height: 600px; overflow-y: auto; }
-    .section-item { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid #e8ecf0; border-radius: 8px; background: #fff; font-size: 13px; }
-    .section-item.new { background: #f0fdf4; border-color: #86efac; }
+    .filter-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    .filter-btn { height: 28px; padding: 0 12px; font-size: 11px; font-weight: 600; border-radius: 14px; border: 1px solid #dde1ea; background: #fff; cursor: pointer; color: #4a5568; font-family: inherit; transition: all 0.15s; }
+    .filter-btn:hover { background: #f5f7fa; }
+    .filter-btn.active { background: #1a2332; color: #fff; border-color: #1a2332; }
+
+    .section-list { display: flex; flex-direction: column; gap: 8px; max-height: 65vh; overflow-y: auto; padding-right: 2px; }
+    .section-wrapper { display: flex; flex-direction: column; }
+    .section-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #e8ecf0; border-radius: 8px; background: #fff; font-size: 13px; transition: border-radius 0.1s; }
+    .section-item.open { border-radius: 8px 8px 0 0; border-bottom-color: transparent; }
+    .section-item.new  { background: #f0fdf4; border-color: #86efac; }
+    .section-item.new.open { border-bottom-color: transparent; }
     .section-item.changed { background: #fef3c7; border-color: #fde047; }
-    .section-item.decided { background: #eef3fb; border-color: #93c5fd; opacity: 0.6; }
-    .section-badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; flex-shrink: 0; white-space: nowrap; }
-    .section-badge.new { background: #86efac; color: #166534; }
+    .section-item.changed.open { border-bottom-color: transparent; }
+    .section-item.decided { background: #eef3fb; border-color: #93c5fd; opacity: 0.65; }
+    .section-item.accepted { background: #f0fdf4; border-color: #4ade80; }
+    .section-item.skipped  { background: #f9fafb; border-color: #e5e7eb; opacity: 0.55; }
+
+    .section-badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 4px; text-transform: uppercase; flex-shrink: 0; white-space: nowrap; }
+    .section-badge.new     { background: #86efac; color: #166534; }
     .section-badge.changed { background: #fde047; color: #92400e; }
     .section-badge.decided { background: #93c5fd; color: #0c4a6e; }
-    .section-name { flex: 1; min-width: 0; }
+    .section-badge.accepted{ background: #4ade80; color: #14532d; }
+    .section-badge.skipped { background: #e5e7eb; color: #6b7280; }
+    .section-badge.pending { background: #fed7aa; color: #9a3412; }
+
+    .section-name { flex: 1; min-width: 0; font-size: 12.5px; line-height: 1.4; }
+    .section-meta { font-size: 10px; color: #9ca3af; margin-top: 2px; }
     .section-actions { display: flex; gap: 4px; flex-shrink: 0; }
-    .section-btn { height: 24px; padding: 0 8px; font-size: 10px; border-radius: 4px; border: 1px solid #dde1ea; background: #fff; cursor: pointer; color: #4a5568; }
+    .section-btn { height: 26px; padding: 0 10px; font-size: 11px; font-weight: 600; border-radius: 4px; border: 1px solid #dde1ea; background: #fff; cursor: pointer; color: #4a5568; font-family: inherit; white-space: nowrap; }
     .section-btn:hover { background: #f5f7fa; }
+    .section-btn.open { background: #eef3fb; border-color: #2463eb; color: #2463eb; }
 
-    .summary-bar { background: #eef3fb; border: 1px solid #c7d7f8; border-radius: 10px; padding: 14px; margin-bottom: 16px; font-size: 12px; color: #1e40af; display: flex; gap: 16px; align-items: center; }
-    .summary-stat { font-weight: 600; }
+    .enrich-panel { background: #f8fafc; border: 1px solid #e8ecf0; border-radius: 0 0 8px 8px; padding: 14px 16px 16px; border-top: 1px dashed #dde1ea; display: none; }
+    .enrich-panel.open { display: block; }
+    .enrich-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .enrich-field { display: flex; flex-direction: column; gap: 4px; }
+    .enrich-field.full { grid-column: 1 / -1; }
+    .enrich-label { font-size: 11px; font-weight: 600; color: #4a5568; text-transform: uppercase; letter-spacing: 0.04em; }
+    .enrich-input, .enrich-select { height: 32px; padding: 0 10px; border: 1px solid #dde1ea; border-radius: 6px; font-size: 12px; color: #1a2332; background: #fff; font-family: inherit; outline: none; }
+    .enrich-input:focus, .enrich-select:focus { border-color: #2463eb; box-shadow: 0 0 0 2px rgba(36,99,235,0.1); }
+    .enrich-textarea { padding: 8px 10px; border: 1px solid #dde1ea; border-radius: 6px; font-size: 12px; color: #1a2332; background: #fff; font-family: inherit; width: 100%; min-height: 56px; resize: vertical; outline: none; }
+    .enrich-textarea:focus { border-color: #2463eb; box-shadow: 0 0 0 2px rgba(36,99,235,0.1); }
+    .enrich-actions { display: flex; gap: 8px; margin-top: 12px; }
 
-    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a2332; color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 13px; z-index: 999; opacity: 0; transition: opacity 0.3s; }
+    .summary-bar { background: #eef3fb; border: 1px solid #c7d7f8; border-radius: 10px; padding: 12px 16px; margin-bottom: 14px; font-size: 12px; color: #1e40af; display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    .summary-stat { font-weight: 700; }
+
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a2332; color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 13px; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap; }
     .toast.show { opacity: 1; }
 
-    .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #e8ecf0; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; z-index: 100; box-shadow: 0 -2px 8px rgba(0,0,0,0.05); }
+    .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #e8ecf0; padding: 10px 24px; display: flex; justify-content: space-between; align-items: center; z-index: 100; box-shadow: 0 -2px 8px rgba(0,0,0,0.05); }
 
     input[type=file] { display: none; }
-    .file-inputs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-    .file-input-group { position: relative; }
-    .file-label { display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid #dde1ea; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; background: #fff; color: #4a5568; }
+    .file-label { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border: 1px solid #dde1ea; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; background: #fff; color: #4a5568; font-family: inherit; }
     .file-label:hover { background: #f5f7fa; }
     .file-label.loaded { border-color: #16a34a; color: #16a34a; }
+
+    @media (max-width: 700px) {
+      .two-col { grid-template-columns: 1fr; }
+      .enrich-grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -76,16 +108,16 @@
     <div class="header-brand">
       <span class="logo-text">RegIntel</span>
       <span class="header-sep">|</span>
-      <span class="header-subtitle">Recurring Ingest (Monthly updates)</span>
+      <span class="header-subtitle">Monthly OpenLaws Ingest</span>
     </div>
-    <a href="regintel.html" class="back-link">&larr; Back</a>
+    <a href="regintel.html" class="back-link">&larr; Back to research view</a>
   </header>
 
   <div class="page-wrap">
-    <h1 class="page-title">Recurring regulatory ingest</h1>
-    <p class="page-desc">Monthly workflow for syncing OpenLaws updates. Load current and previous dumps, the tool diffs them, shows only new/changed sections, and remembers your triage decisions.</p>
+    <h1 class="page-title">Monthly OpenLaws sync</h1>
+    <p class="page-desc">Load this month's OpenLaws dump, the previous month's dump, and your triage ledger. The tool diffs them and shows only new or changed sections — unchanged sections reuse your previous decisions automatically.</p>
 
-    <div class="mode-tabs">
+    <div class="mode-tabs" id="modeTabs">
       <button class="mode-tab active" onclick="switchMode('setup')">1. Setup</button>
       <button class="mode-tab" onclick="switchMode('triage')">2. Triage queue</button>
       <button class="mode-tab" onclick="switchMode('export')">3. Export</button>
@@ -93,108 +125,122 @@
 
     <!-- SETUP MODE -->
     <div id="modeSetup" class="mode-content">
-      <p style="font-size:13px;color:#6b7a99;margin-bottom:20px">Load three things: your triage decisions from last month, the previous OpenLaws dump, and today's new dump. The tool will detect what changed.</p>
-
       <div class="two-col">
         <div class="col-card">
           <div class="col-title">Triage ledger</div>
-          <div class="col-desc">Your decisions from previous months. Decisions will be reused for unchanged sections.</div>
-          <label class="file-label" id="ledgerLabel"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Load ledger</label>
+          <div class="col-desc">Your decisions from previous months. Unchanged sections will reuse decisions automatically.</div>
+          <label class="file-label" id="ledgerLabel" for="ledgerFile">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Load ledger.json
+          </label>
           <input type="file" id="ledgerFile" accept=".json" onchange="loadFile('ledger', this)">
         </div>
 
         <div class="col-card">
           <div class="col-title">Previous OpenLaws dump</div>
           <div class="col-desc">Last month's data. Used to detect what's new or changed this month.</div>
-          <label class="file-label" id="prevLabel"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Load previous</label>
+          <label class="file-label" id="prevLabel" for="prevFile">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Load previous dump
+          </label>
           <input type="file" id="prevFile" accept=".json" onchange="loadFile('prev', this)">
         </div>
 
         <div class="col-card">
           <div class="col-title">Current OpenLaws dump</div>
-          <div class="col-desc">This month's data. The new/updated sections will be queued for triage.</div>
-          <label class="file-label" id="currLabel"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Load current</label>
+          <div class="col-desc">This month's data. New and changed sections will be queued for triage.</div>
+          <label class="file-label" id="currLabel" for="currFile">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Load current dump
+          </label>
           <input type="file" id="currFile" accept=".json" onchange="loadFile('curr', this)">
         </div>
 
         <div class="col-card">
           <div class="col-title">Or paste JSON</div>
-          <div class="col-desc">Paste raw JSON from OpenLaws API, or paste the triage ledger JSON.</div>
-          <div style="font-size:11px;color:#a0aec0;margin-bottom:8px">Select which file to paste:</div>
+          <div class="col-desc">Paste raw JSON from OpenLaws API or the triage ledger directly.</div>
           <select id="pasteTarget" style="width:100%;height:32px;padding:0 8px;border:1px solid #dde1ea;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:12px">
             <option value="curr">Current OpenLaws dump</option>
             <option value="prev">Previous OpenLaws dump</option>
             <option value="ledger">Triage ledger</option>
           </select>
-          <textarea id="pasteArea" placeholder="Paste JSON here..." style="width:100%;height:120px;padding:8px;border:1px solid #dde1ea;border-radius:6px;font-family:monospace;font-size:11px;resize:vertical"></textarea>
-          <button class="btn primary" onclick="pasteJson()" style="width:100%;margin-top:8px">Load from paste</button>
+          <textarea id="pasteArea" placeholder="Paste JSON here..." style="width:100%;height:110px;padding:8px;border:1px solid #dde1ea;border-radius:6px;font-family:monospace;font-size:11px;resize:vertical;outline:none"></textarea>
+          <button class="btn primary" onclick="pasteJson()" style="width:100%;margin-top:8px;justify-content:center">Load from paste</button>
         </div>
       </div>
 
-      <div style="text-align:center;margin-top:20px">
-        <button class="btn primary" onclick="computeDiff()">Analyze diff &amp; detect changes</button>
+      <div style="text-align:center;margin-top:4px">
+        <button class="btn primary" style="height:40px;font-size:14px" onclick="computeDiff()">Analyze diff &amp; detect changes</button>
       </div>
     </div>
 
     <!-- TRIAGE MODE -->
     <div id="modeTriage" class="mode-content" style="display:none">
-      <div class="summary-bar" id="summaryBar"></div>
+      <div class="summary-bar" id="summaryBar">Load data and run diff to see summary.</div>
 
-      <div style="margin-bottom:16px">
-        <div style="font-size:13px;font-weight:600;margin-bottom:8px">Filter:</div>
-        <button class="btn secondary" onclick="filterQueue('all')">All</button>
-        <button class="btn secondary" onclick="filterQueue('new')">New only</button>
-        <button class="btn secondary" onclick="filterQueue('changed')">Changed only</button>
-        <button class="btn secondary" onclick="filterQueue('pending')">Pending triage</button>
+      <div class="filter-row" id="filterRow">
+        <button class="filter-btn active" onclick="setFilter(event,'all')">All</button>
+        <button class="filter-btn" onclick="setFilter(event,'new')">New</button>
+        <button class="filter-btn" onclick="setFilter(event,'changed')">Changed</button>
+        <button class="filter-btn" onclick="setFilter(event,'pending')">Pending</button>
+        <button class="filter-btn" onclick="setFilter(event,'accepted')">Accepted</button>
+        <button class="filter-btn" onclick="setFilter(event,'skipped')">Skipped</button>
+        <button class="filter-btn" onclick="setFilter(event,'decided')">Auto-reused</button>
       </div>
 
-      <div class="section-list" id="queueList"></div>
-
-      <div style="text-align:center;margin-top:20px;color:#a0aec0;font-size:12px">
-        Scroll to see more. Click "Enrich" to expand a section's triage panel.
+      <div class="section-list" id="queueList">
+        <div style="text-align:center;padding:40px;color:#a0aec0;font-size:13px">Run the diff in Setup to populate the queue.</div>
       </div>
     </div>
 
     <!-- EXPORT MODE -->
     <div id="modeExport" class="mode-content" style="display:none">
-      <p style="font-size:13px;color:#6b7a99;margin-bottom:20px">Export the merged triage ledger and RegIntel JSON ready for import into the main site.</p>
+      <p style="font-size:13px;color:#6b7a99;margin-bottom:20px">Export the updated triage ledger (commit to repo) and the RegIntel JSON (import via admin mode).</p>
 
       <div class="two-col">
         <div class="col-card">
           <div class="col-title">Updated triage ledger</div>
-          <div class="col-desc">Your triage decisions (reused + new) for all sections. Commit this to the repo.</div>
-          <button class="btn success" onclick="exportLedger()" style="width:100%">Export ledger.json</button>
+          <div class="col-desc">All decisions — auto-reused and newly triaged. Commit this to the repo after each month so next month's run can reuse decisions.</div>
+          <button class="btn success" onclick="exportLedger()" style="width:100%;justify-content:center">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Export ledger.json
+          </button>
         </div>
 
         <div class="col-card">
-          <div class="col-title">RegIntel data</div>
-          <div class="col-desc">Sections you triaged as "ACCEPT" in RegIntel JSON format, ready for admin import.</div>
-          <button class="btn success" onclick="exportRegIntel()" style="width:100%">Export RegIntel.json</button>
+          <div class="col-title">RegIntel data (accepted sections)</div>
+          <div class="col-desc">Sections you marked "Accept" formatted for admin import. Drag this file into the Import panel on the main site.</div>
+          <button class="btn success" onclick="exportRegIntel()" style="width:100%;justify-content:center">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Export RegIntel.json
+          </button>
         </div>
       </div>
 
-      <div style="background:#fef9e7;border:1px solid #fde68a;border-radius:8px;padding:12px;margin-top:20px;font-size:12px;color:#854d0e">
-        <strong>Next steps:</strong> Commit the updated ledger to your repo. Upload the RegIntel JSON to the admin import on the main site. The ledger becomes the source of truth for future months.
+      <div style="background:#fef9e7;border:1px solid #fde68a;border-radius:8px;padding:12px 16px;margin-top:8px;font-size:12px;color:#854d0e;line-height:1.6">
+        <strong>Next steps:</strong> Commit the triage ledger to <code>data/triage-ledger-YYYY-MM.json</code>. Import the RegIntel JSON via the Admin panel on <a href="regintel.html" style="color:#854d0e">regintel.html</a>. Archive this month's OpenLaws dump as <code>data/openlaws-YYYY-MM.json</code>.
       </div>
     </div>
   </div>
 
   <div class="bottom-bar">
-    <div style="font-size:12px;color:#6b7a99">
-      Files loaded: <strong id="filesLoaded">0</strong> / 3
-    </div>
-    <button class="btn" onclick="switchMode('setup')">Back to setup</button>
+    <div style="font-size:12px;color:#6b7a99">Files loaded: <strong id="filesLoaded">0</strong> / 3 &nbsp;·&nbsp; Queue: <strong id="queueSize">0</strong></div>
+    <button class="btn" onclick="switchMode('setup')">← Back to setup</button>
   </div>
 
   <div class="toast" id="toast"></div>
 
   <script>
+  const HSTM_ROLES    = ['Licensed Vocational Nurse','Licensed Practical Nurse','Certified Nursing Assistant','Home Health Aide','Registered Nurse','Medical Assistant'];
+  const HSTM_SETTINGS = ['Assisted Living Facility','Skilled Nursing Facility','Home Health','Hospice','PACE','Critical Access Hospital'];
+  const FREQUENCIES   = ['Annual','Biennial','Once','Ongoing','Discretionary','Per Admission','Initial'];
+
   let files = { curr: null, prev: null, ledger: null };
-  let diff = null;
   let queue = [];
   let currentFilter = 'all';
-  let enrichOpen = {};
+  let activeMode = 'setup';
 
+  // ─── Toast ───
   function showToast(msg) {
     const el = document.getElementById('toast');
     el.textContent = msg;
@@ -202,6 +248,7 @@
     setTimeout(() => el.classList.remove('show'), 2500);
   }
 
+  // ─── File loading ───
   function loadFile(type, input) {
     const file = input.files[0];
     if (!file) return;
@@ -211,13 +258,15 @@
         files[type] = JSON.parse(e.target.result);
         const labels = { ledger: 'ledgerLabel', prev: 'prevLabel', curr: 'currLabel' };
         document.getElementById(labels[type]).classList.add('loaded');
-        document.getElementById('filesLoaded').textContent = Object.values(files).filter(Boolean).length;
-        showToast(type + ' loaded');
+        document.getElementById(labels[type]).textContent = '✓ ' + file.name;
+        updateFilesCount();
+        showToast(type + ' loaded (' + file.name + ')');
       } catch(err) {
         showToast('JSON parse error: ' + err.message);
       }
     };
     reader.readAsText(file);
+    input.value = '';
   }
 
   function pasteJson() {
@@ -226,130 +275,339 @@
     if (!raw) { showToast('Paste JSON first'); return; }
     try {
       files[target] = JSON.parse(raw);
-      document.getElementById('filesLoaded').textContent = Object.values(files).filter(Boolean).length;
       document.getElementById('pasteArea').value = '';
+      updateFilesCount();
       showToast(target + ' loaded from paste');
     } catch(err) {
       showToast('JSON parse error: ' + err.message);
     }
   }
 
+  function updateFilesCount() {
+    document.getElementById('filesLoaded').textContent = Object.values(files).filter(Boolean).length;
+  }
+
+  // ─── Diff ───
   function makeHash(obj) {
-    return Math.abs(obj ? obj.toString().split('').reduce((a, b) => { a = ((a << 5) - a) + b.charCodeAt(0); return a & a; }, 0) : 0).toString(36);
+    const s = obj ? JSON.stringify(obj) : '';
+    let h = 0;
+    for (let i = 0; i < s.length; i++) { h = Math.imul(31, h) + s.charCodeAt(i) | 0; }
+    return (h >>> 0).toString(36);
+  }
+
+  function extractSections(src) {
+    // Handle both array and object sources; try common OpenLaws section keys
+    return src.display_children || src.sections || src.children || [];
   }
 
   function computeDiff() {
-    if (!files.curr) { showToast('Load current OpenLaws dump'); return; }
-    const current = Array.isArray(files.curr) ? files.curr : [files.curr];
+    if (!files.curr) { showToast('Load current OpenLaws dump first'); return; }
+    const current  = Array.isArray(files.curr) ? files.curr : [files.curr];
     const previous = files.prev ? (Array.isArray(files.prev) ? files.prev : [files.prev]) : [];
-    const ledger = files.ledger ? (Array.isArray(files.ledger) ? files.ledger : files.ledger) : {};
+    const ledger   = (files.ledger && !Array.isArray(files.ledger)) ? files.ledger : {};
 
     const prevIndex = {};
     previous.forEach(src => {
-      (src.display_children || []).forEach(child => {
+      extractSections(src).forEach(child => {
         prevIndex[child.path] = makeHash(child);
       });
     });
 
     queue = [];
-    current.forEach((src, si) => {
-      const juris = (src.jurisdiction_key === 'FED' ? 'US' : src.jurisdiction_key);
-      (src.display_children || []).forEach((child, ci) => {
-        const childPath = child.path;
-        const childHash = makeHash(child);
-        const wasSeen = childPath in prevIndex;
-        const hasChanged = wasSeen && prevIndex[childPath] !== childHash;
-        let status = wasSeen ? (hasChanged ? 'changed' : 'decided') : 'new';
+    current.forEach(src => {
+      const juris = src.jurisdiction_key === 'FED' ? 'US' : (src.jurisdiction_key || 'US');
+      extractSections(src).forEach(child => {
+        const path      = child.path;
+        const hash      = makeHash(child);
+        const wasSeen   = path in prevIndex;
+        const changed   = wasSeen && prevIndex[path] !== hash;
+        const ledgerDec = ledger[path] || null;
 
-        let decision = ledger[childPath] || null;
-        if (status === 'decided' && decision) {
-          status = 'decided'; // keep reused
-        } else if (status !== 'new') {
-          status = status === 'changed' ? 'changed' : 'pending';
-        }
+        let status;
+        if (!wasSeen)       status = 'new';
+        else if (changed)   status = 'changed';
+        else if (ledgerDec) status = 'decided';
+        else                status = 'pending';
 
         queue.push({
-          path: childPath,
-          name: child.display_name.replace(/^Section\s+[\d.]+:\s*/, ''),
-          source: src,
-          sourceIdx: si,
-          status: status,
+          path,
+          name:       (child.display_name || child.name || path).replace(/^Section\s+[\d.]+:\s*/i, ''),
           jurisdiction: juris,
-          hash: childHash,
-          decision: decision || { hstmRole: '', hstmSetting: '', agency: '' }
+          hash,
+          status,
+          accepted:   false,
+          skipped:    false,
+          decision: ledgerDec ? { ...ledgerDec } : {
+            hstmRole: '', hstmSetting: '', agency: '',
+            citation: path.replace(/_/g, ' '),
+            topic: (child.display_name || child.name || '').replace(/^Section\s+[\d.]+:\s*/i, ''),
+            hours: '0', frequency: ''
+          }
         });
       });
     });
 
+    document.getElementById('queueSize').textContent = queue.length;
     renderQueue();
     switchMode('triage');
     showToast('Analyzed ' + queue.length + ' sections');
   }
 
+  // ─── Queue rendering ───
+  function effectiveStatus(item) {
+    if (item.accepted) return 'accepted';
+    if (item.skipped)  return 'skipped';
+    return item.status;
+  }
+
   function renderQueue() {
+    const filtered = filterItems(queue);
+    updateSummary();
+
     const list = document.getElementById('queueList');
-    const filtered = currentFilter === 'all' ? queue : queue.filter(s => s.status === currentFilter || (currentFilter === 'pending' && (!s.decision.hstmRole && !s.decision.hstmSetting)));
+    if (!filtered.length) {
+      list.innerHTML = '<div style="text-align:center;padding:40px;color:#a0aec0;font-size:13px">No sections match this filter.</div>';
+      return;
+    }
 
-    const newCount = queue.filter(s => s.status === 'new').length;
-    const changedCount = queue.filter(s => s.status === 'changed').length;
-    const decidedCount = queue.filter(s => s.status === 'decided').length;
-    document.getElementById('summaryBar').innerHTML = `
-      <strong>Total:</strong> ${queue.length} sections
-      <span class="summary-stat" style="color:#16a34a">New: ${newCount}</span>
-      <span class="summary-stat" style="color:#d97706">Changed: ${changedCount}</span>
-      <span class="summary-stat" style="color:#2463eb">Decided: ${decidedCount}</span>
-      <span class="summary-stat">To review: ${newCount + changedCount}</span>
-    `;
+    list.innerHTML = filtered.map(item => {
+      const es     = effectiveStatus(item);
+      const safeId = 'p_' + item.path.replace(/[^a-zA-Z0-9]/g, '_');
+      const isOpen = item._panelOpen;
+      const dec    = item.decision;
 
-    list.innerHTML = filtered.map((item, idx) => {
-      const isOpen = enrichOpen[item.path];
-      const decideBtn = item.status === 'decided' ? '✓ Reusing' : 'Triage';
-      return `<div class="section-item ${item.status}">
-        <span class="section-badge ${item.status}">${item.status}</span>
-        <span class="section-name">${item.name}</span>
-        <button class="section-btn" onclick="enrichSection('${item.path.replace(/'/g, "\\'")}')">Enrich</button>
+      const decisionNote = (es === 'decided' || es === 'accepted') && dec.hstmRole
+        ? `<div class="section-meta">${esc(dec.hstmRole)}${dec.hstmSetting ? ' · ' + esc(dec.hstmSetting) : ''}${dec.hours && dec.hours !== '0' ? ' · ' + esc(dec.hours) + 'h' : ''}</div>`
+        : '';
+
+      const actionBtns = es === 'decided'
+        ? `<button class="section-btn" onclick="togglePanel('${esc(item.path)}')">Review</button>`
+        : `<button class="section-btn${isOpen ? ' open' : ''}" onclick="togglePanel('${esc(item.path)}')">${isOpen ? 'Close' : 'Enrich'}</button>
+           ${es !== 'skipped' ? `<button class="section-btn" onclick="skipItem('${esc(item.path)}')">Skip</button>` : `<button class="section-btn" onclick="unskipItem('${esc(item.path)}')">Undo skip</button>`}`;
+
+      const panelHtml = isOpen ? `
+        <div class="enrich-panel open" id="${safeId}">
+          <div class="enrich-grid">
+            <div class="enrich-field full">
+              <label class="enrich-label">Training topic</label>
+              <textarea class="enrich-textarea" id="${safeId}_topic">${esc(dec.topic || item.name)}</textarea>
+            </div>
+            <div class="enrich-field">
+              <label class="enrich-label">HSTM Role *</label>
+              <select class="enrich-select" id="${safeId}_role">
+                <option value="">Select role</option>
+                ${HSTM_ROLES.map(r => `<option value="${esc(r)}"${dec.hstmRole === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="enrich-field">
+              <label class="enrich-label">HSTM Setting</label>
+              <select class="enrich-select" id="${safeId}_setting">
+                <option value="">Role-level only</option>
+                ${HSTM_SETTINGS.map(s => `<option value="${esc(s)}"${dec.hstmSetting === s ? ' selected' : ''}>${esc(s)}</option>`).join('')}
+              </select>
+            </div>
+            <div class="enrich-field">
+              <label class="enrich-label">Agency</label>
+              <input class="enrich-input" id="${safeId}_agency" value="${esc(dec.agency || 'CMS')}" placeholder="e.g. CMS">
+            </div>
+            <div class="enrich-field">
+              <label class="enrich-label">Citation</label>
+              <input class="enrich-input" id="${safeId}_citation" value="${esc(dec.citation || item.path.replace(/_/g,' '))}" placeholder="e.g. 42 CFR §483.35">
+            </div>
+            <div class="enrich-field">
+              <label class="enrich-label">Hours required</label>
+              <input class="enrich-input" id="${safeId}_hours" type="number" min="0" step="0.5" value="${esc(dec.hours || '0')}">
+            </div>
+            <div class="enrich-field">
+              <label class="enrich-label">Frequency</label>
+              <select class="enrich-select" id="${safeId}_freq">
+                <option value="">Select</option>
+                ${FREQUENCIES.map(f => `<option value="${esc(f)}"${dec.frequency === f ? ' selected' : ''}>${esc(f)}</option>`).join('')}
+              </select>
+            </div>
+          </div>
+          <div class="enrich-actions">
+            <button class="btn success" onclick="acceptItem('${esc(item.path)}', '${safeId}')">✓ Accept</button>
+            <button class="btn secondary" onclick="togglePanel('${esc(item.path)}')">Cancel</button>
+          </div>
+        </div>` : '';
+
+      return `<div class="section-wrapper">
+        <div class="section-item ${es}${isOpen ? ' open' : ''}">
+          <span class="section-badge ${es}">${es}</span>
+          <div class="section-name">${esc(item.name)}<div class="section-meta">${esc(item.jurisdiction)}${decisionNote ? '' : ''}</div>${decisionNote}</div>
+          <div class="section-actions">${actionBtns}</div>
+        </div>
+        ${panelHtml}
       </div>`;
     }).join('');
   }
 
-  function filterQueue(f) {
+  function updateSummary() {
+    const counts = { new: 0, changed: 0, decided: 0, pending: 0, accepted: 0, skipped: 0 };
+    queue.forEach(item => { counts[effectiveStatus(item)] = (counts[effectiveStatus(item)] || 0) + 1; });
+    const toReview = counts.new + counts.changed + counts.pending;
+    document.getElementById('summaryBar').innerHTML = `
+      <strong>Total:</strong> ${queue.length}
+      <span class="summary-stat" style="color:#16a34a">New: ${counts.new}</span>
+      <span class="summary-stat" style="color:#d97706">Changed: ${counts.changed}</span>
+      <span class="summary-stat" style="color:#2463eb">Auto-reused: ${counts.decided}</span>
+      <span class="summary-stat" style="color:#15803d">Accepted: ${counts.accepted}</span>
+      <span class="summary-stat" style="color:#6b7280">Skipped: ${counts.skipped}</span>
+      <span>To review: <strong>${toReview}</strong></span>
+    `;
+    document.getElementById('queueSize').textContent = queue.length;
+  }
+
+  // ─── Filter ───
+  function filterItems(q) {
+    if (currentFilter === 'all') return q;
+    if (currentFilter === 'accepted') return q.filter(i => i.accepted);
+    if (currentFilter === 'skipped')  return q.filter(i => i.skipped);
+    if (currentFilter === 'pending')  return q.filter(i => !i.accepted && !i.skipped && (i.status === 'new' || i.status === 'changed' || i.status === 'pending'));
+    return q.filter(i => !i.accepted && !i.skipped && i.status === currentFilter);
+  }
+
+  function setFilter(e, f) {
     currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
     renderQueue();
   }
 
-  function enrichSection(path) {
-    showToast('Enrich panel would open here');
+  // ─── Panel toggle ───
+  function findItem(path) {
+    return queue.find(i => i.path === path);
   }
 
+  function togglePanel(path) {
+    const item = findItem(path);
+    if (!item) return;
+    item._panelOpen = !item._panelOpen;
+    renderQueue();
+  }
+
+  // ─── Accept / Skip ───
+  function acceptItem(path, safeId) {
+    const item = findItem(path);
+    if (!item) return;
+    const role = document.getElementById(safeId + '_role')?.value || '';
+    if (!role) { showToast('Select an HSTM Role before accepting'); return; }
+    item.decision = {
+      hstmRole:    role,
+      hstmSetting: document.getElementById(safeId + '_setting')?.value || '',
+      agency:      document.getElementById(safeId + '_agency')?.value || 'CMS',
+      citation:    document.getElementById(safeId + '_citation')?.value || '',
+      topic:       document.getElementById(safeId + '_topic')?.value || item.name,
+      hours:       document.getElementById(safeId + '_hours')?.value || '0',
+      frequency:   document.getElementById(safeId + '_freq')?.value || ''
+    };
+    item.accepted    = true;
+    item.skipped     = false;
+    item._panelOpen  = false;
+    renderQueue();
+    showToast('Accepted: ' + item.name.slice(0, 50));
+  }
+
+  function skipItem(path) {
+    const item = findItem(path);
+    if (!item) return;
+    item.skipped    = true;
+    item.accepted   = false;
+    item._panelOpen = false;
+    renderQueue();
+  }
+
+  function unskipItem(path) {
+    const item = findItem(path);
+    if (!item) return;
+    item.skipped    = false;
+    item._panelOpen = false;
+    renderQueue();
+  }
+
+  // ─── Mode switching ───
   function switchMode(mode) {
+    activeMode = mode;
     document.querySelectorAll('.mode-content').forEach(m => m.style.display = 'none');
-    document.getElementById('mode' + (mode === 'setup' ? 'Setup' : mode === 'triage' ? 'Triage' : 'Export')).style.display = 'block';
-    document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
-    event.target.classList.add('active');
+    const ids = { setup: 'modeSetup', triage: 'modeTriage', export: 'modeExport' };
+    document.getElementById(ids[mode]).style.display = 'block';
+    const order = ['setup', 'triage', 'export'];
+    document.querySelectorAll('.mode-tab').forEach((btn, i) => {
+      btn.classList.toggle('active', order[i] === mode);
+    });
   }
 
+  // ─── Export: ledger ───
   function exportLedger() {
-    const ledgerOut = {};
+    if (!queue.length) { showToast('No data — run diff first'); return; }
+    const out = {};
     queue.forEach(item => {
-      ledgerOut[item.path] = item.decision;
+      if (item.accepted || item.skipped || item.status === 'decided') {
+        out[item.path] = item.skipped
+          ? { skip: true }
+          : { ...item.decision };
+      }
     });
-    const blob = new Blob([JSON.stringify(ledgerOut, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'triage-ledger-' + new Date().toISOString().slice(0, 7) + '.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('Exported triage ledger');
+    download(JSON.stringify(out, null, 2), 'triage-ledger-' + new Date().toISOString().slice(0, 7) + '.json');
+    showToast('Exported triage ledger (' + Object.keys(out).length + ' decisions)');
+  }
+
+  // ─── Export: RegIntel JSON ───
+  const ROLE_CODES    = { 'Licensed Vocational Nurse': 'LVN', 'Licensed Practical Nurse': 'LPN', 'Certified Nursing Assistant': 'CNA', 'Home Health Aide': 'HHA', 'Registered Nurse': 'RN', 'Medical Assistant': 'MA' };
+  const SETTING_CODES = { 'Assisted Living Facility': 'ALF', 'Skilled Nursing Facility': 'SNF', 'Home Health': 'HH', 'Hospice': 'HOSP', 'PACE': 'PACE', 'Critical Access Hospital': 'CAH' };
+
+  function sheetKey(dec) {
+    if (dec.hstmSetting) return 'CS ' + (SETTING_CODES[dec.hstmSetting] || dec.hstmSetting.replace(/\s+/g,''));
+    return 'R ' + (ROLE_CODES[dec.hstmRole] || dec.hstmRole.replace(/\s+/g,'').slice(0,4).toUpperCase());
   }
 
   function exportRegIntel() {
-    showToast('Export RegIntel JSON (not yet implemented)');
+    const accepted = queue.filter(i => i.accepted && i.decision.hstmRole);
+    if (!accepted.length) { showToast('No accepted sections to export'); return; }
+    const out = {};
+    accepted.forEach(item => {
+      const dec = item.decision;
+      const key = sheetKey(dec);
+      if (!out[key]) out[key] = [];
+      out[key].push({
+        'Jurisdiction':                    item.jurisdiction || 'US',
+        'Jurisdiction Role':               null,
+        'Jurisdiction Setting':            null,
+        'Oversight / Professional Agency': dec.agency || 'CMS',
+        'HSTM Role':                       [dec.hstmRole],
+        'HSTM Setting':                    dec.hstmSetting || null,
+        'Tier':                            item.jurisdiction === 'US' ? 1 : 2,
+        'Tier Priority':                   'HIGH',
+        'Requirement Level':               item.jurisdiction === 'US' ? 'Federal Floor' : 'State Floor',
+        'Citation':                        dec.citation || item.path,
+        'Training Topic / Competency Item': dec.topic || item.name,
+        'Purpose':                         'Ongoing',
+        'Approval Required':               null,
+        'Hours Required':                  parseFloat(dec.hours) || 0,
+        'Frequency':                       dec.frequency || null,
+        'Explicit Training':               'Yes',
+        'Relationship':                    'Parent',
+        'Notes / Research Flags':          'None',
+        'Source URL':                      null
+      });
+    });
+    download(JSON.stringify(out, null, 2), 'regintel-openlaws-' + new Date().toISOString().slice(0, 10) + '.json');
+    showToast('Exported ' + accepted.length + ' accepted sections across ' + Object.keys(out).length + ' sheet(s)');
+  }
+
+  // ─── Helpers ───
+  function download(content, filename) {
+    const blob = new Blob([content], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
   }
 
   function esc(s) {
     if (s == null) return '';
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
   </script>
 </body>
