@@ -10730,6 +10730,7 @@
       ${row.type ? `<div class="drawer-row"><span class="drawer-label">Type</span><span class="drawer-value">${esc(row.type)}</span></div>` : ''}
     ` : '';
     const metaContent = row ? `
+      ${row.tier_reason ? `<div class="drawer-row"><span class="drawer-label">Requirement</span><span class="drawer-value">${esc(row.tier_reason)}</span></div>` : ''}
       <div class="drawer-row"><span class="drawer-label">Agency</span><span class="drawer-value">${esc(row.oversight_agency)}</span></div>
       <div class="drawer-row"><span class="drawer-label">Citation</span><span class="drawer-value">${esc(row.tier_citation)}</span></div>
       <div class="drawer-row"><span class="drawer-label">Approval</span><span class="drawer-value">${approval}</span></div>
@@ -10836,6 +10837,7 @@
     return `<div class="filter-bar">
   ${settingDD}
   ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
+  ${renderDropdown('tierReasons', 'Requirement', ALL_TIER_REASONS, filterState.tierReasons)}
   <div class="search-wrapper">
     <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     <input type="text" class="search-input" id="searchInput" placeholder="Search topics or citations…" value="${esc(filterState.search)}">
@@ -10854,7 +10856,8 @@
     if (roleOnly) return `<div class="filter-bar">${roleDD}</div>`;
     return `<div class="filter-bar">
   ${roleDD}
-  ${renderDropdown('jurisdictions', 'Jurisdiction',       ALL_JURISDICTIONS, filterState.jurisdictions)}
+  ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
+  ${renderDropdown('tierReasons', 'Requirement', ALL_TIER_REASONS, filterState.tierReasons)}
   <div class="search-wrapper">
     <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     <input type="text" class="search-input" id="searchInput" placeholder="Search topics or citations…" value="${esc(filterState.search)}">
