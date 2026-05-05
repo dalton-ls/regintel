@@ -671,7 +671,7 @@
       const suggestion = await fetchAiSuggestion(item, key);
       applyAiSuggestion(safeId, suggestion);
     } catch (err) {
-      showToast('AI auto-fill failed — fill manually');
+      showToast('AI auto-fill failed: ' + String(err.message).slice(0, 80));
     } finally {
       document.getElementById(safeId + '_aiload')?.remove();
       grid.style.opacity = '';
@@ -704,7 +704,7 @@ Default agency to "CMS" for federal 42 CFR sections. Format citation like "42 CF
       headers: {
         'x-api-key': key,
         'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-allow-browser': 'true',
+        'anthropic-dangerous-direct-browser-access': 'true',
         'content-type': 'application/json'
       },
       body: JSON.stringify({
@@ -715,7 +715,10 @@ Default agency to "CMS" for federal 42 CFR sections. Format citation like "42 CF
       })
     });
 
-    if (!resp.ok) throw new Error(`API ${resp.status}`);
+    if (!resp.ok) {
+      const errBody = await resp.text().catch(() => '');
+      throw new Error(`${resp.status}: ${errBody.slice(0, 120)}`);
+    }
     const data = await resp.json();
     const text = data.content?.[0]?.text || '';
     const cleaned = text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
