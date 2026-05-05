@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RegIntel — Regulatory Data Parser</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; color: #1a2332; background: #f0f2f5; }
+    .app-header { position: sticky; top: 0; z-index: 200; height: 60px; background: #1a2e5a; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .header-brand { display: flex; align-items: center; gap: 10px; color: #fff; }
+    .logo-text { font-size: 17px; font-weight: 700; letter-spacing: -0.3px; }
+    .header-sep { color: rgba(255,255,255,0.25); font-size: 20px; font-weight: 200; }
+    .header-subtitle { font-size: 12px; color: rgba(255,255,255,0.6); }
+    .back-link { font-size: 12px; color: rgba(255,255,255,0.5); text-decoration: none; font-weight: 500; }
+    .back-link:hover { color: rgba(255,255,255,0.85); }
+
+    .page-wrap { max-width: 1200px; margin: 0 auto; padding: 32px 24px 80px; }
+    .page-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .page-desc { font-size: 14px; color: #6b7a99; line-height: 1.6; margin-bottom: 24px; }
+
+    .btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 8px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; border: 1px solid #dde1ea; background: #fff; color: #4a5568; transition: all 0.15s; }
+    .btn:hover { background: #f5f7fa; }
+    .btn.primary { background: #2463eb; color: #fff; border-color: #2463eb; }
+    .btn.primary:hover { background: #1d4ed8; }
+    .btn.success { background: #16a34a; color: #fff; border-color: #16a34a; }
+    .btn.success:hover { background: #15803d; }
+    .btn.danger { background: #fef2f2; color: #dc2626; border-color: #fca5a5; }
+    .btn.danger:hover { background: #fee2e2; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+
+    /* API key card */
+    .apikey-card { background: #fff; border: 1px solid #e8ecf0; border-radius: 10px; padding: 14px 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .apikey-label { font-size: 11px; font-weight: 700; color: #6b7a99; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+    .apikey-input { flex: 1; min-width: 240px; height: 32px; padding: 0 10px; border: 1px solid #dde1ea; border-radius: 6px; font-size: 12px; font-family: monospace; outline: none; color: #1a2332; }
+    .apikey-input:focus { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,0.1); }
+    .apikey-status { font-size: 11px; color: #9ca3af; white-space: nowrap; }
+    .model-select { height: 32px; padding: 0 8px; border: 1px solid #dde1ea; border-radius: 6px; font-size: 12px; font-family: inherit; background: #fff; color: #1a2332; outline: none; cursor: pointer; }
+    .model-select:focus { border-color: #7c3aed; }
+
+    /* Input layout */
+    .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+    @media (max-width: 800px) { .input-grid { grid-template-columns: 1fr; } }
+    .input-card { background: #fff; border: 1px solid #e8ecf0; border-radius: 10px; padding: 20px; display: flex; flex-direction: column; gap: 10px; }
+    .input-card.dragover { border-color: #2463eb; background: #eef3fb; }
+    .input-card-title { font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .input-card-desc { font-size: 12px; color: #6b7a99; line-height: 1.5; }
+    .paste-area { width: 100%; min-height: 160px; padding: 10px; border: 1px solid #dde1ea; border-radius: 6px; font-size: 12px; font-family: monospace; resize: vertical; outline: none; color: #1a2332; line-height: 1.5; }
+    .paste-area:focus { border-color: #2463eb; box-shadow: 0 0 0 2px rgba(36,99,235,0.1); }
+    .file-drop-zone { border: 2px dashed #dde1ea; border-radius: 8px; padding: 24px 16px; text-align: center; cursor: pointer; color: #6b7a99; font-size: 12px; transition: all 0.15s; }
+    .file-drop-zone:hover { border-color: #2463eb; color: #2463eb; background: #f5f8ff; }
+    .file-drop-zone.loaded { border-color: #16a34a; color: #16a34a; background: #f0fdf4; }
+    input[type=file] { display: none; }
+
+    /* Parse control bar */
+    .parse-bar { background: #fff; border: 1px solid #e8ecf0; border-radius: 10px; padding: 14px 20px; margin-bottom: 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .parse-bar-info { flex: 1; font-size: 12px; color: #6b7a99; }
+
+    /* Output area */
+    .output-section { display: none; }
+    .output-section.visible { display: block; }
+    .output-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; flex-wrap: wrap; gap: 8px; }
+    .output-title { font-size: 15px; font-weight: 700; }
+    .output-actions { display: flex; gap: 8px; }
+
+    /* Status / streaming preview */
+    .status-card { background: #fff; border: 1px solid #e8ecf0; border-radius: 10px; padding: 16px 20px; margin-bottom: 16px; }
+    .status-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7a99; margin-bottom: 8px; }
+    .stream-preview { font-size: 11px; font-family: monospace; color: #4a5568; background: #f8fafc; border: 1px solid #e8ecf0; border-radius: 6px; padding: 10px; max-height: 180px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; line-height: 1.5; }
+    .progress-row { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #6b7a99; margin-bottom: 8px; }
+    .spinner { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Sheet tabs + records */
+    .sheet-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+    .sheet-tab { height: 28px; padding: 0 12px; font-size: 11px; font-weight: 700; border-radius: 14px; border: 1px solid #dde1ea; background: #fff; cursor: pointer; color: #4a5568; font-family: inherit; transition: all 0.15s; }
+    .sheet-tab:hover { background: #f5f7fa; }
+    .sheet-tab.active { background: #1a2332; color: #fff; border-color: #1a2332; }
+    .sheet-count { display: inline-block; margin-left: 4px; background: rgba(255,255,255,0.25); border-radius: 10px; padding: 0 5px; font-size: 10px; }
+    .sheet-tab:not(.active) .sheet-count { background: #f0f2f5; color: #6b7a99; }
+
+    .records-list { display: flex; flex-direction: column; gap: 10px; }
+    .record-card { background: #fff; border: 1px solid #e8ecf0; border-radius: 8px; overflow: hidden; }
+    .record-header { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; cursor: pointer; }
+    .record-header:hover { background: #f8fafc; }
+    .record-badges { display: flex; gap: 5px; flex-wrap: wrap; flex-shrink: 0; }
+    .badge { font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; white-space: nowrap; }
+    .badge.tier1 { background: #fee2e2; color: #7f1d1d; }
+    .badge.tier2 { background: #fef3c7; color: #78350f; }
+    .badge.tier3 { background: #dbeafe; color: #1e3a8a; }
+    .badge.tier4 { background: #f3e8ff; color: #581c87; }
+    .badge.crit { background: #dc2626; color: #fff; }
+    .badge.high { background: #ea580c; color: #fff; }
+    .badge.parent { background: #1a2332; color: #fff; }
+    .badge.child { background: #6b7a99; color: #fff; }
+    .badge.juris { background: #e0f2fe; color: #0c4a6e; }
+    .record-topic { flex: 1; font-size: 12.5px; font-weight: 600; line-height: 1.45; }
+    .record-citation { font-size: 11px; color: #6b7a99; margin-top: 2px; }
+    .record-chevron { color: #9ca3af; flex-shrink: 0; margin-top: 1px; transition: transform 0.15s; }
+    .record-card.open .record-chevron { transform: rotate(90deg); }
+    .record-detail { display: none; padding: 0 14px 14px; }
+    .record-card.open .record-detail { display: block; }
+    .detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+    .detail-field { background: #f8fafc; border-radius: 6px; padding: 8px 10px; }
+    .detail-label { font-size: 10px; font-weight: 700; color: #6b7a99; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px; }
+    .detail-val { font-size: 12px; color: #1a2332; line-height: 1.4; word-break: break-word; }
+    .detail-val.mono { font-family: monospace; font-size: 11px; }
+    .detail-val.null { color: #9ca3af; font-style: italic; }
+    .detail-field.full { grid-column: 1 / -1; }
+    .detail-val.flag { color: #b45309; }
+
+    /* Raw JSON panel */
+    .raw-json-wrap { background: #1a2332; border-radius: 10px; overflow: hidden; }
+    .raw-json-bar { display: flex; justify-content: flex-end; padding: 8px 12px; gap: 6px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .raw-json-btn { height: 24px; padding: 0 10px; border-radius: 4px; font-size: 11px; font-weight: 600; font-family: inherit; cursor: pointer; border: 1px solid rgba(255,255,255,0.2); background: transparent; color: rgba(255,255,255,0.7); transition: all 0.15s; }
+    .raw-json-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+    .raw-json { font-size: 11.5px; font-family: monospace; color: #e2e8f0; padding: 16px; max-height: 500px; overflow-y: auto; white-space: pre; line-height: 1.6; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a2332; color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 13px; z-index: 999; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+
+    /* Error */
+    .error-card { background: #fff7f7; border: 1px solid #fca5a5; border-radius: 10px; padding: 16px 20px; color: #dc2626; font-size: 13px; line-height: 1.5; }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-brand">
+    <span class="logo-text">RegIntel</span>
+    <span class="header-sep">|</span>
+    <span class="header-subtitle">Regulatory Data Parser</span>
+  </div>
+  <a href="regintel.html" class="back-link">&larr; Back to research view</a>
+</header>
+
+<div class="page-wrap">
+  <h1 class="page-title">Regulatory Data Parser</h1>
+  <p class="page-desc">Paste or upload raw regulatory JSON/JSONL and Claude will extract all RegIntel metadata fields — jurisdiction, roles, settings, citations, training topics, hours, frequency, and more — grouped by sheet key for import.</p>
+
+  <!-- API key + model -->
+  <div class="apikey-card">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" style="flex-shrink:0"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+    <span class="apikey-label">AI Parser</span>
+    <input type="password" class="apikey-input" id="apiKeyInput" placeholder="sk-ant-… Anthropic API key (stored locally, never sent elsewhere)" autocomplete="off" oninput="saveApiKey(this.value)">
+    <select class="model-select" id="modelSelect">
+      <option value="claude-opus-4-7">claude-opus-4-7 (best accuracy)</option>
+      <option value="claude-sonnet-4-6">claude-sonnet-4-6 (balanced)</option>
+      <option value="claude-haiku-4-5-20251001">claude-haiku-4-5 (fastest)</option>
+    </select>
+    <span class="apikey-status" id="apiKeyStatus">Paste key to enable</span>
+  </div>
+
+  <!-- Input -->
+  <div class="input-grid">
+    <div class="input-card" id="pasteCard">
+      <div class="input-card-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="2" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Paste JSON / JSONL
+      </div>
+      <div class="input-card-desc">Paste raw regulatory data directly. Supports a single JSON object, a JSON array, or newline-delimited JSONL records.</div>
+      <textarea class="paste-area" id="pasteInput" placeholder='{"section": "42 CFR 483.152", "text": "..."}' spellcheck="false"></textarea>
+    </div>
+
+    <div class="input-card" id="fileCard">
+      <div class="input-card-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Upload File
+      </div>
+      <div class="input-card-desc">Drop a <code>.json</code> or <code>.jsonl</code> file here, or click to browse. File contents will appear in the paste area.</div>
+      <input type="file" id="fileInput" accept=".json,.jsonl,.txt" onchange="handleFileUpload(this)">
+      <label for="fileInput" class="file-drop-zone" id="dropZone"
+        ondragover="event.preventDefault(); this.classList.add('dragover')"
+        ondragleave="this.classList.remove('dragover')"
+        ondrop="handleDrop(event)">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin:0 auto 8px;display:block;opacity:0.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <span id="dropZoneLabel">Drop file here or click to browse</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Parse control -->
+  <div class="parse-bar">
+    <div class="parse-bar-info" id="parseBarInfo">Load regulatory data above, then parse it with Claude.</div>
+    <button class="btn primary" id="parseBtn" onclick="startParse()" disabled>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Parse with Claude
+    </button>
+    <button class="btn danger" id="cancelBtn" onclick="cancelParse()" style="display:none">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+      Cancel
+    </button>
+  </div>
+
+  <!-- Output -->
+  <div class="output-section" id="outputSection">
+
+    <!-- Streaming status -->
+    <div class="status-card" id="statusCard">
+      <div class="progress-row" id="progressRow">
+        <svg class="spinner" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2463eb" stroke-width="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        <span id="progressText">Calling Claude…</span>
+      </div>
+      <div class="status-label">Live stream</div>
+      <div class="stream-preview" id="streamPreview"></div>
+    </div>
+
+    <!-- Results -->
+    <div id="resultsArea" style="display:none">
+      <div class="output-header">
+        <div class="output-title" id="resultTitle">Parsed records</div>
+        <div class="output-actions">
+          <button class="btn" onclick="toggleRawJson()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            <span id="rawToggleLabel">Show raw JSON</span>
+          </button>
+          <button class="btn success" onclick="downloadJson()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download JSON
+          </button>
+        </div>
+      </div>
+
+      <!-- Raw JSON (hidden by default) -->
+      <div class="raw-json-wrap" id="rawJsonWrap" style="display:none;margin-bottom:16px">
+        <div class="raw-json-bar">
+          <button class="raw-json-btn" onclick="copyRawJson()">Copy</button>
+        </div>
+        <div class="raw-json" id="rawJsonEl"></div>
+      </div>
+
+      <!-- Sheet tabs -->
+      <div class="sheet-tabs" id="sheetTabs"></div>
+      <div class="records-list" id="recordsList"></div>
+    </div>
+
+    <!-- Error -->
+    <div class="error-card" id="errorCard" style="display:none"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── System prompt ───────────────────────────────────────────────────────────
+const SYSTEM_PROMPT = `You are a regulatory data parser for HealthStream. Parse JSON and JSONL input data and extract or map the following metadata fields for each record using the exact definitions below.
+
+**METADATA FIELDS:**
+- **Jurisdiction**: ISO 2-letter state code or "US" for federal (e.g., "US", "CA", "TX").
+- **Jurisdiction Role**: Verbatim statutory job title from the regulation. Never abbreviate or paraphrase.
+- **Jurisdiction Setting**: Verbatim care setting per issuing jurisdiction. Federal: use CMS terms (e.g., "Skilled Nursing Facility (fed)"). State: use state-specific terms.
+- **Oversight / Professional Agency**: Enforcement agency (e.g., "CMS", "CDPH", "AHCA", "HHSC").
+- **HSTM Role**: Array of canonical HealthStream audience names mapped from HSTM Audience Categories below. Always output as an array (e.g., ["Licensed Vocational Nurse"]), or null if unknown.
+- **HSTM Setting**: Canonical HealthStream setting abbreviation — one of: "SNF", "ALF", "HH", "HOSP", or null.
+- **Tier**: Integer 1–4 mapped from the 6-tier regulatory scale as follows:
+  - 1 = Federal/State Mandate Floor (original tiers 1–2)
+  - 2 = Accreditation (original tier 3)
+  - 3 = National Best Practice / Quality Metrics (original tiers 4–5)
+  - 4 = Emerging/Strategic (original tier 6)
+- **Tier Priority**: "CRITICAL" for top-priority items within a tier, "HIGH" for secondary priority.
+- **Requirement Level**: One of: "Federal Floor" | "State Floor" | "Accreditation" | "Competency".
+- **Citation**: Full citation string (e.g., "16 CCR §2540.1", "26 TAC §550.305(c)"). Must be verifiable.
+- **Training Topic / Competency Item**: Exact statutory language. One record per distinct topic.
+- **Purpose**: One of: "Initial" | "Renewal" | "Ongoing" | null.
+- **Approval Required**: "Yes" | "No" | null.
+- **Hours Required**: Numeric (e.g., 30, 0) or null.
+- **Frequency**: One of: "Once" | "Annual" | "Biennial" | exact regulatory language for non-standard intervals | null.
+- **Explicit Training**: "Yes" | "No" | null.
+- **Relationship**: "Parent" or "Child".
+- **Notes / Research Flags**: Internal annotations, verification needs, discrepancies. String or null.
+- **Source URL**: Direct link to primary source (eCFR, state legislative sites, CMS SOM preferred). String or null.
+
+---
+
+**HSTM AUDIENCE CATEGORIES (for HSTM Role mapping):**
+- **Clinical, Medication Dispensing**: Licensed or certified professionals legally authorized to prescribe, administer, dispense, or assist with medications in clinical settings.
+- **Clinical, Non-Medication Dispensing**: Licensed or certified professionals authorized for direct patient care (including diagnostics) but do not prescribe, administer, dispense, or assist with medications.
+- **Physicians & Practitioners**: Licensed autonomous providers with authority to diagnose, treat, and prescribe medications.
+- **Non-Clinical, Patient-Facing**: Staff who regularly interact with patients but do not provide licensed care or diagnostic services.
+- **Non-Clinical, Non-Patient Facing**: Administrative, technical, or operations staff with no direct patient interaction.
+- **Billers, Coders & HIM Staff**: Professionals managing coding, documentation, claims, and medical records.
+- **Executives, Board & Corporate Staff**: High-level governance and leadership roles including managerial staff like nurse administrators, clinical managers, and supervisory roles overseeing care coordination.
+- **Managerial Staff**: Operational leadership roles responsible for supervising personnel, managing departmental workflows, and ensuring compliance. Includes roles across acute, post-acute, long-term, and community-based care settings.
+
+---
+
+**HSTM CARE SETTINGS:**
+- **SNF** (Skilled Nursing Facility): Licensed institutional facility providing 24-hour skilled nursing and rehabilitative care.
+- **ALF** (Assisted Living Facility): State-regulated residential setting for housing, personal care, and ADL assistance without continuous skilled medical care.
+- **HOSP** (Hospice): Palliative care for terminally ill individuals (≤6 months prognosis), comfort-focused.
+- **HH** (Home Health): Skilled nursing and therapy services in the patient's home for homebound/recovering patients.
+
+---
+
+**OUTPUT FORMAT:**
+
+Output a single JSON object grouped by sheet key. Assign each record to one or more sheet keys based on the role and care setting it applies to.
+
+Sheet key categories:
+- Role sheets: "R LPN", "R CNA", "R RN" (and additional role keys as needed, e.g. "R RN", "R MD")
+- Care setting sheets: "CS ALF", "CS SNF", "CS HH", "CS HOSP"
+
+Each record must conform to the following RegIntel schema:
+
+\`\`\`json
+{
+  "Jurisdiction": "US" | "CA" | "TX" | ...,
+  "Jurisdiction Role": "Licensed Vocational Nurse" | null,
+  "Jurisdiction Setting": "Skilled Nursing Facility (fed)" | null,
+  "Oversight / Professional Agency": "CMS" | "CDPH" | ...,
+  "HSTM Role": ["Licensed Vocational Nurse"] | null,
+  "HSTM Setting": "SNF" | "ALF" | "HH" | "HOSP" | null,
+  "Tier": 1 | 2 | 3 | 4,
+  "Tier Priority": "CRITICAL" | "HIGH",
+  "Requirement Level": "Federal Floor" | "State Floor" | "Accreditation" | "Competency",
+  "Citation": "16 CCR §2540.1",
+  "Training Topic / Competency Item": "Full statutory text here",
+  "Purpose": "Renewal" | "Ongoing" | "Initial" | null,
+  "Approval Required": "Yes" | "No" | null,
+  "Hours Required": 30 | 0 | null,
+  "Frequency": "Biennial" | "Annual" | "Once" | null,
+  "Explicit Training": "Yes" | "No" | null,
+  "Relationship": "Parent" | "Child",
+  "Notes / Research Flags": "Internal notes, flags, discrepancies" | null,
+  "Source URL": "https://..." | null
+}
+\`\`\`
+
+Example grouped output structure:
+\`\`\`json
+{
+  "R LPN": [
+    { "Jurisdiction": "CA", "Jurisdiction Role": "Licensed Vocational Nurse", ... },
+    { "Jurisdiction": "TX", "Jurisdiction Role": "Licensed Vocational Nurse", ... }
+  ],
+  "CS SNF": [
+    { "Jurisdiction": "US", "Jurisdiction Setting": "Skilled Nursing Facility (fed)", ... }
+  ]
+}
+\`\`\`
+
+**Rules:**
+- For multi-topic regulations, produce one Child record per distinct training topic plus one Parent record for the umbrella requirement.
+- A record may appear under multiple sheet keys if it applies to multiple roles or settings.
+- Use null for unknown text fields. Use null (not "NR") for unknown numeric fields.
+- Flag all ambiguities, unverifiable citations, and conflicting data in "Notes / Research Flags".
+- Never abbreviate or paraphrase statutory language in "Jurisdiction Role" or "Training Topic / Competency Item".
+- Output ONLY the JSON object — no markdown fences, no explanation, no preamble.`;
+
+// ─── State ────────────────────────────────────────────────────────────────────
+let apiKey = localStorage.getItem('regintel_anthropic_key') || '';
+let parsedResult = null;
+let activeSheet = null;
+let rawVisible = false;
+let abortController = null;
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+(function init() {
+  if (apiKey) {
+    document.getElementById('apiKeyInput').value = apiKey;
+    setKeyStatus(true);
+  }
+  document.getElementById('pasteInput').addEventListener('input', onInputChange);
+})();
+
+// ─── API key ─────────────────────────────────────────────────────────────────
+function saveApiKey(val) {
+  apiKey = val.trim();
+  if (apiKey) {
+    localStorage.setItem('regintel_anthropic_key', apiKey);
+    setKeyStatus(true);
+  } else {
+    localStorage.removeItem('regintel_anthropic_key');
+    setKeyStatus(false);
+  }
+  onInputChange();
+}
+
+function setKeyStatus(ok) {
+  const el = document.getElementById('apiKeyStatus');
+  el.textContent = ok ? '✓ Parser enabled' : 'Paste key to enable';
+  el.style.color = ok ? '#16a34a' : '#9ca3af';
+}
+
+// ─── File handling ─────────────────────────────────────────────────────────
+function handleFileUpload(input) {
+  const file = input.files[0];
+  if (file) loadFile(file);
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('dropZone').classList.remove('dragover');
+  const file = e.dataTransfer?.files?.[0];
+  if (file) loadFile(file);
+}
+
+function loadFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('pasteInput').value = e.target.result;
+    document.getElementById('dropZone').classList.add('loaded');
+    document.getElementById('dropZoneLabel').textContent = `✓ ${file.name} loaded`;
+    onInputChange();
+  };
+  reader.readAsText(file);
+}
+
+function onInputChange() {
+  const hasInput = document.getElementById('pasteInput').value.trim().length > 0;
+  const hasKey = !!apiKey;
+  document.getElementById('parseBtn').disabled = !(hasInput && hasKey);
+  if (hasInput) {
+    document.getElementById('parseBarInfo').textContent =
+      'Input ready — click Parse to extract RegIntel metadata.';
+  } else {
+    document.getElementById('parseBarInfo').textContent =
+      'Load regulatory data above, then parse it with Claude.';
+  }
+}
+
+// ─── Parse ────────────────────────────────────────────────────────────────────
+async function startParse() {
+  const input = document.getElementById('pasteInput').value.trim();
+  if (!input || !apiKey) return;
+
+  const model = document.getElementById('modelSelect').value;
+
+  // Reset UI
+  parsedResult = null;
+  document.getElementById('outputSection').classList.add('visible');
+  document.getElementById('statusCard').style.display = 'block';
+  document.getElementById('resultsArea').style.display = 'none';
+  document.getElementById('errorCard').style.display = 'none';
+  document.getElementById('streamPreview').textContent = '';
+  document.getElementById('progressRow').style.display = 'flex';
+  document.getElementById('progressText').textContent = 'Calling Claude…';
+  document.getElementById('parseBtn').style.display = 'none';
+  document.getElementById('cancelBtn').style.display = 'inline-flex';
+
+  abortController = new AbortController();
+
+  let fullText = '';
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      signal: abortController.signal,
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 16000,
+        stream: true,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: `Parse the following regulatory data:\n\n${input}` }]
+      })
+    });
+
+    if (!resp.ok) {
+      let errMsg = `API error ${resp.status}`;
+      try { const d = await resp.json(); errMsg = d?.error?.message || errMsg; } catch {}
+      throw new Error(errMsg);
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n');
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') continue;
+        try {
+          const ev = JSON.parse(data);
+          if (ev.type === 'content_block_delta' && ev.delta?.type === 'text_delta') {
+            fullText += ev.delta.text;
+            const preview = document.getElementById('streamPreview');
+            preview.textContent = fullText.slice(-1200);
+            preview.scrollTop = preview.scrollHeight;
+            document.getElementById('progressText').textContent =
+              `Receiving… ${fullText.length.toLocaleString()} chars`;
+          }
+        } catch {}
+      }
+    }
+
+    // Parse JSON from response
+    const cleaned = fullText
+      .replace(/^```json\s*/i, '')
+      .replace(/^```\s*/i, '')
+      .replace(/```\s*$/i, '')
+      .trim();
+
+    parsedResult = JSON.parse(cleaned);
+    showResults();
+
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      document.getElementById('progressText').textContent = 'Cancelled.';
+      document.getElementById('progressRow').style.display = 'none';
+    } else {
+      document.getElementById('statusCard').style.display = 'none';
+      showError(err.message);
+    }
+  } finally {
+    document.getElementById('parseBtn').style.display = 'inline-flex';
+    document.getElementById('cancelBtn').style.display = 'none';
+    abortController = null;
+  }
+}
+
+function cancelParse() {
+  abortController?.abort();
+}
+
+// ─── Results ─────────────────────────────────────────────────────────────────
+function showResults() {
+  document.getElementById('progressRow').style.display = 'none';
+  document.getElementById('statusCard').style.display = 'none';
+
+  const sheets = Object.keys(parsedResult);
+  const total = sheets.reduce((n, k) => n + (parsedResult[k]?.length || 0), 0);
+
+  document.getElementById('resultTitle').textContent =
+    `${total} record${total !== 1 ? 's' : ''} across ${sheets.length} sheet${sheets.length !== 1 ? 's' : ''}`;
+
+  // Raw JSON
+  document.getElementById('rawJsonEl').textContent = JSON.stringify(parsedResult, null, 2);
+
+  // Sheet tabs
+  const tabsEl = document.getElementById('sheetTabs');
+  tabsEl.innerHTML = '';
+  sheets.forEach((key, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'sheet-tab' + (i === 0 ? ' active' : '');
+    btn.innerHTML = `${key}<span class="sheet-count">${parsedResult[key]?.length || 0}</span>`;
+    btn.onclick = () => switchSheet(key);
+    tabsEl.appendChild(btn);
+  });
+
+  activeSheet = sheets[0];
+  renderSheet(activeSheet);
+
+  document.getElementById('resultsArea').style.display = 'block';
+}
+
+function switchSheet(key) {
+  activeSheet = key;
+  document.querySelectorAll('.sheet-tab').forEach(b => {
+    b.classList.toggle('active', b.textContent.startsWith(key));
+  });
+  renderSheet(key);
+}
+
+function renderSheet(key) {
+  const records = parsedResult[key] || [];
+  const list = document.getElementById('recordsList');
+  list.innerHTML = '';
+
+  if (records.length === 0) {
+    list.innerHTML = '<div style="color:#6b7a99;font-size:13px;padding:8px 0">No records in this sheet.</div>';
+    return;
+  }
+
+  records.forEach((rec, i) => {
+    const card = document.createElement('div');
+    card.className = 'record-card';
+
+    const tier = rec['Tier'];
+    const tierCls = tier ? `tier${tier}` : '';
+    const prio = rec['Tier Priority'] || '';
+    const rel = rec['Relationship'] || '';
+    const juris = rec['Jurisdiction'] || '';
+    const topic = rec['Training Topic / Competency Item'] || '(no topic)';
+    const citation = rec['Citation'] || '';
+
+    card.innerHTML = `
+      <div class="record-header" onclick="toggleRecord(this)">
+        <div class="record-badges">
+          ${juris ? `<span class="badge juris">${juris}</span>` : ''}
+          ${tier ? `<span class="badge ${tierCls}">T${tier}</span>` : ''}
+          ${prio === 'CRITICAL' ? '<span class="badge crit">CRIT</span>' : prio === 'HIGH' ? '<span class="badge high">HIGH</span>' : ''}
+          ${rel ? `<span class="badge ${rel.toLowerCase()}">${rel}</span>` : ''}
+        </div>
+        <div style="flex:1;min-width:0">
+          <div class="record-topic">${esc(topic)}</div>
+          ${citation ? `<div class="record-citation">${esc(citation)}</div>` : ''}
+        </div>
+        <svg class="record-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+      <div class="record-detail">
+        ${renderDetail(rec)}
+      </div>`;
+
+    list.appendChild(card);
+  });
+}
+
+function toggleRecord(header) {
+  header.parentElement.classList.toggle('open');
+}
+
+function renderDetail(rec) {
+  const fields = [
+    ['Jurisdiction', false],
+    ['Jurisdiction Role', false],
+    ['Jurisdiction Setting', false],
+    ['Oversight / Professional Agency', false],
+    ['HSTM Role', false],
+    ['HSTM Setting', false],
+    ['Tier', false],
+    ['Tier Priority', false],
+    ['Requirement Level', false],
+    ['Citation', false],
+    ['Purpose', false],
+    ['Approval Required', false],
+    ['Hours Required', false],
+    ['Frequency', false],
+    ['Explicit Training', false],
+    ['Relationship', false],
+    ['Training Topic / Competency Item', true],
+    ['Notes / Research Flags', true],
+    ['Source URL', true],
+  ];
+
+  return `<div class="detail-grid">${fields.map(([f, full]) => {
+    let val = rec[f];
+    const isNull = val == null;
+    let display = '';
+    if (Array.isArray(val)) display = val.join(', ');
+    else if (val != null) display = String(val);
+
+    const mono = f === 'Citation' || f === 'Source URL';
+    const isFlag = f === 'Notes / Research Flags' && val;
+    return `<div class="detail-field${full ? ' full' : ''}">
+      <div class="detail-label">${esc(f)}</div>
+      <div class="detail-val${isNull ? ' null' : ''}${mono ? ' mono' : ''}${isFlag ? ' flag' : ''}">
+        ${isNull ? 'null' : f === 'Source URL' && val ? `<a href="${esc(val)}" target="_blank" style="color:#2463eb">${esc(val)}</a>` : esc(display)}
+      </div>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+// ─── Raw JSON toggle ─────────────────────────────────────────────────────────
+function toggleRawJson() {
+  rawVisible = !rawVisible;
+  document.getElementById('rawJsonWrap').style.display = rawVisible ? 'block' : 'none';
+  document.getElementById('rawToggleLabel').textContent = rawVisible ? 'Hide raw JSON' : 'Show raw JSON';
+}
+
+function copyRawJson() {
+  navigator.clipboard.writeText(JSON.stringify(parsedResult, null, 2));
+  showToast('Copied to clipboard');
+}
+
+// ─── Download ─────────────────────────────────────────────────────────────────
+function downloadJson() {
+  if (!parsedResult) return;
+  const date = new Date().toISOString().slice(0, 10);
+  const blob = new Blob([JSON.stringify(parsedResult, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `regintel-parsed-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function showError(msg) {
+  const el = document.getElementById('errorCard');
+  el.textContent = `Parse error: ${msg}`;
+  el.style.display = 'block';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function esc(str) {
+  return String(str ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+</body>
+</html>
