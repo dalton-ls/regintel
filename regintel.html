@@ -224,36 +224,6 @@
     .role-select-option:hover { background: #f5f7fa; }
     .role-select-option.selected { background: #eef3fb; color: #2463eb; font-weight: 600; }
 
-    .search-wrapper { margin-left: auto; position: relative; flex-shrink: 0; }
-
-    .search-icon {
-      position: absolute;
-      left: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #a0aec0;
-      pointer-events: none;
-    }
-
-    .search-input {
-      height: 32px;
-      padding: 0 12px 0 30px;
-      border: 1px solid #dde1ea;
-      border-radius: 8px;
-      font-size: 13px;
-      color: #1a2332;
-      background: #fff;
-      font-family: inherit;
-      outline: none;
-      width: 200px;
-      transition: border-color 0.15s, box-shadow 0.15s;
-    }
-    .search-input::placeholder { color: #a0aec0; }
-    .search-input:focus {
-      border-color: #2463eb;
-      box-shadow: 0 0 0 3px rgba(36,99,235,0.08);
-    }
-
     /* ── Main content ── */
     .main-content { padding: 24px; flex: 1; }
 
@@ -635,8 +605,7 @@
     /* ── Responsive ── */
     @media (max-width: 600px) {
       .header-subtitle { display: none; }
-      .search-input { width: 140px; }
-      .detail-row { grid-template-columns: 100px 1fr; }
+.detail-row { grid-template-columns: 100px 1fr; }
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -10543,8 +10512,7 @@
   // ─── UI state ───
   let sidebarOpen   = true;
   let activeSection = 'roles';
-  let searchTimer   = null;
-  let selectedRole        = null;
+let selectedRole        = null;
   let selectedCareSetting = null;
   let selectedWFRole      = null;
   let selectedWFSetting   = null;
@@ -10601,8 +10569,7 @@
 
   const filterState = {
     jurisdictions: new Set(),
-    tierReasons:   new Set(),
-    search: ''
+    tierReasons:   new Set()
   };
 
   const openJurisdictions = new Set();
@@ -10622,12 +10589,9 @@
 
   // ─── Filter & group ───
   function filterData() {
-    const q = filterState.search.toLowerCase().trim();
     return DATA.filter(r => {
       if (!filterState.jurisdictions.has(r.state))     return false;
       if (!filterState.tierReasons.has(r.tier_reason)) return false;
-      if (q && !r.training_topic.toLowerCase().includes(q) &&
-               !(r.tier_citation||'').toLowerCase().includes(q)) return false;
       return true;
     });
   }
@@ -10839,10 +10803,6 @@
   ${settingDD}
   ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
   ${renderDropdown('tierReasons', 'Requirement', ALL_TIER_REASONS, filterState.tierReasons)}
-  <div class="search-wrapper">
-    <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" class="search-input" id="searchInput" placeholder="Search topics or citations…" value="${esc(filterState.search)}">
-  </div>
   ${exportBtn}
 </div>`;
   }
@@ -10859,10 +10819,6 @@
   ${roleDD}
   ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
   ${renderDropdown('tierReasons', 'Requirement', ALL_TIER_REASONS, filterState.tierReasons)}
-  <div class="search-wrapper">
-    <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input type="text" class="search-input" id="searchInput" placeholder="Search topics or citations…" value="${esc(filterState.search)}">
-  </div>
   ${exportBtn}
 </div>`;
   }
@@ -10990,9 +10946,6 @@
         if (r.hstm_setting !== selectedCareSetting) return false;
         if (!filterState.jurisdictions.has(r.state))     return false;
         if (!filterState.tierReasons.has(r.tier_reason)) return false;
-        const q = filterState.search.toLowerCase().trim();
-        if (q && !r.training_topic.toLowerCase().includes(q) &&
-                 !(r.tier_citation||'').toLowerCase().includes(q)) return false;
         return true;
       });
       const groups = groupByHstmSetting(careFiltered);
@@ -11001,7 +10954,7 @@
         : `<div class="empty-state">
              <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
              <p class="empty-state-title">No results</p>
-             <p class="empty-state-text">Try adjusting your filters or search query.</p>
+             <p class="empty-state-text">Try adjusting your filters.</p>
            </div>`;
       panel.innerHTML = renderCareFilterBar() + `<div class="main-content">${body}</div>`;
       updateDrawer();
@@ -11137,13 +11090,6 @@
       selectedCardKey = selectedCardKey === key ? null : key;
       render();
       return;
-    }
-  });
-
-  document.getElementById('contentPanel').addEventListener('input', e => {
-    if (e.target.id === 'searchInput') {
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => { filterState.search = e.target.value; render(); }, 200);
     }
   });
 
@@ -11291,8 +11237,6 @@
         if (selectedCareSetting && r.hstm_setting !== selectedCareSetting) return false;
         if (!filterState.jurisdictions.has(r.state)) return false;
         if (!filterState.tierReasons.has(r.tier_reason)) return false;
-        const q = filterState.search.toLowerCase().trim();
-        if (q && !r.training_topic.toLowerCase().includes(q) && !(r.tier_citation||'').toLowerCase().includes(q)) return false;
         return true;
       });
       filename = `regintel-care-settings-${(selectedCareSetting || 'all').replace(/\s+/g, '-').toLowerCase()}`;

@@ -1,14 +1,3 @@
-const searchInput = document.querySelector('.search-input');
-const rows = document.querySelectorAll('.data-table tbody tr');
-
-searchInput?.addEventListener('input', (e) => {
-  const query = e.target.value.toLowerCase();
-  rows.forEach((row) => {
-    const text = row.textContent.toLowerCase();
-    row.style.display = text.includes(query) ? '' : 'none';
-  });
-});
-
 document.querySelector('.btn-primary')?.addEventListener('click', () => {
   alert('Add Watcher — coming soon');
 });
