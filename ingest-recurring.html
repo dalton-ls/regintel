@@ -115,7 +115,7 @@
 
   <div class="page-wrap">
     <h1 class="page-title">Monthly OpenLaws sync</h1>
-    <p class="page-desc">Load this month's OpenLaws dump, the previous month's dump, and your triage ledger. The tool diffs them and shows only new or changed sections — unchanged sections reuse your previous decisions automatically.</p>
+    <p class="page-desc">Load this month's OpenLaws export, the previous month's export, and your triage ledger. The tool diffs them and shows only new or changed sections — unchanged sections reuse your previous decisions automatically.</p>
 
     <div class="mode-tabs" id="modeTabs">
       <button class="mode-tab active" onclick="switchMode('setup')">1. Setup</button>
@@ -137,21 +137,21 @@
         </div>
 
         <div class="col-card">
-          <div class="col-title">Previous OpenLaws dump</div>
+          <div class="col-title">Previous OpenLaws export</div>
           <div class="col-desc">Last month's data. Used to detect what's new or changed this month.</div>
           <label class="file-label" id="prevLabel" for="prevFile">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Load previous dump
+            Load previous export
           </label>
           <input type="file" id="prevFile" accept=".json" onchange="loadFile('prev', this)">
         </div>
 
         <div class="col-card">
-          <div class="col-title">Current OpenLaws dump</div>
+          <div class="col-title">Current OpenLaws export</div>
           <div class="col-desc">This month's data. New and changed sections will be queued for triage.</div>
           <label class="file-label" id="currLabel" for="currFile">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            Load current dump
+            Load current export
           </label>
           <input type="file" id="currFile" accept=".json" onchange="loadFile('curr', this)">
         </div>
@@ -160,8 +160,8 @@
           <div class="col-title">Or paste JSON</div>
           <div class="col-desc">Paste raw JSON from OpenLaws API or the triage ledger directly.</div>
           <select id="pasteTarget" style="width:100%;height:32px;padding:0 8px;border:1px solid #dde1ea;border-radius:6px;margin-bottom:8px;font-family:inherit;font-size:12px">
-            <option value="curr">Current OpenLaws dump</option>
-            <option value="prev">Previous OpenLaws dump</option>
+            <option value="curr">Current OpenLaws export</option>
+            <option value="prev">Previous OpenLaws export</option>
             <option value="ledger">Triage ledger</option>
           </select>
           <textarea id="pasteArea" placeholder="Paste JSON here..." style="width:100%;height:110px;padding:8px;border:1px solid #dde1ea;border-radius:6px;font-family:monospace;font-size:11px;resize:vertical;outline:none"></textarea>
@@ -218,7 +218,7 @@
       </div>
 
       <div style="background:#fef9e7;border:1px solid #fde68a;border-radius:8px;padding:12px 16px;margin-top:8px;font-size:12px;color:#854d0e;line-height:1.6">
-        <strong>Next steps:</strong> Commit the triage ledger to <code>data/triage-ledger-YYYY-MM.json</code>. Import the RegIntel JSON via the Admin panel on <a href="regintel.html" style="color:#854d0e">regintel.html</a>. Archive this month's OpenLaws dump as <code>data/openlaws-YYYY-MM.json</code>.
+        <strong>Next steps:</strong> Commit the triage ledger to <code>data/triage-ledger-YYYY-MM.json</code>. Import the RegIntel JSON via the Admin panel on <a href="regintel.html" style="color:#854d0e">regintel.html</a>. Archive this month's OpenLaws export as <code>data/openlaws-YYYY-MM.json</code>.
       </div>
     </div>
   </div>
@@ -301,7 +301,7 @@
   }
 
   function computeDiff() {
-    if (!files.curr) { showToast('Load current OpenLaws dump first'); return; }
+    if (!files.curr) { showToast('Load current OpenLaws export first'); return; }
     const current  = Array.isArray(files.curr) ? files.curr : [files.curr];
     const previous = files.prev ? (Array.isArray(files.prev) ? files.prev : [files.prev]) : [];
     const ledger   = (files.ledger && !Array.isArray(files.ledger)) ? files.ledger : {};
