@@ -115,7 +115,17 @@
 
   <div class="page-wrap">
     <h1 class="page-title">Monthly OpenLaws sync</h1>
-    <p class="page-desc">Load this month's OpenLaws export, the previous month's export, and your triage ledger. The tool diffs them and shows only new or changed sections — unchanged sections reuse your previous decisions automatically.</p>
+    <p class="page-desc" id="pageDesc">Load this month's OpenLaws export, the previous month's export, and your triage ledger. The tool diffs them and shows only new or changed sections — unchanged sections reuse your previous decisions automatically.</p>
+
+    <div style="display:flex;align-items:center;gap:20px;margin-bottom:20px;padding:10px 14px;background:#fff;border:1px solid #e8ecf0;border-radius:8px;font-size:13px;">
+      <span style="font-weight:600;color:#6b7a99;font-size:11px;text-transform:uppercase;letter-spacing:0.05em">Run type</span>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600">
+        <input type="radio" name="runType" value="initial" onchange="setRunType('initial')"> First run <span style="font-weight:400;color:#6b7a99">— no previous data</span>
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:600">
+        <input type="radio" name="runType" value="monthly" checked onchange="setRunType('monthly')"> Monthly sync <span style="font-weight:400;color:#6b7a99">— diff against last month</span>
+      </label>
+    </div>
 
     <div class="mode-tabs" id="modeTabs">
       <button class="mode-tab active" onclick="switchMode('setup')">1. Setup</button>
@@ -126,9 +136,9 @@
     <!-- SETUP MODE -->
     <div id="modeSetup" class="mode-content">
       <div class="two-col">
-        <div class="col-card">
-          <div class="col-title">Triage ledger</div>
-          <div class="col-desc">Your decisions from previous months. Unchanged sections will reuse decisions automatically.</div>
+        <div class="col-card" id="cardLedger">
+          <div class="col-title">Triage ledger <span id="ledgerOptLabel" style="font-size:11px;font-weight:400;color:#9aaac4">(optional — new ledger created if not loaded)</span></div>
+          <div class="col-desc" id="ledgerDesc">Your decisions from previous months. Unchanged sections will reuse decisions automatically.</div>
           <label class="file-label" id="ledgerLabel" for="ledgerFile">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Load ledger.json
@@ -136,9 +146,9 @@
           <input type="file" id="ledgerFile" accept=".json" onchange="loadFile('ledger', this)">
         </div>
 
-        <div class="col-card">
-          <div class="col-title">Previous OpenLaws export</div>
-          <div class="col-desc">Last month's data. Used to detect what's new or changed this month.</div>
+        <div class="col-card" id="cardPrev">
+          <div class="col-title">Previous OpenLaws export <span id="prevOptLabel" style="font-size:11px;font-weight:400;color:#9aaac4"></span></div>
+          <div class="col-desc" id="prevDesc">Last month's data. Used to detect what's new or changed this month.</div>
           <label class="file-label" id="prevLabel" for="prevFile">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Load previous export
@@ -147,7 +157,7 @@
         </div>
 
         <div class="col-card">
-          <div class="col-title">Current OpenLaws export</div>
+          <div class="col-title">Current OpenLaws export <span style="font-size:11px;font-weight:600;color:#16a34a">required</span></div>
           <div class="col-desc">This month's data. New and changed sections will be queued for triage.</div>
           <label class="file-label" id="currLabel" for="currFile">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -224,7 +234,7 @@
   </div>
 
   <div class="bottom-bar">
-    <div style="font-size:12px;color:#6b7a99">Files loaded: <strong id="filesLoaded">0</strong> / 3 &nbsp;·&nbsp; Queue: <strong id="queueSize">0</strong></div>
+    <div style="font-size:12px;color:#6b7a99">Files loaded: <strong id="filesLoaded">0</strong> <span id="filesRequired">/ 1 required</span> &nbsp;·&nbsp; Queue: <strong id="queueSize">0</strong></div>
     <button class="btn" onclick="switchMode('setup')">← Back to setup</button>
   </div>
 
@@ -239,6 +249,34 @@
   let queue = [];
   let currentFilter = 'all';
   let activeMode = 'setup';
+  let runType = 'monthly';
+
+  function setRunType(type) {
+    runType = type;
+    const isInitial = type === 'initial';
+    const cardPrev = document.getElementById('cardPrev');
+    const prevOptLabel = document.getElementById('prevOptLabel');
+    const pageDesc = document.getElementById('pageDesc');
+    const filesRequired = document.getElementById('filesRequired');
+
+    if (isInitial) {
+      cardPrev.style.opacity = '0.45';
+      cardPrev.style.pointerEvents = 'none';
+      prevOptLabel.textContent = '(not needed for first run)';
+      pageDesc.textContent = 'First run mode: load this month\'s OpenLaws export. All sections will be treated as new and queued for triage. A fresh triage ledger will be created on export.';
+      filesRequired.textContent = '/ 1 required';
+      files.prev = null;
+      document.getElementById('prevLabel').classList.remove('loaded');
+      document.getElementById('prevLabel').innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Load previous export';
+    } else {
+      cardPrev.style.opacity = '';
+      cardPrev.style.pointerEvents = '';
+      prevOptLabel.textContent = '';
+      pageDesc.textContent = 'Load this month\'s OpenLaws export, the previous month\'s export, and your triage ledger. The tool diffs them and shows only new or changed sections — unchanged sections reuse your previous decisions automatically.';
+      filesRequired.textContent = '/ 3';
+    }
+    updateFilesCount();
+  }
 
   // ─── Toast ───
   function showToast(msg) {
