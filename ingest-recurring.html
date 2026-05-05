@@ -680,22 +680,20 @@
   }
 
   async function fetchAiSuggestion(item, key) {
-    // Build content snippet from raw section fields (capped to keep prompt compact)
-    const contentFields = ['text', 'content', 'full_text', 'description', 'body', 'summary'];
-    const rawCtx = contentFields
-      .map(f => item.raw?.[f])
-      .filter(v => v && typeof v === 'string')
-      .map(v => v.slice(0, 600))
-      .join('\n\n')
-      .slice(0, 1200);
+    // Send ALL scalar string fields from raw — field names vary across OpenLaws exports
+    const rawCtx = Object.entries(item.raw || {})
+      .filter(([, v]) => typeof v === 'string' && v.length > 0)
+      .map(([k, v]) => `${k}: ${v.slice(0, 800)}`)
+      .join('\n')
+      .slice(0, 2500);
 
     const systemPrompt = `You are a regulatory metadata specialist for US healthcare training compliance.
 Given an OpenLaws regulatory section, respond ONLY with valid JSON (no markdown) with exactly these keys:
 {"topic":string,"hstmRole":string,"hstmSetting":string,"agency":string,"citation":string,"hours":number,"frequency":string,"confidence":{"hstmRole":"high"|"medium"|"low","hstmSetting":"high"|"medium"|"low","frequency":"high"|"medium"|"low"}}
-Allowed hstmRole values (use exact string or ""): ${HSTM_ROLES.join(', ')}
-Allowed hstmSetting values (use exact string or "" for role-level only): ${HSTM_SETTINGS.join(', ')}
-Allowed frequency values (use exact string or "" if unspecified): ${FREQUENCIES.join(', ')}
-Default agency to "CMS" for federal 42 CFR sections. Format citation like "42 CFR §483.35(b)".`;
+hstmRole MUST be one of these exact strings (pick the closest match; use "" only if truly none apply): ${HSTM_ROLES.join(' | ')}
+hstmSetting MUST be one of these exact strings (or "" for role-level only): ${HSTM_SETTINGS.join(' | ')}
+frequency MUST be one of these exact strings (or "" if unspecified): ${FREQUENCIES.join(' | ')}
+Default agency to "CMS" for federal 42 CFR sections. Extract hours from the text if stated. Format citation like "42 CFR §483.35(b)".`;
 
     const userMsg = `Path: ${item.path}\nName: ${item.name}\nJurisdiction: ${item.jurisdiction}${rawCtx ? '\nContent:\n' + rawCtx : ''}`;
 
@@ -744,7 +742,12 @@ Default agency to "CMS" for federal 42 CFR sections. Format citation like "42 CF
       if (!wrapper || !el) return;
       if (type === 'select') {
         const opts = Array.from(el.options).map(o => o.value);
-        if (!opts.includes(val)) return;
+        if (!opts.includes(val)) {
+          // case-insensitive fallback
+          const match = opts.find(o => o.toLowerCase() === val.toLowerCase());
+          if (!match) return;
+          val = match;
+        }
       }
       el.value = val;
       wrapper.classList.remove('ai-filled', 'ai-low');
