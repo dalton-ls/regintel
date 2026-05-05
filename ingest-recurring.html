@@ -102,6 +102,24 @@
       .two-col { grid-template-columns: 1fr; }
       .enrich-grid { grid-template-columns: 1fr; }
     }
+
+    /* ─── AI auto-fill ─── */
+    .enrich-field.ai-filled .enrich-input,
+    .enrich-field.ai-filled .enrich-select,
+    .enrich-field.ai-filled .enrich-textarea { border-color: #a78bfa; background: #faf5ff; }
+    .enrich-field.ai-filled .enrich-label::after { content: ' ✦'; color: #7c3aed; font-size: 9px; }
+    .enrich-field.ai-low .enrich-input,
+    .enrich-field.ai-low .enrich-select,
+    .enrich-field.ai-low .enrich-textarea { border-color: #fcd34d; background: #fffbeb; }
+    .enrich-field.ai-low .enrich-label::after { content: ' ✦'; color: #d97706; font-size: 9px; }
+    .ai-loading-row { display: flex; align-items: center; gap: 8px; padding: 14px 0 8px; font-size: 12px; color: #6b7a99; grid-column: 1 / -1; }
+    .ai-loading-row svg { animation: ai-spin 1s linear infinite; flex-shrink: 0; }
+    @keyframes ai-spin { to { transform: rotate(360deg); } }
+
+    .apikey-card { background: #fff; border: 1px solid #e8ecf0; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .apikey-input { flex: 1; min-width: 200px; height: 32px; padding: 0 10px; border: 1px solid #dde1ea; border-radius: 6px; font-size: 12px; font-family: monospace; outline: none; color: #1a2332; }
+    .apikey-input:focus { border-color: #7c3aed; box-shadow: 0 0 0 2px rgba(124,58,237,0.1); }
+    .apikey-status { font-size: 11px; color: #9ca3af; white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -167,6 +185,14 @@
           <input type="file" id="currFile" accept=".json,.jsonl" onchange="loadFile('curr', this)">
         </div>
 
+      </div>
+
+      <!-- AI auto-fill key -->
+      <div class="apikey-card">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        <span style="font-size:11px;font-weight:700;color:#6b7a99;text-transform:uppercase;letter-spacing:0.05em;white-space:nowrap">AI Auto-fill</span>
+        <input type="password" class="apikey-input" id="apiKeyInput" placeholder="sk-ant-… Anthropic API key (stored locally, never sent elsewhere)" autocomplete="off" oninput="saveApiKey(this.value)">
+        <span class="apikey-status" id="apiKeyStatus">Paste key to enable</span>
       </div>
 
       <div style="text-align:center;margin-top:4px">
@@ -240,6 +266,30 @@
   let currentFilter = 'all';
   let activeMode = 'setup';
   let runType = 'monthly';
+  let anthropicApiKey = localStorage.getItem('regintel_anthropic_key') || '';
+
+  // ─── API Key Management ───
+  function getApiKey() { return anthropicApiKey; }
+
+  function saveApiKey(val) {
+    anthropicApiKey = val.trim();
+    if (anthropicApiKey) {
+      localStorage.setItem('regintel_anthropic_key', anthropicApiKey);
+      document.getElementById('apiKeyStatus').textContent = '✓ AI auto-fill enabled';
+      document.getElementById('apiKeyStatus').style.color = '#16a34a';
+    } else {
+      localStorage.removeItem('regintel_anthropic_key');
+      document.getElementById('apiKeyStatus').textContent = 'Paste key to enable';
+      document.getElementById('apiKeyStatus').style.color = '#9ca3af';
+    }
+  }
+
+  function initApiKeyUI() {
+    if (!anthropicApiKey) return;
+    const el = document.getElementById('apiKeyStatus');
+    el.textContent = '✓ AI auto-fill enabled';
+    el.style.color = '#16a34a';
+  }
 
   function setRunType(type) {
     runType = type;
@@ -439,6 +489,7 @@
         jurisdiction: juris,
         hash,
         status,
+        raw:          child,
         accepted:     false,
         skipped:      false,
         decision: ledgerDec ? { ...ledgerDec } : {
@@ -491,37 +542,37 @@
       const panelHtml = isOpen ? `
         <div class="enrich-panel open" id="${safeId}">
           <div class="enrich-grid">
-            <div class="enrich-field full">
+            <div class="enrich-field full" id="${safeId}_field_topic">
               <label class="enrich-label">Training topic</label>
               <textarea class="enrich-textarea" id="${safeId}_topic">${esc(dec.topic || item.name)}</textarea>
             </div>
-            <div class="enrich-field">
+            <div class="enrich-field" id="${safeId}_field_role">
               <label class="enrich-label">HSTM Role *</label>
               <select class="enrich-select" id="${safeId}_role">
                 <option value="">Select role</option>
                 ${HSTM_ROLES.map(r => `<option value="${esc(r)}"${dec.hstmRole === r ? ' selected' : ''}>${esc(r)}</option>`).join('')}
               </select>
             </div>
-            <div class="enrich-field">
+            <div class="enrich-field" id="${safeId}_field_setting">
               <label class="enrich-label">HSTM Setting</label>
               <select class="enrich-select" id="${safeId}_setting">
                 <option value="">Role-level only</option>
                 ${HSTM_SETTINGS.map(s => `<option value="${esc(s)}"${dec.hstmSetting === s ? ' selected' : ''}>${esc(s)}</option>`).join('')}
               </select>
             </div>
-            <div class="enrich-field">
+            <div class="enrich-field" id="${safeId}_field_agency">
               <label class="enrich-label">Agency</label>
               <input class="enrich-input" id="${safeId}_agency" value="${esc(dec.agency || 'CMS')}" placeholder="e.g. CMS">
             </div>
-            <div class="enrich-field">
+            <div class="enrich-field" id="${safeId}_field_citation">
               <label class="enrich-label">Citation</label>
               <input class="enrich-input" id="${safeId}_citation" value="${esc(dec.citation || item.path.replace(/_/g,' '))}" placeholder="e.g. 42 CFR §483.35">
             </div>
-            <div class="enrich-field">
+            <div class="enrich-field" id="${safeId}_field_hours">
               <label class="enrich-label">Hours required</label>
               <input class="enrich-input" id="${safeId}_hours" type="number" min="0" step="0.5" value="${esc(dec.hours || '0')}">
             </div>
-            <div class="enrich-field">
+            <div class="enrich-field" id="${safeId}_field_freq">
               <label class="enrich-label">Frequency</label>
               <select class="enrich-select" id="${safeId}_freq">
                 <option value="">Select</option>
@@ -588,6 +639,120 @@
     if (!item) return;
     item._panelOpen = !item._panelOpen;
     renderQueue();
+    if (item._panelOpen && getApiKey() &&
+        (item.status === 'new' || item.status === 'changed' || item.status === 'pending') &&
+        !item._aiFilled) {
+      item._aiFilled = true;
+      const safeId = 'p_' + path.replace(/[^a-zA-Z0-9]/g, '_');
+      autoFillItem(item, safeId);
+    }
+  }
+
+  // ─── AI Auto-fill ───
+  async function autoFillItem(item, safeId) {
+    const key = getApiKey();
+    if (!key) return;
+    const panel = document.getElementById(safeId);
+    if (!panel) return;
+
+    // Show loading indicator inside the grid
+    const grid = panel.querySelector('.enrich-grid');
+    const actions = panel.querySelector('.enrich-actions');
+    const loadEl = document.createElement('div');
+    loadEl.className = 'ai-loading-row';
+    loadEl.id = safeId + '_aiload';
+    loadEl.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg> Claude is reading this section…`;
+    grid.prepend(loadEl);
+    grid.style.opacity = '0.45';
+    if (actions) { actions.style.opacity = '0.4'; actions.style.pointerEvents = 'none'; }
+
+    try {
+      const suggestion = await fetchAiSuggestion(item, key);
+      applyAiSuggestion(safeId, suggestion);
+    } catch (err) {
+      showToast('AI auto-fill failed — fill manually');
+    } finally {
+      document.getElementById(safeId + '_aiload')?.remove();
+      grid.style.opacity = '';
+      if (actions) { actions.style.opacity = ''; actions.style.pointerEvents = ''; }
+    }
+  }
+
+  async function fetchAiSuggestion(item, key) {
+    // Build content snippet from raw section fields (capped to keep prompt compact)
+    const contentFields = ['text', 'content', 'full_text', 'description', 'body', 'summary'];
+    const rawCtx = contentFields
+      .map(f => item.raw?.[f])
+      .filter(v => v && typeof v === 'string')
+      .map(v => v.slice(0, 600))
+      .join('\n\n')
+      .slice(0, 1200);
+
+    const systemPrompt = `You are a regulatory metadata specialist for US healthcare training compliance.
+Given an OpenLaws regulatory section, respond ONLY with valid JSON (no markdown) with exactly these keys:
+{"topic":string,"hstmRole":string,"hstmSetting":string,"agency":string,"citation":string,"hours":number,"frequency":string,"confidence":{"hstmRole":"high"|"medium"|"low","hstmSetting":"high"|"medium"|"low","frequency":"high"|"medium"|"low"}}
+Allowed hstmRole values (use exact string or ""): ${HSTM_ROLES.join(', ')}
+Allowed hstmSetting values (use exact string or "" for role-level only): ${HSTM_SETTINGS.join(', ')}
+Allowed frequency values (use exact string or "" if unspecified): ${FREQUENCIES.join(', ')}
+Default agency to "CMS" for federal 42 CFR sections. Format citation like "42 CFR §483.35(b)".`;
+
+    const userMsg = `Path: ${item.path}\nName: ${item.name}\nJurisdiction: ${item.jurisdiction}${rawCtx ? '\nContent:\n' + rawCtx : ''}`;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-allow-browser': 'true',
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 512,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMsg }]
+      })
+    });
+
+    if (!resp.ok) throw new Error(`API ${resp.status}`);
+    const data = await resp.json();
+    const text = data.content?.[0]?.text || '';
+    const cleaned = text.replace(/^```json\s*/i, '').replace(/```\s*$/i, '').trim();
+    return JSON.parse(cleaned);
+  }
+
+  function applyAiSuggestion(safeId, s) {
+    if (!s) return;
+    const conf = s.confidence || {};
+    const fields = [
+      { fid: '_field_topic',    eid: '_topic',    val: s.topic,        type: 'textarea', c: 'high' },
+      { fid: '_field_role',     eid: '_role',     val: s.hstmRole,     type: 'select',   c: conf.hstmRole    || 'high' },
+      { fid: '_field_setting',  eid: '_setting',  val: s.hstmSetting,  type: 'select',   c: conf.hstmSetting || 'medium' },
+      { fid: '_field_agency',   eid: '_agency',   val: s.agency,       type: 'input',    c: 'high' },
+      { fid: '_field_citation', eid: '_citation', val: s.citation,     type: 'input',    c: 'high' },
+      { fid: '_field_hours',    eid: '_hours',    val: String(s.hours ?? 0), type: 'input', c: 'high' },
+      { fid: '_field_freq',     eid: '_freq',     val: s.frequency,    type: 'select',   c: conf.frequency   || 'medium' },
+    ];
+    fields.forEach(({ fid, eid, val, type, c }) => {
+      if (val == null || val === '') return;
+      const wrapper = document.getElementById(safeId + fid);
+      const el = document.getElementById(safeId + eid);
+      if (!wrapper || !el) return;
+      if (type === 'select') {
+        const opts = Array.from(el.options).map(o => o.value);
+        if (!opts.includes(val)) return;
+      }
+      el.value = val;
+      wrapper.classList.remove('ai-filled', 'ai-low');
+      wrapper.classList.add(c === 'low' ? 'ai-low' : 'ai-filled');
+      const clearAi = () => {
+        wrapper.classList.remove('ai-filled', 'ai-low');
+        el.removeEventListener('input', clearAi);
+        el.removeEventListener('change', clearAi);
+      };
+      el.addEventListener('input', clearAi);
+      el.addEventListener('change', clearAi);
+    });
   }
 
   // ─── Accept / Skip ───
@@ -735,6 +900,7 @@
   wireCardDrop('cardCurr',   'currFile',   'curr');
   wireCardDrop('cardPrev',   'prevFile',   'prev');
   wireCardDrop('cardLedger', 'ledgerFile', 'ledger');
+  initApiKeyUI();
   </script>
 </body>
 </html>
