@@ -676,10 +676,6 @@
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         Export JSON
       </button>
-      <button class="admin-btn primary" onclick="exportDataSchema()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-        Schema
-      </button>
     </div>
   </div>
 
@@ -736,23 +732,25 @@
           </span>
           <span class="nav-label">Workforce Readiness</span>
         </a>
-        <div style="border-top:1px solid #e8ecf0;margin:12px 0;"></div>
-        <a href="ingest-recurring.html" class="nav-item" style="color:#6b7a99;">
-          <span class="nav-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
-            </svg>
-          </span>
-          <span class="nav-label">Monthly Ingest</span>
-        </a>
-        <a href="ingest.html" class="nav-item" style="color:#6b7a99;">
-          <span class="nav-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-          </span>
-          <span class="nav-label">WR Ingest</span>
-        </a>
+        <div id="adminNav" style="display:none">
+          <div style="border-top:1px solid #e8ecf0;margin:12px 0;"></div>
+          <a href="ingest-recurring.html" class="nav-item" style="color:#6b7a99;">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+              </svg>
+            </span>
+            <span class="nav-label">Monthly Ingest</span>
+          </a>
+          <a href="ingest.html" class="nav-item" style="color:#6b7a99;">
+            <span class="nav-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+            </span>
+            <span class="nav-label">WR Ingest</span>
+          </a>
+        </div>
       </nav>
     </aside>
 
@@ -11249,17 +11247,18 @@
       document.getElementById('adminToggle').classList.remove('active');
       document.getElementById('adminLabel').textContent = 'Admin';
       document.getElementById('adminBar').classList.remove('visible');
+      const an = document.getElementById('adminNav'); if (an) an.style.display = 'none';
       showToast('Admin mode deactivated');
       return;
     }
     const pass = prompt('Enter admin passphrase:');
     if (pass === null) return;
-    // Simple client-side passphrase — not real security, just access gating
     if (pass === 'regintel2025') {
       adminMode = true;
       document.getElementById('adminToggle').classList.add('active');
       document.getElementById('adminLabel').textContent = 'Active';
       document.getElementById('adminBar').classList.add('visible');
+      const an = document.getElementById('adminNav'); if (an) an.style.display = '';
       showToast('Admin mode activated');
     } else {
       showToast('Incorrect passphrase');
@@ -11355,53 +11354,6 @@
     showToast('Full dataset exported as JSON');
   }
 
-  // ─── Schema Export (Admin) ───
-  function exportDataSchema() {
-    if (!adminMode) return;
-    const schema = {
-      _description: 'RegIntel data schema — use this structure when creating new records via the Monthly Ingest or WR Ingest tools.',
-      _version: '1.0',
-      _updated: new Date().toISOString(),
-      record_template: {
-        'Jurisdiction': '(state code, e.g., CA, FL, TX, US)',
-        'Jurisdiction Role': '(state-specific title)',
-        'Jurisdiction Setting': '(null or state-specific setting name)',
-        'Oversight / Professional Agency': '(regulatory body name)',
-        'HSTM Role': ['(HealthStream role taxonomy value)'],
-        'HSTM Setting': '(null or HealthStream setting: Assisted Living Facility, Skilled Nursing Facility, Home Health, etc.)',
-        'Tier': '(1-4: 1=Federal Floor, 2=State Floor, 3=Accreditation, 4=Competency)',
-        'Tier Priority': '(CRITICAL or HIGH)',
-        'Requirement Level': '(Federal Floor | State Floor | Competency)',
-        'Citation': '(CFR, CCR, BPC, statute reference)',
-        'Training Topic / Competency Item': '(requirement description)',
-        'Purpose': '(Renewal | Ongoing | Initial)',
-        'Approval Required': '(Yes | No | null)',
-        'Hours Required': '(number or 0)',
-        'Frequency': '(Annual | Biennial | Once | Discretionary)',
-        'Explicit Training': '(Yes | No)',
-        'Relationship': '(Parent | Child)',
-        'Notes / Research Flags': '(free text or None)',
-        'Source URL': '(primary source link)'
-      },
-      sheet_key_convention: {
-        roles: 'R {ROLE_CODE} — e.g., R LPN, R CNA, R HHA',
-        care_settings: 'CS {SETTING_CODE} — e.g., CS ALF, CS SNF',
-        workforce: 'WR {ROLE} {SETTING} — e.g., WR LPN ALF'
-      },
-      valid_jurisdictions: ['US', 'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'],
-      valid_tiers: [1, 2, 3, 4],
-      valid_requirement_levels: ['Federal Floor', 'State Floor', 'Accreditation', 'Competency'],
-      valid_frequencies: ['Annual', 'Biennial', 'Once', 'Discretionary', 'Per Admission', 'Initial']
-    };
-    const blob = new Blob([JSON.stringify(schema, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'regintel-schema.json';
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('Schema exported');
-  }
 
   // ─── JSON Import (Admin) ───
   function showImportModal() {
