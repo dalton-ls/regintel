@@ -10520,6 +10520,8 @@
   let DATA = [];
   let CARE_DATA = [];
   let WR_DATA = [];
+  let ROLE_DATA = {};
+  let CS_DATA   = {};
 
   // ─── UI state ───
   let sidebarOpen   = true;
@@ -10530,11 +10532,7 @@ let selectedRole        = null;
   let selectedWFSetting   = null;
   let openDropdown  = null;
 
-  const WF_ROLE_MATCH = {
-    'lpn-lvn': ['Licensed Practical Nurse', 'Licensed Vocational Nurse'],
-    'cna':     ['Certified Nursing Assistant', 'Nurse Assistant'],
-    'hha':     ['Home Health Aide']
-  };
+  let WF_ROLE_MATCH = {};
 
   function buildWFDomains(role, setting) {
     const roleMatches = WF_ROLE_MATCH[role] || [];
@@ -10562,17 +10560,8 @@ let selectedRole        = null;
     return domains;
   }
 
-  const ROLES = [
-    { value: 'lpn-lvn', label: 'Licensed Vocational Nurse' },
-    { value: 'cna',     label: 'Certified Nursing Assistant' },
-    { value: 'hha',     label: 'Home Health Aide' }
-  ];
-
-  const CARE_SETTINGS_LIST = [
-    { value: 'Assisted Living Facility', label: 'Assisted Living Facility' },
-    { value: 'Skilled Nursing Facility', label: 'Skilled Nursing Facility' },
-    { value: 'Home Health',              label: 'Home Health' }
-  ];
+  let ROLES = [];
+  let CARE_SETTINGS_LIST = [];
 
   let ALL_JURISDICTIONS = ['CA','FL','US'];
   let ALL_TIER_REASONS  = ['Federal Floor','State Floor','Competency'];
@@ -10601,11 +10590,18 @@ let selectedRole        = null;
 
   // ─── Filter & group ───
   function filterData() {
-    return DATA.filter(r => {
+    const src = selectedRole ? (ROLE_DATA[selectedRole] || []) : DATA;
+    return src.filter(r => {
       if (!filterState.jurisdictions.has(r.state))     return false;
       if (!filterState.tierReasons.has(r.tier_reason)) return false;
       return true;
     });
+  }
+
+  function statesInOrder(map) {
+    const known   = STATE_ORDER.filter(s => map[s]);
+    const unknown = Object.keys(map).filter(s => !STATE_ORDER.includes(s)).sort();
+    return [...known, ...unknown];
   }
 
   function groupByHstmSetting(rows) {
@@ -10615,9 +10611,9 @@ let selectedRole        = null;
       if (!map[r.state][r.oversight_agency]) map[r.state][r.oversight_agency] = [];
       map[r.state][r.oversight_agency].push(r);
     });
-    return STATE_ORDER.filter(s => map[s]).map(s => ({
+    return statesInOrder(map).map(s => ({
       state:    s,
-      name:     STATE_NAMES[s],
+      name:     STATE_NAMES[s] || s,
       total:    rows.filter(r => r.state === s).length,
       agencies: Object.entries(map[s])
     }));
@@ -10630,9 +10626,9 @@ let selectedRole        = null;
       if (!map[r.state][r.oversight_agency]) map[r.state][r.oversight_agency] = [];
       map[r.state][r.oversight_agency].push(r);
     });
-    return STATE_ORDER.filter(s => map[s]).map(s => ({
+    return statesInOrder(map).map(s => ({
       state: s,
-      name:  STATE_NAMES[s],
+      name:  STATE_NAMES[s] || s,
       total: rows.filter(r => r.state === s).length,
       agencies: Object.entries(map[s])
     }));
@@ -10986,18 +10982,6 @@ let selectedRole        = null;
       return;
     }
 
-    if (selectedRole !== 'lpn-lvn') {
-      panel.innerHTML = renderFilterBar(true) + `<div class="main-content"><div class="empty-state">
-        <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-        </svg>
-        <p class="empty-state-title">Coming soon</p>
-        <p class="empty-state-text">No regulatory data loaded for this role yet.</p>
-      </div></div>`;
-      updateDrawer();
-      return;
-    }
-
     const filtered = filterData();
     const groups   = groupData(filtered);
     const body     = groups.length
@@ -11166,12 +11150,53 @@ let selectedRole        = null;
       source_url:          r['Source URL'],
       row_type:            r['Relationship'] || ''
     });
-    DATA      = (json['R LPN'] || []).map(normalizeRow);
-    CARE_DATA = [...(json['CS ALF'] || []), ...(json['CS SNF'] || [])].map(normalizeRow);
+    ROLE_DATA = {};
+    CS_DATA   = {};
     WR_DATA   = [];
     Object.keys(json).forEach(k => {
-      if (k.startsWith('WR ')) (json[k] || []).forEach(r => WR_DATA.push(normalizeRow(r)));
+      if (k.startsWith('R '))  ROLE_DATA[k] = (json[k] || []).map(normalizeRow);
+      else if (k.startsWith('CS ')) CS_DATA[k] = (json[k] || []).map(normalizeRow);
+      else if (k.startsWith('WR ')) (json[k] || []).forEach(r => WR_DATA.push(normalizeRow(r)));
     });
+    DATA      = Object.values(ROLE_DATA).flat();
+    CARE_DATA = Object.values(CS_DATA).flat();
+
+    // Derive ROLES from loaded R * sheets
+    ROLES = Object.keys(ROLE_DATA).sort().map(k => {
+      const records = ROLE_DATA[k];
+      const parent  = records.find(r => r.row_type !== 'Child') || records[0];
+      const label   = parent ? (parent.jurisdictional_name || k.slice(2)) : k.slice(2);
+      return { value: k, label };
+    });
+
+    // Derive CARE_SETTINGS_LIST from loaded CS * sheets
+    const seenSettings = new Set();
+    CARE_SETTINGS_LIST = [];
+    Object.keys(CS_DATA).sort().forEach(k => {
+      const records = CS_DATA[k];
+      const setting = records.find(r => r.hstm_setting)?.hstm_setting || k.slice(3);
+      if (!seenSettings.has(setting)) {
+        seenSettings.add(setting);
+        CARE_SETTINGS_LIST.push({ value: setting, label: setting });
+      }
+    });
+
+    // Derive WF_ROLE_MATCH from Role records' HSTM Role values
+    WF_ROLE_MATCH = {};
+    Object.keys(ROLE_DATA).forEach(k => {
+      const hstmRoles = new Set();
+      ROLE_DATA[k].forEach(r => {
+        const arr = Array.isArray(r.hstm_role) ? r.hstm_role : [r.hstm_role];
+        arr.forEach(v => { if (v) hstmRoles.add(v); });
+      });
+      WF_ROLE_MATCH[k] = [...hstmRoles];
+    });
+
+    // Seed filter state from loaded data (select all by default)
+    ALL_JURISDICTIONS = [...new Set([...DATA, ...CARE_DATA].map(r => r.state).filter(Boolean))].sort();
+    ALL_TIER_REASONS  = [...new Set([...DATA, ...CARE_DATA].map(r => r.tier_reason).filter(Boolean))];
+    filterState.jurisdictions = new Set(ALL_JURISDICTIONS);
+    filterState.tierReasons   = new Set(ALL_TIER_REASONS);
   }
 
   const USER_IMPORTS_KEY = 'regintel_user_imports';
@@ -11291,7 +11316,7 @@ let selectedRole        = null;
     let filename = 'regintel-export';
 
     if (activeSection === 'roles') {
-      rows = selectedRole === 'lpn-lvn' ? filterData() : [];
+      rows = filterData();
       const roleLabel = ROLES.find(r => r.value === selectedRole)?.label || selectedRole || 'all';
       filename = `regintel-roles-${roleLabel.replace(/\s+/g, '-').toLowerCase()}`;
     } else if (activeSection === 'care-settings') {
