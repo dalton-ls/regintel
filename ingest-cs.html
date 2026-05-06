@@ -71,7 +71,7 @@
 
   <div class="page-wrap">
     <h1 class="page-title">Care Setting Ingest</h1>
-    <p class="page-desc">Upload a RegIntel JSON file. Only care-setting-keyed sheets (<code>CS *</code>) are shown here — e.g. <code>CS SNF</code>, <code>CS ALF</code>, <code>CS HH</code>, <code>CS HOSP</code>. Review the records, then download the CS JSON and import it into RegIntel via Admin &rarr; Import JSON.</p>
+    <p class="page-desc">Upload a RegIntel JSON file. Only care-setting-keyed sheets (<code>CS *</code>) are shown here — e.g. <code>CS SNF</code>, <code>CS ALF</code>, <code>CS HH</code>, <code>CS HOSP</code>. Review the records, then click <strong>Apply to RegIntel</strong> to merge them into the live site (or download the filtered JSON for offline use).</p>
 
     <div class="upload-zone" id="uploadZone">
       <div class="upload-icon">
@@ -88,7 +88,8 @@
       <div class="summary-stat"><strong id="statParents">0</strong>Parent records</div>
       <div class="summary-stat"><strong id="statChildren">0</strong>Child records</div>
       <div class="summary-actions">
-        <button class="btn primary" onclick="downloadCS()" id="downloadBtn">Download CS JSON</button>
+        <button class="btn" onclick="downloadCS()" id="downloadBtn">Download JSON</button>
+        <button class="btn primary" onclick="applyToRegIntel()" id="applyBtn">Apply to RegIntel</button>
       </div>
     </div>
 
@@ -195,6 +196,31 @@
     document.getElementById('statParents').textContent = totalParents;
     document.getElementById('statChildren').textContent = totalChildren;
     document.getElementById('summaryBar').style.display = 'flex';
+  }
+
+  function applyToRegIntel() {
+    if (!Object.keys(csData).length) { showToast('No CS data loaded'); return; }
+    const KEY = 'regintel_user_imports';
+    let store;
+    try { store = JSON.parse(localStorage.getItem(KEY) || '{}'); }
+    catch { store = {}; }
+    let added = 0;
+    Object.entries(csData).forEach(([sheetKey, rows]) => {
+      if (!store[sheetKey]) store[sheetKey] = [];
+      const existing = store[sheetKey];
+      rows.forEach(row => {
+        const isDupe = existing.some(e =>
+          e['Citation'] === row['Citation'] &&
+          e['Training Topic / Competency Item'] === row['Training Topic / Competency Item'] &&
+          e['Jurisdiction'] === row['Jurisdiction']
+        );
+        if (!isDupe) { existing.push(row); added++; }
+      });
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(store)); }
+    catch (e) { showToast('Storage error: ' + e.message); return; }
+    showToast(`Applied ${added} new record${added===1?'':'s'} — opening RegIntel…`);
+    setTimeout(() => { window.location.href = 'regintel.html'; }, 900);
   }
 
   function downloadCS() {
