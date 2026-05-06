@@ -14,12 +14,18 @@ role and care setting. Loads embedded `RAW_DATA` first, falls back to fetching
 | File | Purpose |
 |---|---|
 | `regintel.html` | Main research view (also hosts the admin bar and import logic) |
-| `ingest.html` | **WR Ingest** — uploads `data.json`, filters `WR *` sheets, applies to RegIntel |
-| `ingest-role.html` | **Role Ingest** — uploads RegIntel JSON, filters `R *` sheets, applies to RegIntel |
-| `ingest-cs.html` | **CS Ingest** — uploads RegIntel JSON, filters `CS *` sheets, applies to RegIntel |
-| `data.json` | Full dataset (consumed by `regintel.html` when `RAW_DATA` is absent) |
-| `export_data.py` | Converts `RegIntel_PoC.xlsx` → `data.json` |
-| `RegIntel_PoC.xlsx` | Source spreadsheet for the dataset |
+| `ingest.html` | **WR Ingest** — uploads `wr.json`, filters `WR *` sheets, applies to RegIntel |
+| `ingest-role.html` | **Role Ingest** — uploads `role.json`, filters `R *` sheets, applies to RegIntel |
+| `ingest-cs.html` | **CS Ingest** — uploads `caresetting.json`, filters `CS *` sheets, applies to RegIntel |
+| `wr.json` | Workforce Readiness dataset (`WR *` sheets) |
+| `role.json` | Role dataset (`R *` sheets) |
+| `caresetting.json` | Care Setting dataset (`CS *` sheets) |
+| `data.json` | Legacy full dataset (consumed by `regintel.html` when `RAW_DATA` is absent) |
+| `export_wr.py` | Converts `RegIntel_POC_WR.xlsx` → `wr.json` |
+| `export_role.py` | Converts `RegIntel_POC_Role.xlsx` → `role.json` |
+| `export_caresetting.py` | Converts `RegIntel_POC_CareSetting.xlsx` → `caresetting.json` |
+| `export_data.py` | Legacy: converts `RegIntel_PoC.xlsx` → `data.json` |
+| `RegIntel_PoC.xlsx` | Source spreadsheet for the legacy dataset |
 | `.nojekyll` | Tells GitHub Pages to serve files as-is |
 
 ## Admin workflow
@@ -34,14 +40,21 @@ In admin mode:
 
 ### Ingest tab → live site flow
 
-1. Open an ingest tab (WR / Role / CS) and upload a JSON file
-2. The tab filters its sheet keys, previews the records, and offers **Apply to RegIntel**
-3. Clicking Apply writes the new records to `localStorage.regintel_user_imports`
+| Tab | Upload file | Source script |
+|---|---|---|
+| WR Ingest (`ingest.html`) | `wr.json` | `export_wr.py` |
+| Role Ingest (`ingest-role.html`) | `role.json` | `export_role.py` |
+| CS Ingest (`ingest-cs.html`) | `caresetting.json` | `export_caresetting.py` |
+
+1. Run the relevant Python script against the Excel source to produce the JSON file
+2. Open the matching ingest tab and upload the JSON file
+3. The tab filters its sheet keys, previews the records, and offers **Apply to RegIntel**
+4. Clicking Apply writes the new records to `localStorage.regintel_user_imports`
    (deduped by `Citation` + `Training Topic / Competency Item` + `Jurisdiction`)
    and redirects to `regintel.html`
-4. On load, `regintel.html` merges the localStorage imports on top of `RAW_DATA`
+5. On load, `regintel.html` merges the localStorage imports on top of `RAW_DATA`
    so they appear immediately and survive page reloads
-5. Admin → **Clear imports** wipes the localStorage layer and reloads the page
+6. Admin → **Clear imports** wipes the localStorage layer and reloads the page
 
 The legacy admin **Import JSON** modal uses the same localStorage mechanism, so
 both paths persist identically.

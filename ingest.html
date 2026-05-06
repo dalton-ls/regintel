@@ -77,15 +77,15 @@
 
   <div class="page-wrap">
     <h1 class="page-title">Workforce Readiness ingest</h1>
-    <p class="page-desc">Upload a <code>data.json</code> file exported by <code>export_data.py</code>. Only the Workforce Readiness sheets (<code>WR *</code>) are shown here. Review the domains and KSAs, then click <strong>Apply to RegIntel</strong> to merge them into the live site (or download the filtered JSON for offline use).</p>
+    <p class="page-desc">Upload the <code>wr.json</code> file exported by <code>export_wr.py</code>. Only the Workforce Readiness sheets (<code>WR *</code>) are shown here. Review the domains and KSAs, then click <strong>Apply to RegIntel</strong> to merge them into the live site (or download the filtered JSON for offline use).</p>
 
     <div class="upload-zone" id="uploadZone">
       <div class="upload-icon">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       </div>
-      <p>Drop <strong>data.json</strong> here, or click to browse</p>
+      <p>Drop <strong>wr.json</strong> here, or click to browse</p>
       <button class="btn primary" onclick="document.getElementById('fileInput').click();event.stopPropagation()">Choose file</button>
-      <p class="hint">Accepts data.json produced by export_data.py</p>
+      <p class="hint">Accepts wr.json produced by export_wr.py</p>
       <input type="file" id="fileInput" accept=".json" style="display:none">
     </div>
 
