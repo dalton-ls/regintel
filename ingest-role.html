@@ -71,7 +71,7 @@
 
   <div class="page-wrap">
     <h1 class="page-title">Role Ingest</h1>
-    <p class="page-desc">Upload a RegIntel JSON file. Only role-keyed sheets (<code>R *</code>) are shown here — e.g. <code>R LPN</code>, <code>R CNA</code>, <code>R RN</code>. Review the records, then click <strong>Apply to RegIntel</strong> to merge them into the live site (or download the filtered JSON for offline use).</p>
+    <p class="page-desc">Upload the <code>role.json</code> file exported by <code>export_role.py</code>. Only role-keyed sheets (<code>R *</code>) are shown here — e.g. <code>R LVN</code>, <code>R CNA</code>, <code>R RN</code>. Review the records, then click <strong>Apply to RegIntel</strong> to merge them into the live site (or download the filtered JSON for offline use).</p>
 
     <div class="upload-zone" id="uploadZone">
       <div class="upload-icon">
@@ -79,7 +79,7 @@
       </div>
       <p>Drop a RegIntel <strong>JSON</strong> file here, or click to browse</p>
       <button class="btn primary" onclick="document.getElementById('fileInput').click();event.stopPropagation()">Choose file</button>
-      <p class="hint">Accepts JSON with sheet-keyed records (e.g. from Reg Parser output)</p>
+      <p class="hint">Accepts role.json produced by export_role.py</p>
       <input type="file" id="fileInput" accept=".json" style="display:none">
     </div>
 
