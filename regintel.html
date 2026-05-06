@@ -650,6 +650,10 @@
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         Export JSON
       </button>
+      <button class="admin-btn" id="clearImportsBtn" onclick="clearUserImports()" style="display:none">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        Clear imports (<span id="clearImportsCount">0</span>)
+      </button>
     </div>
   </div>
 
@@ -11170,15 +11174,64 @@ let selectedRole        = null;
     });
   }
 
+  const USER_IMPORTS_KEY = 'regintel_user_imports';
+
+  function mergeUserImports(target) {
+    let imports;
+    try { imports = JSON.parse(localStorage.getItem(USER_IMPORTS_KEY) || '{}'); }
+    catch { return 0; }
+    let added = 0;
+    Object.keys(imports).forEach(key => {
+      if (!target[key]) target[key] = [];
+      const existing = target[key];
+      const incoming = imports[key];
+      if (!Array.isArray(incoming)) return;
+      incoming.forEach(row => {
+        const isDupe = existing.some(e =>
+          e['Citation'] === row['Citation'] &&
+          e['Training Topic / Competency Item'] === row['Training Topic / Competency Item'] &&
+          e['Jurisdiction'] === row['Jurisdiction']
+        );
+        if (!isDupe) { existing.push(row); added++; }
+      });
+    });
+    return added;
+  }
+
+  function userImportsCount() {
+    try {
+      const imports = JSON.parse(localStorage.getItem(USER_IMPORTS_KEY) || '{}');
+      return Object.values(imports).reduce((n, rows) => n + (Array.isArray(rows) ? rows.length : 0), 0);
+    } catch { return 0; }
+  }
+
+  function refreshClearImportsBtn() {
+    const btn = document.getElementById('clearImportsBtn');
+    const count = userImportsCount();
+    if (!btn) return;
+    btn.style.display = count > 0 ? '' : 'none';
+    document.getElementById('clearImportsCount').textContent = count;
+  }
+
+  function clearUserImports() {
+    if (!adminMode) return;
+    if (!confirm('Clear all imported records? This will reload the page with the original dataset only.')) return;
+    localStorage.removeItem(USER_IMPORTS_KEY);
+    location.reload();
+  }
+
   async function loadData() {
     if (typeof RAW_DATA !== 'undefined' && RAW_DATA && typeof RAW_DATA === 'object') {
+      mergeUserImports(RAW_DATA);
       parseData(RAW_DATA);
       return;
     }
     try {
       const res = await fetch('data.json');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      parseData(await res.json());
+      const json = await res.json();
+      mergeUserImports(json);
+      parseData(json);
     } catch (err) {
       document.getElementById('contentPanel').innerHTML =
         `<div class="main-content"><div class="empty-state">
@@ -11218,6 +11271,7 @@ let selectedRole        = null;
       document.getElementById('adminLabel').textContent = 'Active';
       document.getElementById('adminBar').classList.add('visible');
       document.body.classList.add('admin-on');
+      refreshClearImportsBtn();
       showToast('Admin mode activated');
     } else {
       showToast('Incorrect passphrase');
@@ -11367,23 +11421,33 @@ let selectedRole        = null;
 
   function confirmImport() {
     if (!pendingImportData) return;
-    // Merge: for each sheet key, append new records
+    // Persist to localStorage so the import survives reload
+    let userImports;
+    try { userImports = JSON.parse(localStorage.getItem(USER_IMPORTS_KEY) || '{}'); }
+    catch { userImports = {}; }
     Object.keys(pendingImportData).forEach(key => {
       if (!RAW_DATA[key]) RAW_DATA[key] = [];
+      if (!userImports[key]) userImports[key] = [];
       const existing = RAW_DATA[key];
+      const stored = userImports[key];
       const incoming = pendingImportData[key];
       if (Array.isArray(incoming)) {
         incoming.forEach(row => {
-          // Deduplicate by citation + topic
+          // Deduplicate by citation + topic + jurisdiction
           const isDupe = existing.some(e =>
             e['Citation'] === row['Citation'] &&
             e['Training Topic / Competency Item'] === row['Training Topic / Competency Item'] &&
             e['Jurisdiction'] === row['Jurisdiction']
           );
-          if (!isDupe) existing.push(row);
+          if (!isDupe) {
+            existing.push(row);
+            stored.push(row);
+          }
         });
       }
     });
+    localStorage.setItem(USER_IMPORTS_KEY, JSON.stringify(userImports));
+    refreshClearImportsBtn();
     // Re-parse and re-render
     parseData(RAW_DATA);
     rowMap = {};

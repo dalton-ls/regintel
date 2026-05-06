@@ -77,7 +77,7 @@
 
   <div class="page-wrap">
     <h1 class="page-title">Workforce Readiness ingest</h1>
-    <p class="page-desc">Upload a <code>data.json</code> file exported by <code>export_data.py</code>. Only the Workforce Readiness sheets (<code>WR *</code>) are shown here. Review the domains and KSAs, then download the WR-only JSON for import into RegIntel.</p>
+    <p class="page-desc">Upload a <code>data.json</code> file exported by <code>export_data.py</code>. Only the Workforce Readiness sheets (<code>WR *</code>) are shown here. Review the domains and KSAs, then click <strong>Apply to RegIntel</strong> to merge them into the live site (or download the filtered JSON for offline use).</p>
 
     <div class="upload-zone" id="uploadZone">
       <div class="upload-icon">
@@ -95,7 +95,8 @@
       <div class="summary-stat"><strong id="statKSAs">0</strong>KSAs</div>
       <div class="summary-actions">
         <button class="btn" onclick="collapseAll()">Collapse all</button>
-        <button class="btn primary" onclick="downloadWR()" id="downloadBtn">Download WR JSON</button>
+        <button class="btn" onclick="downloadWR()" id="downloadBtn">Download JSON</button>
+        <button class="btn primary" onclick="applyToRegIntel()" id="applyBtn">Apply to RegIntel</button>
       </div>
     </div>
 
@@ -255,6 +256,32 @@
     openDomains = {};
     document.querySelectorAll('.ksa-list').forEach(el => el.classList.remove('open'));
     document.querySelectorAll('.domain-toggle').forEach(el => el.classList.remove('open'));
+  }
+
+  // ── Apply to RegIntel (writes to localStorage shared with regintel.html) ──
+  function applyToRegIntel() {
+    if (!Object.keys(wrData).length) { showToast('No WR data loaded'); return; }
+    const KEY = 'regintel_user_imports';
+    let store;
+    try { store = JSON.parse(localStorage.getItem(KEY) || '{}'); }
+    catch { store = {}; }
+    let added = 0;
+    Object.entries(wrData).forEach(([sheetKey, rows]) => {
+      if (!store[sheetKey]) store[sheetKey] = [];
+      const existing = store[sheetKey];
+      rows.forEach(row => {
+        const isDupe = existing.some(e =>
+          e['Citation'] === row['Citation'] &&
+          e['Training Topic / Competency Item'] === row['Training Topic / Competency Item'] &&
+          e['Jurisdiction'] === row['Jurisdiction']
+        );
+        if (!isDupe) { existing.push(row); added++; }
+      });
+    });
+    try { localStorage.setItem(KEY, JSON.stringify(store)); }
+    catch (e) { showToast('Storage error: ' + e.message); return; }
+    showToast(`Applied ${added} new record${added===1?'':'s'} — opening RegIntel…`);
+    setTimeout(() => { window.location.href = 'regintel.html'; }, 900);
   }
 
   // ── Download ──
