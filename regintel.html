@@ -11162,11 +11162,14 @@ let selectedRole        = null;
     CARE_DATA = Object.values(CS_DATA).flat();
 
     // Derive ROLES from loaded R * sheets
-    ROLES = Object.keys(ROLE_DATA).sort().map(k => {
+    const seenRoles = new Set();
+    ROLES = Object.keys(ROLE_DATA).sort().flatMap(k => {
       const records = ROLE_DATA[k];
       const parent  = records.find(r => r.row_type !== 'Child') || records[0];
       const label   = parent ? (parent.jurisdictional_name || k.slice(2)) : k.slice(2);
-      return { value: k, label };
+      if (seenRoles.has(label)) return [];
+      seenRoles.add(label);
+      return [{ value: k, label }];
     });
 
     // Derive CARE_SETTINGS_LIST from loaded CS * sheets
