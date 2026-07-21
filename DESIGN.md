@@ -1,0 +1,58 @@
+# RegIntel Data Model & Admin Workflow — Design Document
+
+## 1. Overview
+
+RegIntel currently stores regulatory content as separate JSON files per content type (Workforce Readiness, Role, Care Setting), edited only through read-only preview/upload "ingest" tools, with no ability to edit individual records or push edits back into version-controlled files. As research scales to all 50 states plus federal, and as OpenLaws/RegWatch begins feeding data in at volume, this document defines a unified data model and an admin workflow that supports rapid bulk ingestion, individual and at-scale editing, and safe handling of conflicting updates.
+
+## 2. Unified Requirements Schema
+
+Care Setting and Role data merge into one table, since a single regulation frequently applies to both a setting and a role (e.g., a Texas SNF regulation that is also binding on RNs working there). Each record has the following fields:
+
+- Record ID — stable, immutable identifier assigned once per record; used for all edits, dedup, and conflict detection instead of string-matching on content fields.
+- Jurisdiction — Federal or a specific state.
+- Jurisdiction Setting — the care setting as named in the source regulation (optional).
+- Jurisdiction Role — the professional title as named in the source regulation, verbatim (optional).
+- HSTM Setting — canonical HealthStream care-setting taxonomy value mapped from Jurisdiction Setting.
+- HSTM Role — canonical HealthStream role taxonomy value mapped from Jurisdiction Role.
+- Regulation Type — Facility-based/Organizational training, Individual/Continuing Education, or Organizational Policy. This field also acts as the signal for which admin "lane" (Care Setting vs. Role) a record is primarily associated with.
+- Oversight / Professional Agency — the regulatory/licensing body with enforcement authority.
+- Requirement Level — Explicit Training or Other Training Reference.
+- Explicit Training — boolean, derived from Requirement Level.
+- Citation — full regulatory citation, BB-style per OpenLaws formatting.
+- Training Topic / Competency Item — the specific training subject, one per row.
+- Relationship — Parent (domain) or Child (KSA/sub-topic).
+- Purpose — brief explanation of the training's regulatory intent.
+- Approval Required — Yes/No.
+- Hours Required — numeric value or "NR."
+- Frequency — One-time, Annual, Biennial, Upon hire, Before performing duties, Ongoing, etc.
+- Source URL — link to the primary regulatory source.
+- Notes / Research Flags — free-text internal annotation.
+
+Validation rule: every record must have at least one of Jurisdiction Setting or Jurisdiction Role populated (both, when the regulation applies to both).
+
+## 3. Workforce Readiness Schema
+
+Kept as its own separate structure (unchanged from today's Domain/KSA model), since it represents an internally authored competency framework rather than jurisdiction-driven regulatory mandates.
+
+## 4. Ingestion & Conflict Handling
+
+Pipeline: OpenLaws (raw regulations) -> RegWatch AI parser (maps into the schema above) -> Excel output -> uploaded into RegIntel via an ingest tool.
+
+On upload, each incoming record is checked against existing Record IDs:
+
+- New Record ID -> added directly to the unified table.
+- Existing Record ID with identical content -> no action needed.
+- Existing Record ID with differing content -> always routed to a Pending Review Queue. There is no automatic overwrite under any circumstance, since an update may reflect a genuine regulatory change or may conflict with a manual correction already made in RegIntel — either way, it must be reviewed and is flagged to the content development team before anything changes.
+
+## 5. Admin Interface
+
+Four screens support the workflow:
+
+1. Individual Record Editor — search/select a single record, edit any field in a form, save. Used for spot corrections.
+2. Filter -> Bulk-Apply Tool — filter records by any combination of Jurisdiction, HSTM Setting, HSTM Role, Regulation Type, etc.; preview the matching set; apply a single field change across all matching records at once, with a preview step before committing.
+3. Pending Review Queue — lists every incoming record that conflicts with existing data, showing a field-by-field diff (existing vs. incoming); the reviewer chooses to keep existing, use incoming, or manually reconcile. Nothing here applies automatically.
+4. Export — generates the current dataset as JSON (Requirements and/or Workforce Readiness), downloaded for you to commit into the repository yourself; this tool does not commit on your behalf.
+
+## 6. Out of Scope (for now)
+
+Facility subtypes, accreditation bodies (Joint Commission/DNV/CARF), and multi-level research-status tracking are explicitly excluded from this iteration, per direction to keep the schema and workflow minimal and focused on efficient large-scale ingestion and editing.
