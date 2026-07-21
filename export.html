@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RegIntel — Export</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; color: #1a2332; background: #f0f2f5; }
+
+    .app-header { position: sticky; top: 0; z-index: 200; height: 60px; background: #1a2e5a; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .header-brand { display: flex; align-items: center; gap: 10px; }
+    .logo-text { font-size: 17px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+    .header-sep { color: rgba(255,255,255,0.25); font-size: 20px; font-weight: 200; }
+    .header-subtitle { font-size: 12px; color: rgba(255,255,255,0.6); }
+    .back-link { font-size: 12px; color: rgba(255,255,255,0.5); text-decoration: none; font-weight: 500; }
+    .back-link:hover { color: rgba(255,255,255,0.85); }
+
+    .page-wrap { max-width: 820px; margin: 0 auto; padding: 32px 24px 80px; }
+    .page-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .page-desc { font-size: 14px; color: #6b7a99; line-height: 1.6; margin-bottom: 24px; }
+
+    .dataset-card { background: #fff; border: 1px solid #e8ecf0; border-radius: 10px; padding: 18px 20px; margin-bottom: 14px; display: flex; align-items: flex-start; gap: 14px; }
+    .dataset-card input[type=checkbox] { width: 18px; height: 18px; margin-top: 2px; cursor: pointer; accent-color: #2463eb; }
+    .dataset-info { flex: 1; }
+    .dataset-name { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+    .dataset-meta { font-size: 12px; color: #6b7a99; line-height: 1.5; }
+    .dataset-meta .edited { color: #d97706; font-weight: 600; }
+    .dataset-file { font-family: ui-monospace, monospace; font-size: 11px; color: #9ca3af; }
+
+    .commit-note { background: #eef3fb; border: 1px solid #cfe0fb; color: #1d4ed8; border-radius: 10px; padding: 14px 18px; font-size: 13px; line-height: 1.6; margin: 20px 0; }
+    .commit-note code { background: rgba(29,78,216,0.1); padding: 1px 5px; border-radius: 4px; }
+
+    .actions { display: flex; gap: 8px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; height: 40px; padding: 0 20px; border-radius: 8px; font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer; border: 1px solid #dde1ea; background: #fff; color: #4a5568; transition: background 0.15s; }
+    .btn:hover { background: #f5f7fa; }
+    .btn.primary { background: #2463eb; color: #fff; border-color: #2463eb; }
+    .btn.primary:hover { background: #1d4ed8; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a2332; color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 999; box-shadow: 0 4px 20px rgba(0,0,0,0.25); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-brand">
+      <span class="logo-text">RegIntel</span>
+      <span class="header-sep">|</span>
+      <span class="header-subtitle">Export</span>
+    </div>
+    <a href="regintel.html" class="back-link">&larr; Back to research view</a>
+  </header>
+
+  <div class="page-wrap">
+    <h1 class="page-title">Export</h1>
+    <p class="page-desc">Download the current dataset as JSON. Requirements is always read fresh from the latest commit on GitHub — the Record Editor, Bulk-Apply, and Pending Review screens commit directly there, so this always reflects the live state. Choose which datasets to export, then download.</p>
+
+    <label class="dataset-card">
+      <input type="checkbox" id="chkReq" checked>
+      <div class="dataset-info">
+        <div class="dataset-name">Requirements</div>
+        <div class="dataset-meta" id="reqMeta">Loading…</div>
+        <div class="dataset-file">&rarr; requirements.json</div>
+      </div>
+    </label>
+
+    <label class="dataset-card">
+      <input type="checkbox" id="chkWr">
+      <div class="dataset-info">
+        <div class="dataset-name">Workforce Readiness</div>
+        <div class="dataset-meta" id="wrMeta">Loading…</div>
+        <div class="dataset-file">&rarr; wr.json</div>
+      </div>
+    </label>
+
+    <div class="commit-note">
+      Requirements edits already live on GitHub once saved elsewhere in the admin tools &mdash; this screen is for a manual backup snapshot, not a required step. <code>wr.json</code> is unchanged by any of the admin tools, so its download here is the only way to get a current copy out of the repo.
+    </div>
+
+    <div class="actions">
+      <button class="btn primary" id="downloadBtn">Download selected</button>
+      <button class="btn" id="refreshBtn">Refresh from GitHub</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+  // Set this to the deployed Worker URL from worker/regintel-admin-proxy (see its README).
+  // Export still works without it configured — it just falls back to a plain
+  // relative fetch of requirements.json as served by whatever's hosting this page.
+  const WORKER_URL = 'https://regintel-admin-proxy.regintel.workers.dev';
+
+  let baseRecords = [];
+  let wrData = null;
+
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+  }
+  function esc(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  async function fetchLatestRequirements() {
+    if (WORKER_URL !== 'REPLACE_WITH_WORKER_URL') {
+      const res = await fetch(WORKER_URL + '/file?path=requirements.json');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return (await res.json()).content;
+    }
+    const res = await fetch('requirements.json');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }
+
+  function download(filename, data) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function init() {
+    try {
+      baseRecords = await fetchLatestRequirements();
+      document.getElementById('reqMeta').textContent = baseRecords.length + ' records · loaded fresh from GitHub';
+    } catch (err) {
+      document.getElementById('reqMeta').textContent = 'Could not load requirements.json: ' + err.message;
+      document.getElementById('chkReq').checked = false;
+      document.getElementById('chkReq').disabled = true;
+    }
+
+    try {
+      const res = await fetch('wr.json');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      wrData = await res.json();
+      const sheets = Object.keys(wrData).length;
+      const rows = Object.values(wrData).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0);
+      document.getElementById('wrMeta').textContent = rows + ' records across ' + sheets + ' sheet(s) · unchanged, separate dataset';
+    } catch (err) {
+      document.getElementById('wrMeta').textContent = 'Could not load wr.json: ' + err.message;
+      document.getElementById('chkWr').disabled = true;
+    }
+
+    document.getElementById('downloadBtn').addEventListener('click', doDownload);
+    document.getElementById('refreshBtn').addEventListener('click', () => { showToast('Refreshing…'); init(); });
+  }
+
+  function doDownload() {
+    const wantReq = document.getElementById('chkReq').checked;
+    const wantWr = document.getElementById('chkWr').checked;
+    if (!wantReq && !wantWr) { showToast('Select at least one dataset'); return; }
+
+    let n = 0;
+    if (wantReq && baseRecords.length) { download('requirements.json', baseRecords); n++; }
+    if (wantWr && wrData) { download('wr.json', wrData); n++; }
+    showToast('Downloaded ' + n + ' file' + (n === 1 ? '' : 's'));
+  }
+
+  init();
+  </script>
+</body>
+</html>

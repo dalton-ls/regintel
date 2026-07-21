@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RegIntel — Pending Review</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; color: #1a2332; background: #f0f2f5; }
+
+    .app-header { position: sticky; top: 0; z-index: 200; height: 60px; background: #1a2e5a; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .header-brand { display: flex; align-items: center; gap: 10px; }
+    .logo-text { font-size: 17px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+    .header-sep { color: rgba(255,255,255,0.25); font-size: 20px; font-weight: 200; }
+    .header-subtitle { font-size: 12px; color: rgba(255,255,255,0.6); }
+    .back-link { font-size: 12px; color: rgba(255,255,255,0.5); text-decoration: none; font-weight: 500; }
+    .back-link:hover { color: rgba(255,255,255,0.85); }
+
+    .page-wrap { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+    .page-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .page-desc { font-size: 14px; color: #6b7a99; line-height: 1.6; margin-bottom: 24px; max-width: 800px; }
+
+    .upload-zone { border: 2px dashed #dde1ea; border-radius: 12px; padding: 34px; text-align: center; color: #6b7a99; font-size: 13px; cursor: pointer; transition: border-color 0.2s, background 0.2s; margin-bottom: 24px; }
+    .upload-zone:hover, .upload-zone.dragover { border-color: #2463eb; background: #eef3fb; }
+    .upload-zone .upload-icon { margin-bottom: 8px; color: #9aaac4; }
+    .upload-zone .hint { font-size: 11px; color: #b0b8cc; margin-top: 8px; }
+
+    .summary-bar { display: flex; gap: 22px; align-items: center; background: #fff; border: 1px solid #e8ecf0; border-radius: 10px; padding: 14px 20px; margin-bottom: 20px; flex-wrap: wrap; }
+    .summary-stat { font-size: 12px; color: #6b7a99; }
+    .summary-stat strong { color: #1a2332; font-size: 18px; display: block; }
+    .summary-stat.conflict strong { color: #d97706; }
+    .summary-stat.new strong { color: #15803d; }
+    .summary-actions { margin-left: auto; display: flex; gap: 8px; }
+
+    .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7a99; margin: 22px 0 12px; }
+
+    .conflict-card { background: #fff; border: 1px solid #e8ecf0; border-radius: 10px; overflow: hidden; margin-bottom: 16px; }
+    .conflict-head { padding: 12px 18px; border-bottom: 1px solid #e8ecf0; background: #f7f9fc; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .conflict-id { font-family: ui-monospace, monospace; font-size: 12px; color: #6b7a99; }
+    .conflict-topic { font-weight: 600; font-size: 13px; flex: 1; min-width: 200px; }
+    .resolution-pills { display: flex; gap: 6px; }
+    .pill { font-size: 11px; font-weight: 600; padding: 5px 12px; border-radius: 20px; border: 1px solid #dde1ea; background: #fff; color: #4a5568; cursor: pointer; }
+    .pill.active[data-choice="existing"] { background: #1a2332; color: #fff; border-color: #1a2332; }
+    .pill.active[data-choice="incoming"] { background: #15803d; color: #fff; border-color: #15803d; }
+    .pill.active[data-choice="manual"] { background: #2463eb; color: #fff; border-color: #2463eb; }
+
+    table.diff { width: 100%; border-collapse: collapse; font-size: 12px; }
+    table.diff th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; color: #9ca3af; padding: 7px 18px; border-bottom: 1px solid #e8ecf0; background: #fbfcfe; }
+    table.diff td { padding: 8px 18px; border-bottom: 1px solid #f0f2f5; vertical-align: top; }
+    table.diff tr:last-child td { border-bottom: none; }
+    .field-name { font-weight: 600; color: #4a5568; width: 200px; }
+    .diff-row.changed { background: #fffdf5; }
+    .val-existing { color: #1a2332; }
+    .val-incoming { color: #15803d; }
+    .diff-row.changed .val-existing { color: #b91c1c; }
+    .manual-input { width: 100%; border: 1px solid #dde1ea; border-radius: 6px; padding: 5px 8px; font-size: 12px; font-family: inherit; display: none; }
+    .conflict-card.mode-manual .manual-input { display: block; }
+    .conflict-card.mode-manual .val-existing, .conflict-card.mode-manual .val-incoming { opacity: 0.5; }
+
+    .new-card { background: #fff; border: 1px solid #e8ecf0; border-radius: 10px; padding: 6px 0; margin-bottom: 16px; }
+    .new-item { padding: 9px 18px; border-bottom: 1px solid #f0f2f5; font-size: 12px; display: flex; gap: 10px; align-items: baseline; }
+    .new-item:last-child { border-bottom: none; }
+
+    .btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; border: 1px solid #dde1ea; background: #fff; color: #4a5568; transition: background 0.15s; }
+    .btn:hover { background: #f5f7fa; }
+    .btn.primary { background: #2463eb; color: #fff; border-color: #2463eb; }
+    .btn.primary:hover { background: #1d4ed8; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .empty-state { text-align: center; padding: 50px 24px; color: #9aaac4; }
+    .empty-state p { font-size: 14px; }
+    .muted { color: #9aaac4; font-size: 13px; }
+
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a2332; color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 999; box-shadow: 0 4px 20px rgba(0,0,0,0.25); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-brand">
+      <span class="logo-text">RegIntel</span>
+      <span class="header-sep">|</span>
+      <span class="header-subtitle">Pending Review</span>
+    </div>
+    <a href="regintel.html" class="back-link">&larr; Back to research view</a>
+  </header>
+
+  <div class="page-wrap">
+    <h1 class="page-title">Pending Review Queue</h1>
+    <p class="page-desc">Upload an incoming requirements file (e.g. a RegWatch/OpenLaws batch). Each incoming record is matched by Record ID against the current dataset. New IDs can be added directly; records whose content differs from an existing record are queued as conflicts with a field-by-field diff. <strong>Nothing is applied automatically</strong> — for each conflict you choose to keep existing, use incoming, or manually reconcile, then apply your resolutions.</p>
+
+    <div class="upload-zone" id="uploadZone">
+      <div class="upload-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </div>
+      <p>Drop an incoming <strong>requirements JSON</strong> file here, or click to browse</p>
+      <p class="hint">A JSON array of unified requirement records (each with a Record ID)</p>
+      <input type="file" id="fileInput" accept=".json" style="display:none">
+    </div>
+
+    <div id="summaryBar" style="display:none" class="summary-bar">
+      <div class="summary-stat"><strong id="statTotal">0</strong>Incoming records</div>
+      <div class="summary-stat new"><strong id="statNew">0</strong>New (addable)</div>
+      <div class="summary-stat conflict"><strong id="statConflict">0</strong>Conflicts to review</div>
+      <div class="summary-stat"><strong id="statIdentical">0</strong>Identical (no action)</div>
+      <div class="summary-actions">
+        <button class="btn primary" id="applyAllBtn">Apply resolutions</button>
+      </div>
+    </div>
+
+    <div id="results">
+      <div class="empty-state"><p>Upload an incoming file to see new records and conflicts.</p></div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+  // Set this to the deployed Worker URL from worker/regintel-admin-proxy (see its README).
+  const WORKER_URL = 'https://regintel-admin-proxy.regintel.workers.dev';
+  const TOKEN_KEY = 'regintel_admin_token'; // sessionStorage only — never written into this file
+
+  const UNIFIED_FIELDS = [
+    "Jurisdiction", "Jurisdiction Setting", "Jurisdiction Role",
+    "HSTM Setting", "HSTM Role", "Regulation Type",
+    "Oversight / Professional Agency", "Requirement Level", "Explicit Training",
+    "Citation", "Training Topic / Competency Item", "Relationship", "Purpose",
+    "Approval Required", "Hours Required", "Frequency", "Source URL",
+    "Notes / Research Flags"
+  ];
+  const ARRAY_FIELDS = new Set(["HSTM Role"]);
+
+  let baseRecords = [];
+  let currentById = {};
+  let conflicts = [];   // { id, incoming, existing, choice, topic }
+  let newRecords = [];  // incoming records with unknown Record ID
+
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 3200);
+  }
+  function esc(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ─── Worker API ───
+
+  function getToken() {
+    let t = sessionStorage.getItem(TOKEN_KEY);
+    if (!t) {
+      t = prompt('Enter the RegIntel admin token (asked once per browser session):');
+      if (t) sessionStorage.setItem(TOKEN_KEY, t);
+    }
+    return t;
+  }
+
+  async function fetchLatestRecords() {
+    const res = await fetch(WORKER_URL + '/file?path=requirements.json');
+    if (!res.ok) throw new Error('Failed to load requirements.json (HTTP ' + res.status + ')');
+    const body = await res.json();
+    return body.content;
+  }
+
+  async function commitRecords(newRecordsArr, message) {
+    const token = getToken();
+    if (!token) throw new Error('Admin token is required to save.');
+    const res = await fetch(WORKER_URL + '/commit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ path: 'requirements.json', message, content: newRecordsArr })
+    });
+    if (res.status === 401) {
+      sessionStorage.removeItem(TOKEN_KEY);
+      throw new Error('Admin token was rejected. It has been cleared — try applying again to re-enter it.');
+    }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || ('Save failed (HTTP ' + res.status + ')'));
+    }
+    return res.json();
+  }
+
+  function normVal(v) {
+    if (Array.isArray(v)) return JSON.stringify(v);
+    return JSON.stringify(v == null ? null : v);
+  }
+  function displayVal(v) {
+    if (v == null || v === '') return '(empty)';
+    if (Array.isArray(v)) return v.length ? v.join(', ') : '(empty)';
+    return String(v);
+  }
+  function recordsDiffer(a, b) {
+    return UNIFIED_FIELDS.some(f => normVal(a[f]) !== normVal(b[f]));
+  }
+
+  async function init() {
+    if (WORKER_URL === 'REPLACE_WITH_WORKER_URL') {
+      document.getElementById('results').innerHTML =
+        '<div class="empty-state"><p>This screen has not been pointed at a deployed admin proxy yet. See <code>worker/regintel-admin-proxy/README.md</code> for setup, then set <code>WORKER_URL</code> at the top of this file.</p></div>';
+      return;
+    }
+    try {
+      baseRecords = await fetchLatestRecords();
+    } catch (err) {
+      document.getElementById('results').innerHTML = '<div class="empty-state"><p>Could not load requirements.json: ' + esc(err.message) + '</p></div>';
+      return;
+    }
+    baseRecords.forEach(r => { currentById[r['Record ID']] = r; });
+
+    document.getElementById('fileInput').addEventListener('change', function () {
+      if (this.files[0]) loadFile(this.files[0]);
+    });
+    const zone = document.getElementById('uploadZone');
+    zone.addEventListener('click', () => document.getElementById('fileInput').click());
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault(); zone.classList.remove('dragover');
+      if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+    });
+    document.getElementById('applyAllBtn').addEventListener('click', applyResolutions);
+  }
+
+  function loadFile(file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      let incoming;
+      try { incoming = JSON.parse(e.target.result); }
+      catch (err) { showToast('JSON parse error: ' + err.message); return; }
+      if (!Array.isArray(incoming)) { showToast('Expected a JSON array of records'); return; }
+      classify(incoming);
+    };
+    reader.readAsText(file);
+  }
+
+  function classify(incoming) {
+    conflicts = [];
+    newRecords = [];
+    let identical = 0;
+
+    incoming.forEach(rec => {
+      const id = rec['Record ID'];
+      if (!id) { newRecords.push(rec); return; }
+      const existing = currentById[id];
+      if (!existing) { newRecords.push(rec); return; }
+      if (recordsDiffer(existing, rec)) {
+        conflicts.push({
+          id, incoming: rec, existing,
+          topic: rec['Training Topic / Competency Item'] || existing['Training Topic / Competency Item'] || '(no topic)',
+          choice: 'existing'
+        });
+      } else {
+        identical++;
+      }
+    });
+
+    document.getElementById('statTotal').textContent = incoming.length;
+    document.getElementById('statNew').textContent = newRecords.length;
+    document.getElementById('statConflict').textContent = conflicts.length;
+    document.getElementById('statIdentical').textContent = identical;
+    document.getElementById('summaryBar').style.display = 'flex';
+    render();
+    showToast('Classified ' + incoming.length + ' incoming record(s)');
+  }
+
+  function render() {
+    let html = '';
+
+    if (conflicts.length) {
+      html += '<div class="section-title">Conflicts &mdash; ' + conflicts.length + ' record(s) differ from existing data</div>';
+      conflicts.forEach((c, idx) => {
+        const rows = UNIFIED_FIELDS.map(f => {
+          const changed = normVal(c.existing[f]) !== normVal(c.incoming[f]);
+          return '<tr class="diff-row' + (changed ? ' changed' : '') + '">' +
+            '<td class="field-name">' + esc(f) + '</td>' +
+            '<td class="val-existing">' + esc(displayVal(c.existing[f])) + '</td>' +
+            '<td class="val-incoming">' + esc(displayVal(c.incoming[f])) +
+              '<input class="manual-input" data-conflict="' + idx + '" data-field="' + esc(f) + '" value="' + esc(displayVal(c.incoming[f]) === '(empty)' ? '' : (Array.isArray(c.incoming[f]) ? c.incoming[f].join(', ') : (c.incoming[f] ?? ''))) + '"></td>' +
+            '</tr>';
+        }).join('');
+
+        html += '<div class="conflict-card" data-idx="' + idx + '">' +
+          '<div class="conflict-head">' +
+            '<span class="conflict-id">' + esc(c.id) + '</span>' +
+            '<span class="conflict-topic">' + esc(c.topic) + '</span>' +
+            '<div class="resolution-pills">' +
+              '<button class="pill active" data-choice="existing" data-idx="' + idx + '">Keep existing</button>' +
+              '<button class="pill" data-choice="incoming" data-idx="' + idx + '">Use incoming</button>' +
+              '<button class="pill" data-choice="manual" data-idx="' + idx + '">Reconcile</button>' +
+            '</div>' +
+          '</div>' +
+          '<table class="diff"><thead><tr><th>Field</th><th>Existing</th><th>Incoming</th></tr></thead>' +
+          '<tbody>' + rows + '</tbody></table>' +
+        '</div>';
+      });
+    }
+
+    if (newRecords.length) {
+      html += '<div class="section-title">New records &mdash; ' + newRecords.length + ' unknown Record ID(s), added directly on apply</div>';
+      html += '<div class="new-card">' + newRecords.map(r =>
+        '<div class="new-item"><span class="conflict-id">' + esc(r['Record ID'] || '(no ID)') + '</span>' +
+        '<span>' + esc(r['Training Topic / Competency Item'] || '(no topic)') + '</span></div>'
+      ).join('') + '</div>';
+    }
+
+    if (!conflicts.length && !newRecords.length) {
+      html = '<div class="empty-state"><p>No new records and no conflicts &mdash; the incoming file matches the current dataset.</p></div>';
+    }
+
+    document.getElementById('results').innerHTML = html;
+
+    document.querySelectorAll('.pill').forEach(p => {
+      p.addEventListener('click', () => setChoice(+p.dataset.idx, p.dataset.choice));
+    });
+  }
+
+  function setChoice(idx, choice) {
+    conflicts[idx].choice = choice;
+    const card = document.querySelector('.conflict-card[data-idx="' + idx + '"]');
+    card.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p.dataset.choice === choice));
+    card.classList.toggle('mode-manual', choice === 'manual');
+  }
+
+  function parseField(field, raw) {
+    const val = (raw ?? '').trim();
+    if (ARRAY_FIELDS.has(field)) return val ? val.split(',').map(s => s.trim()).filter(Boolean) : [];
+    return val === '' ? null : val;
+  }
+
+  async function applyResolutions() {
+    const resolutions = {}; // id -> resolved field object
+    let kept = 0, blocked = 0;
+
+    conflicts.forEach((c, idx) => {
+      if (c.choice === 'existing') { kept++; return; }
+
+      let resolved;
+      if (c.choice === 'incoming') {
+        resolved = {};
+        UNIFIED_FIELDS.forEach(f => { resolved[f] = c.incoming[f] ?? null; });
+      } else { // manual
+        resolved = {};
+        const card = document.querySelector('.conflict-card[data-idx="' + idx + '"]');
+        UNIFIED_FIELDS.forEach(f => {
+          const inp = card.querySelector('.manual-input[data-field="' + CSS.escape(f) + '"]');
+          resolved[f] = parseField(f, inp ? inp.value : null);
+        });
+      }
+
+      // Enforce the schema anchor rule before writing.
+      const hasSetting = resolved['Jurisdiction Setting'] != null && resolved['Jurisdiction Setting'] !== '';
+      const hasRole = resolved['Jurisdiction Role'] != null && resolved['Jurisdiction Role'] !== '';
+      if (!hasSetting && !hasRole) { blocked++; return; }
+
+      resolutions[c.id] = resolved;
+    });
+
+    const applyBtn = document.getElementById('applyAllBtn');
+    applyBtn.disabled = true;
+    const originalLabel = applyBtn.textContent;
+    applyBtn.textContent = 'Fetching latest and committing…';
+
+    try {
+      // Re-fetch the freshest copy so we don't stomp a change made from
+      // another tab/device since this page loaded.
+      const latest = await fetchLatestRecords();
+      const latestIds = new Set(latest.map(r => r['Record ID']));
+      let updated = latest.map(r => resolutions[r['Record ID']] ? { ...r, ...resolutions[r['Record ID']] } : r);
+
+      let added = 0;
+      newRecords.forEach(r => {
+        if (!latestIds.has(r['Record ID'])) { updated.push(r); added++; }
+      });
+
+      const applied = Object.keys(resolutions).length;
+      const result = await commitRecords(updated, 'Pending review: ' + applied + ' resolution(s), ' + added + ' new record(s)');
+
+      baseRecords = updated;
+      updated.forEach(r => { currentById[r['Record ID']] = r; });
+
+      let msg = 'Applied ' + applied + ' conflict resolution(s), added ' + added + ' new record(s)';
+      if (kept) msg += ', kept ' + kept + ' existing';
+      if (blocked) msg += ' — ' + blocked + ' blocked (missing jurisdiction anchor)';
+      if (result.commitUrl) msg += ' — ' + result.commitUrl;
+      showToast(msg);
+      conflicts = []; newRecords = [];
+      document.getElementById('summaryBar').style.display = 'none';
+      document.getElementById('results').innerHTML = '<div class="empty-state"><p>Resolutions applied. Upload another incoming file to continue reviewing.</p></div>';
+    } catch (err) {
+      showToast(err.message);
+    } finally {
+      applyBtn.disabled = false;
+      applyBtn.textContent = originalLabel;
+    }
+  }
+
+  init();
+  </script>
+</body>
+</html>
