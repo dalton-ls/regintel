@@ -1,0 +1,313 @@
+"""
+normalize_batch.py
+
+Converts one raw incoming sheet (Excel workbook, one or more tabs) using the
+18-column unified template into a flat unified-JSON array, ready to upload
+into the Pending Review Queue (pending-review.html) -- NOT a drop-in
+replacement for requirements.json the way migrate_to_unified.py is.
+
+Why this exists (and why it's not just "run migrate_to_unified.py again")
+---------------------------------------------------------------------------
+migrate_to_unified.py hardcodes exactly two source files (role.json,
+caresetting.json) and fully regenerates requirements.json from scratch on
+every run -- it has no notion of "add this new batch on top of what's
+already there," and it bypasses Pending Review Queue's conflict detection
+entirely. For sporadic incoming batches of thousands of rows across many
+sheets, that's the wrong shape: re-running it means manually folding every
+new sheet into those two files and hoping the full regeneration doesn't
+silently clobber a prior manual correction.
+
+This script instead normalizes ONE sheet/workbook at a time into the same
+unified shape Pending Review Queue expects (a flat JSON array of records,
+each with a Record ID), so each batch can be reviewed independently --
+new Record IDs get added directly, records that already exist and differ
+get queued as conflicts, nothing applies without a human decision.
+
+Record ID stability
+---------------------------------------------------------------------------
+migrate_to_unified.py hashes (source_dataset, SHEET KEY, Citation, Training
+Topic, Jurisdiction). The sheet key is just an Excel tab name -- not a
+stable real-world identifier -- so the same regulation re-uploaded under a
+differently-named sheet would hash to a different Record ID and look like
+a brand-new record instead of surfacing as an update in Pending Review
+Queue. This script drops the sheet key from the hash and adds Jurisdiction
+Role / Jurisdiction Setting for extra collision safety, so the ID is
+derived purely from content that identifies the regulation itself:
+
+    req_ + sha1(source_dataset|Citation|Training Topic|Jurisdiction|
+                Jurisdiction Role|Jurisdiction Setting)[:12]
+
+Re-running this script against the same rows (from any sheet, any tab
+name) reproduces the same IDs.
+
+Usage
+---------------------------------------------------------------------------
+    python3 normalize_batch.py <input.xlsx> --source-dataset Role
+    python3 normalize_batch.py <input.xlsx> --source-dataset "Care Setting" -o batch.json
+    python3 normalize_batch.py <input.xlsx>          # auto-detect per sheet from
+                                                      # an "R "/"CS " tab-name prefix
+
+    python3 normalize_batch.py <input.json>          # JSON array input instead of Excel
+
+Reads (optional):
+    requirements.json in the current directory, or --reference <path> --
+    used only to warn (never block or silently rewrite) when an incoming
+    Jurisdiction / HSTM Setting / HSTM Role value hasn't been seen before,
+    since that's the earliest, cheapest point to catch vocabulary drift
+    (e.g. "Federal" vs "US") before it reaches the live site's filters.
+
+Writes:
+    <input>-normalized.json     (flat array, ready for Pending Review Queue)
+    <input>-normalize-warnings.txt   (only if any warnings were raised)
+"""
+
+import sys
+import json
+import hashlib
+import argparse
+from pathlib import Path
+
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+
+UNIFIED_FIELDS = [
+    "Jurisdiction",
+    "Jurisdiction Setting",
+    "Jurisdiction Role",
+    "HSTM Setting",
+    "HSTM Role",
+    "Regulation Type",
+    "Oversight / Professional Agency",
+    "Requirement Level",
+    "Explicit Training",
+    "Citation",
+    "Training Topic / Competency Item",
+    "Relationship",
+    "Purpose",
+    "Approval Required",
+    "Hours Required",
+    "Frequency",
+    "Source URL",
+    "Notes / Research Flags",
+]
+
+ARRAY_FIELDS = {"HSTM Role"}
+INTEGER_FIELDS = {"Hours Required"}
+PIPE_NULL = {"nan", "NaN", "None", "none", ""}
+
+
+def source_dataset_from_sheet_name(name):
+    if name.startswith("R "):
+        return "Role"
+    if name.startswith("CS "):
+        return "Care Setting"
+    return None
+
+
+def make_record_id(source_dataset, record):
+    basis = "|".join([
+        source_dataset,
+        str(record.get("Citation", "")),
+        str(record.get("Training Topic / Competency Item", "")),
+        str(record.get("Jurisdiction", "")),
+        str(record.get("Jurisdiction Role", "")),
+        str(record.get("Jurisdiction Setting", "")),
+    ])
+    digest = hashlib.sha1(basis.encode("utf-8")).hexdigest()[:12]
+    return "req_" + digest
+
+
+def strip_stray_asterisk(val):
+    """Catches footnote-marker asterisks that leaked from a header
+    ("HSTM Role*") into the cell value beneath it, e.g. "Managerial Staff*"."""
+    if isinstance(val, str):
+        stripped = val.strip()
+        if stripped.endswith("*") and not stripped.endswith("**"):
+            return stripped[:-1].strip()
+        return stripped
+    return val
+
+
+def to_array(raw):
+    if raw is None:
+        return None
+    s = str(raw).strip()
+    if s in PIPE_NULL:
+        return None
+    parts = [strip_stray_asterisk(p.strip()) for p in s.split("|") if p.strip() and p.strip() not in PIPE_NULL]
+    return parts if parts else None
+
+
+def clean_scalar(val, field):
+    if val is None:
+        return None
+    if pd is not None and pd.isna(val):
+        return None
+    s = str(val).strip() if not isinstance(val, str) else val.strip()
+    if s in PIPE_NULL:
+        return None
+    if field in INTEGER_FIELDS:
+        try:
+            return int(float(s))
+        except (ValueError, TypeError):
+            return None
+    return strip_stray_asterisk(s)
+
+
+def normalize_row(raw_row, source_dataset):
+    record = {"Source Dataset": source_dataset}
+    for field in UNIFIED_FIELDS:
+        raw_val = raw_row.get(field)
+        if field in ARRAY_FIELDS:
+            record[field] = to_array(raw_val)
+        else:
+            record[field] = clean_scalar(raw_val, field)
+    record["Record ID"] = make_record_id(source_dataset, record)
+    return record
+
+
+def load_reference_values(reference_path):
+    """Distinct known-good values per field, from an existing requirements.json,
+    used only to warn on drift -- never to block or silently rewrite."""
+    if not reference_path or not Path(reference_path).exists():
+        return {}
+    try:
+        existing = json.loads(Path(reference_path).read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return {}
+    known = {"Jurisdiction": set(), "HSTM Setting": set(), "HSTM Role": set()}
+    for r in existing:
+        if r.get("Jurisdiction"):
+            known["Jurisdiction"].add(r["Jurisdiction"])
+        if r.get("HSTM Setting"):
+            known["HSTM Setting"].add(r["HSTM Setting"])
+        hstm_role = r.get("HSTM Role")
+        if isinstance(hstm_role, list):
+            known["HSTM Role"].update(hstm_role)
+        elif hstm_role:
+            known["HSTM Role"].add(hstm_role)
+    return known
+
+
+def validate(records, known_values):
+    warnings = []
+    seen_ids = {}
+    for record in records:
+        record_id = record["Record ID"]
+        if not record.get("Jurisdiction Setting") and not record.get("Jurisdiction Role"):
+            warnings.append(
+                record_id + ": missing both Jurisdiction Setting and Jurisdiction Role"
+            )
+        if record_id in seen_ids:
+            warnings.append(
+                record_id + ": duplicate Record ID within this batch (check for identical "
+                "Citation/Training Topic/Jurisdiction/Role/Setting combos)"
+            )
+        seen_ids[record_id] = True
+
+        if known_values.get("Jurisdiction") and record.get("Jurisdiction") not in known_values["Jurisdiction"]:
+            warnings.append(
+                record_id + ": Jurisdiction " + repr(record.get("Jurisdiction")) +
+                " not seen in the reference dataset (known values: " +
+                ", ".join(sorted(known_values["Jurisdiction"])) + ") -- possible vocabulary drift"
+            )
+        if known_values.get("HSTM Setting") and record.get("HSTM Setting") and record["HSTM Setting"] not in known_values["HSTM Setting"]:
+            warnings.append(
+                record_id + ": HSTM Setting " + repr(record["HSTM Setting"]) +
+                " not seen in the reference dataset -- confirm against the Definitions Sheet"
+            )
+        hstm_role = record.get("HSTM Role") or []
+        for v in hstm_role:
+            if known_values.get("HSTM Role") and v not in known_values["HSTM Role"]:
+                warnings.append(
+                    record_id + ": HSTM Role " + repr(v) +
+                    " not seen in the reference dataset -- confirm against the Definitions Sheet"
+                )
+    return warnings
+
+
+def load_excel(input_path, cli_source_dataset):
+    workbook = pd.read_excel(input_path, sheet_name=None, dtype=str)
+    records = []
+    for sheet_name, df in workbook.items():
+        if df.empty:
+            continue
+        source_dataset = cli_source_dataset or source_dataset_from_sheet_name(sheet_name)
+        if not source_dataset:
+            print(
+                f"ERROR: sheet '{sheet_name}' doesn't start with 'R ' or 'CS ', and "
+                f"--source-dataset wasn't given. Pass --source-dataset Role|\"Care Setting\", "
+                f"or rename the tab."
+            )
+            sys.exit(1)
+        df = df.where(pd.notnull(df), None)
+        for _, row in df.iterrows():
+            records.append(normalize_row(row.to_dict(), source_dataset))
+        print(f"  OK  {sheet_name}: {len(df)} rows -> {source_dataset}")
+    return records
+
+
+def load_json_array(input_path, cli_source_dataset):
+    raw = json.loads(Path(input_path).read_text(encoding="utf-8"))
+    if not isinstance(raw, list):
+        print("ERROR: JSON input must be a flat array of row objects.")
+        sys.exit(1)
+    if not cli_source_dataset:
+        print("ERROR: --source-dataset is required for JSON input (can't infer from a sheet-tab name).")
+        sys.exit(1)
+    return [normalize_row(row, cli_source_dataset) for row in raw]
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("input", help="Excel workbook (.xlsx) or JSON array (.json) using the 18-column unified template")
+    parser.add_argument("--source-dataset", choices=["Role", "Care Setting"], default=None,
+                         help="Force the Source Dataset lane. If omitted for Excel input, inferred per-sheet from an 'R '/'CS ' tab-name prefix.")
+    parser.add_argument("--reference", default="requirements.json",
+                         help="Existing requirements.json to check incoming Jurisdiction/HSTM values against (default: requirements.json in the current directory; pass '' to skip)")
+    parser.add_argument("-o", "--output", default=None, help="Output path (default: <input>-normalized.json)")
+    args = parser.parse_args()
+
+    input_path = Path(args.input)
+    if not input_path.exists():
+        print(f"ERROR: file not found -- {input_path}")
+        sys.exit(1)
+
+    output_path = Path(args.output) if args.output else input_path.with_name(input_path.stem + "-normalized.json")
+    warnings_path = input_path.with_name(input_path.stem + "-normalize-warnings.txt")
+
+    print(f"\nReading:  {input_path}")
+
+    if input_path.suffix.lower() in (".xlsx", ".xls"):
+        if pd is None:
+            print("ERROR: pandas is required to read Excel input (pip install pandas openpyxl).")
+            sys.exit(1)
+        records = load_excel(input_path, args.source_dataset)
+    elif input_path.suffix.lower() == ".json":
+        records = load_json_array(input_path, args.source_dataset)
+    else:
+        print("ERROR: input must be .xlsx, .xls, or .json")
+        sys.exit(1)
+
+    known_values = load_reference_values(args.reference) if args.reference else {}
+    warnings = validate(records, known_values)
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(records, f, indent=2, ensure_ascii=False, default=str)
+
+    if warnings:
+        with open(warnings_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(warnings) + "\n")
+
+    print(f"\nWritten:  {output_path}")
+    print(f"Summary:  {len(records)} record(s)")
+    if warnings:
+        print(f"{len(warnings)} warning(s) -- see {warnings_path}")
+        print("(warnings never block output -- review them, they don't stop this batch from being usable)")
+    print(f"\nNext step: upload {output_path} into pending-review.html to classify against the live dataset.\n")
+
+
+if __name__ == "__main__":
+    main()

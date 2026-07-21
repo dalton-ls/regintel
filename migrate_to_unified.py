@@ -31,13 +31,19 @@ Writes:
 Record IDs
 ----------
 Each record gets a stable "Record ID" derived from a hash of
-(source dataset, sheet key, Citation, Training Topic / Competency Item,
-Jurisdiction). Re-running this script against unchanged source data will
-reproduce the same IDs, so downstream admin edits keyed by Record ID are
-not invalidated by re-migration.
+(source dataset, Citation, Training Topic / Competency Item, Jurisdiction,
+Jurisdiction Role, Jurisdiction Setting) -- deliberately NOT the sheet key
+(the Excel tab a record happened to arrive on), since that's not a stable
+real-world identifier: the same regulation re-submitted under a
+differently-named tab must hash to the same ID. This matches
+normalize_batch.py's formula exactly, so a batch normalized by that script
+and a full re-migration by this one always agree on IDs for the same
+content. Re-running either against unchanged data reproduces the same
+IDs, so downstream admin edits keyed by Record ID are not invalidated.
 """
 
 import json
+import os
 import hashlib
 
 UNIFIED_FIELDS = [
@@ -62,20 +68,21 @@ UNIFIED_FIELDS = [
 ]
 
 
-def make_record_id(source_dataset, sheet_key, record):
+def make_record_id(source_dataset, record):
     basis = "|".join([
         source_dataset,
-        sheet_key,
         str(record.get("Citation", "")),
         str(record.get("Training Topic / Competency Item", "")),
         str(record.get("Jurisdiction", "")),
+        str(record.get("Jurisdiction Role", "")),
+        str(record.get("Jurisdiction Setting", "")),
     ])
     digest = hashlib.sha1(basis.encode("utf-8")).hexdigest()[:12]
     return "req_" + digest
 
 
-def normalize_record(source_dataset, sheet_key, record):
-    normalized = {"Record ID": make_record_id(source_dataset, sheet_key, record)}
+def normalize_record(source_dataset, record):
+    normalized = {"Record ID": make_record_id(source_dataset, record)}
     normalized["Source Dataset"] = source_dataset
     for field in UNIFIED_FIELDS:
         normalized[field] = record.get(field)
@@ -109,23 +116,28 @@ def migrate():
     unified = []
 
     role_data = load("role.json")
-    for sheet_key, records in role_data.items():
+    for records in role_data.values():
         for record in records:
-            unified.append(normalize_record("Role", sheet_key, record))
+            unified.append(normalize_record("Role", record))
 
     cs_data = load("caresetting.json")
-    for sheet_key, records in cs_data.items():
+    for records in cs_data.values():
         for record in records:
-            unified.append(normalize_record("Care Setting", sheet_key, record))
+            unified.append(normalize_record("Care Setting", record))
 
     warnings = validate(unified)
 
     with open("requirements.json", "w", encoding="utf-8") as f:
         json.dump(unified, f, indent=2, ensure_ascii=False)
 
+    warnings_path = "migration_warnings.txt"
     if warnings:
-        with open("migration_warnings.txt", "w", encoding="utf-8") as f:
+        with open(warnings_path, "w", encoding="utf-8") as f:
             f.write("\n".join(warnings) + "\n")
+    elif os.path.exists(warnings_path):
+        # Remove a stale file from a prior run so a clean re-run can't be
+        # mistaken for one that still has unresolved warnings.
+        os.remove(warnings_path)
 
     print("Wrote " + str(len(unified)) + " unified requirement records to requirements.json")
     if warnings:

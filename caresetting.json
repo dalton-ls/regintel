@@ -4292,7 +4292,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "All Employees with Occupational Exposure",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Clinical, Medication Dispensing",
@@ -4316,7 +4316,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "All Employees with Occupational Exposure",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Clinical, Medication Dispensing",
@@ -4340,7 +4340,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "All Employees with Occupational Exposure",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Clinical, Medication Dispensing",
@@ -4364,7 +4364,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "All Employees with Occupational Exposure",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Clinical, Medication Dispensing",
@@ -4388,7 +4388,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "All Employees with Occupational Exposure",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Clinical, Medication Dispensing",
@@ -4412,7 +4412,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "All Employees with Occupational Exposure",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Clinical, Medication Dispensing",
@@ -4436,7 +4436,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "All Employees Required to Use PPE",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Clinical, Medication Dispensing",
@@ -4462,7 +4462,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "All Employees Required to Use PPE",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Clinical, Medication Dispensing",
@@ -4488,7 +4488,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "Employees Required to Use Respirators",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Clinical, Medication Dispensing",
@@ -4511,7 +4511,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "Employees Required to Use Respirators",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Clinical, Medication Dispensing",
@@ -4534,7 +4534,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "Employees Required to Use Respirators",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Clinical, Medication Dispensing",
@@ -4557,7 +4557,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "Employees Required to Use Respirators",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Clinical, Medication Dispensing",
@@ -4580,7 +4580,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "All Employees with Chemical Hazard Exposure",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Clinical, Medication Dispensing",
@@ -4604,7 +4604,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "All Employees with Chemical Hazard Exposure",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Clinical, Medication Dispensing",
@@ -4628,7 +4628,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "Maintenance / Facilities Staff",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Non-Clinical, Non-Patient Facing"
@@ -4649,7 +4649,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "Maintenance / Facilities Staff",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Non-Clinical, Non-Patient Facing"
@@ -4670,7 +4670,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "Maintenance / Facilities Staff",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Non-Clinical, Non-Patient Facing"
@@ -4691,7 +4691,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "All Employees",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Clinical, Medication Dispensing",
@@ -4717,7 +4717,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "Designated Staff / All Employees",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Clinical, Medication Dispensing",
@@ -4743,7 +4743,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "Dietary / Laundry / Maintenance Staff",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Non-Clinical, Non-Patient Facing"
@@ -4764,7 +4764,7 @@
     {
       "Jurisdiction": "US",
       "Jurisdiction Role": "Designated First Aid Responders",
-      "Jurisdiction Setting": "Skilled Nursing Facility",
+      "Jurisdiction Setting": "Assisted Living Community",
       "Oversight / Professional Agency": "Occupational Safety and Health Administration (OSHA), U.S. Department of Labor",
       "HSTM Role": [
         "Clinical, Medication Dispensing",

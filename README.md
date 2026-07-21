@@ -32,10 +32,34 @@ write to it.
 python3 migrate_to_unified.py
 ```
 
-It assigns each record a stable `Record ID` (hashed from source + Citation +
-Training Topic + Jurisdiction, so IDs survive re-runs), validates the "at
-least one of Jurisdiction Setting/Role" rule, and writes
-`migration_warnings.txt` if anything fails validation.
+It assigns each record a stable `Record ID` — hashed from Source Dataset +
+Citation + Training Topic + Jurisdiction + Jurisdiction Role + Jurisdiction
+Setting, deliberately **not** the sheet/tab name (not a stable real-world
+identifier — the same regulation resubmitted under a differently-named
+sheet must hash to the same ID) — validates the "at least one of
+Jurisdiction Setting/Role" rule, and writes `migration_warnings.txt` if
+anything fails validation.
+
+### Ongoing bulk ingestion: `normalize_batch.py`
+
+For incoming batches after the initial migration — a new sheet of a few
+thousand rows, arriving sporadically — don't re-run `migrate_to_unified.py`
+(it fully regenerates `requirements.json` from just `role.json` +
+`caresetting.json` and bypasses Pending Review Queue's conflict detection
+entirely). Instead, normalize the new sheet on its own and feed it into
+Pending Review Queue:
+
+```
+python3 normalize_batch.py incoming_sheet.xlsx --source-dataset Role
+```
+
+This computes the same stable Record IDs as `migrate_to_unified.py` (so a
+resubmission of an existing regulation is recognized as an update, not a
+duplicate), validates the anchor rule, and warns — without blocking output —
+on likely vocabulary drift (a `Jurisdiction`, `HSTM Setting`, or `HSTM Role`
+value not seen in the reference `requirements.json`). It writes a flat JSON
+array; upload that into `pending-review.html` to classify against the live
+dataset and resolve any conflicts.
 
 ## Unified admin tools (requirements.json)
 
@@ -90,7 +114,8 @@ the same `localStorage` mechanism as these three tabs.
 | `requirements.json` | Unified Role + Care Setting dataset — the live source of truth |
 | `wr.json` | Workforce Readiness dataset (`WR *` sheets) |
 | `role.json` / `caresetting.json` | Original per-type source files consumed by `migrate_to_unified.py` |
-| `migrate_to_unified.py` | Builds `requirements.json` from `role.json` + `caresetting.json` |
+| `migrate_to_unified.py` | Builds `requirements.json` from `role.json` + `caresetting.json` (one-time / full-regeneration use) |
+| `normalize_batch.py` | Normalizes one incoming sheet into a Pending-Review-Queue-ready JSON batch, for ongoing sporadic bulk ingestion |
 | `DESIGN.md` | Schema and admin-workflow design document |
 | `worker/regintel-admin-proxy/` | Cloudflare Worker that lets the unified admin tools commit to GitHub |
 | `ingest.html` / `ingest-role.html` / `ingest-cs.html` | Legacy per-type ingest tools (see above) |
