@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RegIntel — Record Editor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; color: #1a2332; background: #f0f2f5; }
+
+    .app-header { position: sticky; top: 0; z-index: 200; height: 60px; background: #1a2e5a; display: flex; align-items: center; justify-content: space-between; padding: 0 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+    .header-brand { display: flex; align-items: center; gap: 10px; }
+    .logo-text { font-size: 17px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+    .header-sep { color: rgba(255,255,255,0.25); font-size: 20px; font-weight: 200; }
+    .header-subtitle { font-size: 12px; color: rgba(255,255,255,0.6); }
+    .back-link { font-size: 12px; color: rgba(255,255,255,0.5); text-decoration: none; font-weight: 500; }
+    .back-link:hover { color: rgba(255,255,255,0.85); }
+
+    .page-wrap { max-width: 1200px; margin: 0 auto; padding: 32px 24px 80px; }
+    .page-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+    .page-desc { font-size: 14px; color: #6b7a99; line-height: 1.6; margin-bottom: 24px; max-width: 760px; }
+
+    .editor-layout { display: grid; grid-template-columns: 380px 1fr; gap: 20px; align-items: start; }
+
+    .search-box { position: relative; margin-bottom: 14px; }
+    .search-box input { width: 100%; height: 38px; border: 1px solid #dde1ea; border-radius: 8px; padding: 0 14px; font-size: 13px; font-family: inherit; background: #fff; }
+    .search-box input:focus { outline: none; border-color: #2463eb; }
+
+    .result-count { font-size: 12px; color: #6b7a99; margin-bottom: 10px; }
+
+    .result-list { background: #fff; border: 1px solid #e8ecf0; border-radius: 10px; max-height: 640px; overflow-y: auto; }
+    .result-item { padding: 12px 16px; border-bottom: 1px solid #f0f2f5; cursor: pointer; }
+    .result-item:last-child { border-bottom: none; }
+    .result-item:hover { background: #f7f9fc; }
+    .result-item.selected { background: #eef3fb; box-shadow: inset 3px 0 0 #2463eb; }
+    .result-topic { font-weight: 600; color: #1a2332; font-size: 13px; line-height: 1.4; margin-bottom: 3px; }
+    .result-meta { font-size: 11px; color: #9ca3af; }
+    .result-badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; background: #e2e8f0; color: #4a5568; margin-right: 6px; }
+    .result-badge.role { background: #1a2332; color: #fff; }
+    .result-badge.edited { background: #d97706; color: #fff; }
+
+    .empty-state { text-align: center; padding: 60px 24px; color: #9aaac4; }
+    .empty-state svg { margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+
+    .editor-panel { background: #fff; border: 1px solid #e8ecf0; border-radius: 10px; padding: 24px; }
+    .editor-panel .placeholder { text-align: center; padding: 100px 24px; color: #9aaac4; font-size: 14px; }
+
+    .editor-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; padding-bottom: 14px; border-bottom: 1px solid #e8ecf0; }
+    .editor-record-id { font-size: 11px; color: #9ca3af; font-family: ui-monospace, monospace; }
+    .editor-source { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; background: #e2e8f0; color: #4a5568; }
+
+    .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+    .field-grid .field.span-2 { grid-column: span 2; }
+    .field label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #6b7a99; margin-bottom: 5px; }
+    .field input, .field select, .field textarea { width: 100%; border: 1px solid #dde1ea; border-radius: 6px; padding: 7px 10px; font-size: 13px; font-family: inherit; color: #1a2332; background: #fff; }
+    .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: #2463eb; }
+    .field textarea { resize: vertical; min-height: 56px; }
+    .field .hint { font-size: 10px; color: #b0b8cc; margin-top: 3px; }
+
+    .validation-warning { background: #fef3e2; border: 1px solid #f5cd87; color: #92620a; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-bottom: 16px; }
+
+    .editor-actions { display: flex; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #e8ecf0; }
+
+    .btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; border: 1px solid #dde1ea; background: #fff; color: #4a5568; transition: background 0.15s; }
+    .btn:hover { background: #f5f7fa; }
+    .btn.primary { background: #2463eb; color: #fff; border-color: #2463eb; }
+    .btn.primary:hover { background: #1d4ed8; }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a2332; color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 999; box-shadow: 0 4px 20px rgba(0,0,0,0.25); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-brand">
+      <span class="logo-text">RegIntel</span>
+      <span class="header-sep">|</span>
+      <span class="header-subtitle">Record Editor</span>
+    </div>
+    <a href="regintel.html" class="back-link">&larr; Back to research view</a>
+  </header>
+
+  <div class="page-wrap">
+    <h1 class="page-title">Individual Record Editor</h1>
+    <p class="page-desc">Search the unified requirements dataset by Record ID, jurisdiction, citation, training topic, or role/setting. Select a record to edit any field and save. Edits are stored locally in this browser and layered on top of <code>requirements.json</code>; use <strong>Download edited dataset</strong> to get a file to commit back into the repo.</p>
+
+    <div class="editor-layout">
+      <div>
+        <div class="search-box">
+          <input type="text" id="searchInput" placeholder="Search Record ID, jurisdiction, citation, topic, role, setting…">
+        </div>
+        <div class="result-count" id="resultCount"></div>
+        <div class="result-list" id="resultList"></div>
+      </div>
+
+      <div class="editor-panel" id="editorPanel">
+        <div class="placeholder">Select a record on the left to edit it.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+  const EDITS_KEY = 'regintel_record_edits';
+
+  const UNIFIED_FIELDS = [
+    "Jurisdiction", "Jurisdiction Setting", "Jurisdiction Role",
+    "HSTM Setting", "HSTM Role", "Regulation Type",
+    "Oversight / Professional Agency", "Requirement Level", "Explicit Training",
+    "Citation", "Training Topic / Competency Item", "Relationship", "Purpose",
+    "Approval Required", "Hours Required", "Frequency", "Source URL",
+    "Notes / Research Flags"
+  ];
+
+  const TEXTAREA_FIELDS = new Set(["Training Topic / Competency Item", "Purpose", "Notes / Research Flags", "Source URL"]);
+  const ARRAY_FIELDS = new Set(["HSTM Role"]);
+
+  let baseRecords = [];
+  let records = [];
+  let selectedId = null;
+  let edits = {};
+
+  function showToast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+  }
+
+  function esc(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function loadEdits() {
+    try { edits = JSON.parse(localStorage.getItem(EDITS_KEY) || '{}'); }
+    catch { edits = {}; }
+  }
+
+  function applyEdits() {
+    records = baseRecords.map(r => edits[r['Record ID']] ? { ...r, ...edits[r['Record ID']] } : r);
+  }
+
+  async function init() {
+    loadEdits();
+    try {
+      const res = await fetch('requirements.json');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      baseRecords = await res.json();
+    } catch (err) {
+      document.getElementById('resultList').innerHTML =
+        '<div class="empty-state"><p>Could not load requirements.json: ' + esc(err.message) + '</p></div>';
+      return;
+    }
+    applyEdits();
+    renderList();
+    document.getElementById('searchInput').addEventListener('input', renderList);
+  }
+
+  function matches(record, q) {
+    if (!q) return true;
+    q = q.toLowerCase();
+    const hstmRole = Array.isArray(record['HSTM Role']) ? record['HSTM Role'].join(' ') : (record['HSTM Role'] || '');
+    const haystack = [
+      record['Record ID'], record['Jurisdiction'], record['Jurisdiction Setting'],
+      record['Jurisdiction Role'], record['HSTM Setting'], hstmRole,
+      record['Citation'], record['Training Topic / Competency Item']
+    ].filter(Boolean).join(' ').toLowerCase();
+    return haystack.includes(q);
+  }
+
+  function renderList() {
+    const q = document.getElementById('searchInput').value.trim();
+    const filtered = records.filter(r => matches(r, q));
+    const listEl = document.getElementById('resultList');
+    document.getElementById('resultCount').textContent =
+      filtered.length + ' of ' + records.length + ' records';
+
+    if (!filtered.length) {
+      listEl.innerHTML = '<div class="empty-state"><p>No records match your search.</p></div>';
+      return;
+    }
+
+    listEl.innerHTML = filtered.map(r => {
+      const id = r['Record ID'];
+      const isRole = r['Source Dataset'] === 'Role';
+      const isEdited = !!edits[id];
+      const juris = [r['Jurisdiction Setting'], r['Jurisdiction Role']].filter(Boolean).join(' / ');
+      const meta = [r['Jurisdiction'], juris, r['Citation']].filter(Boolean).join(' · ');
+      return '<div class="result-item' + (id === selectedId ? ' selected' : '') + '" data-id="' + esc(id) + '">' +
+        '<div class="result-topic">' +
+          '<span class="result-badge' + (isRole ? ' role' : '') + '">' + esc(r['Source Dataset'] || '') + '</span>' +
+          (isEdited ? '<span class="result-badge edited">Edited</span>' : '') +
+          esc(r['Training Topic / Competency Item'] || '(no topic)') +
+        '</div>' +
+        '<div class="result-meta">' + esc(meta) + '</div>' +
+      '</div>';
+    }).join('');
+
+    listEl.querySelectorAll('.result-item').forEach(el => {
+      el.addEventListener('click', () => selectRecord(el.dataset.id));
+    });
+  }
+
+  function selectRecord(id) {
+    selectedId = id;
+    renderList();
+    renderEditor(records.find(r => r['Record ID'] === id));
+  }
+
+  function fieldValue(record, field) {
+    const v = record[field];
+    if (ARRAY_FIELDS.has(field)) return Array.isArray(v) ? v.join(', ') : (v || '');
+    return v == null ? '' : v;
+  }
+
+  function renderEditor(record) {
+    const panel = document.getElementById('editorPanel');
+    if (!record) {
+      panel.innerHTML = '<div class="placeholder">Select a record on the left to edit it.</div>';
+      return;
+    }
+
+    let fieldsHtml = '';
+    UNIFIED_FIELDS.forEach(field => {
+      const isWide = TEXTAREA_FIELDS.has(field);
+      const value = fieldValue(record, field);
+      const inputEl = isWide
+        ? '<textarea data-field="' + esc(field) + '">' + esc(value) + '</textarea>'
+        : '<input type="text" data-field="' + esc(field) + '" value="' + esc(value) + '">';
+      const hint = ARRAY_FIELDS.has(field) ? '<div class="hint">Comma-separated list</div>' : '';
+      fieldsHtml += '<div class="field' + (isWide ? ' span-2' : '') + '">' +
+        '<label>' + esc(field) + '</label>' + inputEl + hint + '</div>';
+    });
+
+    panel.innerHTML =
+      '<div class="editor-header">' +
+        '<span class="editor-record-id">' + esc(record['Record ID']) + '</span>' +
+        '<span class="editor-source">' + esc(record['Source Dataset'] || '') + '</span>' +
+      '</div>' +
+      '<div id="validationWarning"></div>' +
+      '<div class="field-grid">' + fieldsHtml + '</div>' +
+      '<div class="editor-actions">' +
+        '<button class="btn primary" id="saveBtn">Save</button>' +
+        '<button class="btn" id="revertBtn">Revert to original</button>' +
+        '<button class="btn" id="downloadBtn" style="margin-left:auto">Download edited dataset</button>' +
+      '</div>';
+
+    document.getElementById('saveBtn').addEventListener('click', () => saveRecord(record['Record ID']));
+    document.getElementById('revertBtn').addEventListener('click', () => revertRecord(record['Record ID']));
+    document.getElementById('downloadBtn').addEventListener('click', downloadDataset);
+  }
+
+  function readFormValues() {
+    const panel = document.getElementById('editorPanel');
+    const values = {};
+    panel.querySelectorAll('[data-field]').forEach(el => {
+      const field = el.dataset.field;
+      let val = el.value.trim();
+      if (ARRAY_FIELDS.has(field)) {
+        values[field] = val ? val.split(',').map(s => s.trim()).filter(Boolean) : [];
+      } else {
+        values[field] = val === '' ? null : val;
+      }
+    });
+    return values;
+  }
+
+  function saveRecord(id) {
+    const values = readFormValues();
+
+    if (!values['Jurisdiction Setting'] && !values['Jurisdiction Role']) {
+      document.getElementById('validationWarning').innerHTML =
+        '<div class="validation-warning">Cannot save: at least one of Jurisdiction Setting or Jurisdiction Role is required.</div>';
+      return;
+    }
+
+    edits[id] = values;
+    try { localStorage.setItem(EDITS_KEY, JSON.stringify(edits)); }
+    catch (e) { showToast('Storage error: ' + e.message); return; }
+
+    applyEdits();
+    renderList();
+    renderEditor(records.find(r => r['Record ID'] === id));
+    showToast('Saved changes to ' + id);
+  }
+
+  function revertRecord(id) {
+    if (!edits[id]) { showToast('No local edits to revert'); return; }
+    delete edits[id];
+    localStorage.setItem(EDITS_KEY, JSON.stringify(edits));
+    applyEdits();
+    renderList();
+    renderEditor(records.find(r => r['Record ID'] === id));
+    showToast('Reverted ' + id + ' to original');
+  }
+
+  function downloadDataset() {
+    const blob = new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'requirements-edited.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Downloaded edited requirements.json');
+  }
+
+  init();
+  </script>
+</body>
+</html>
