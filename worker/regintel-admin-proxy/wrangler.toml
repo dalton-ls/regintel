@@ -1,0 +1,14 @@
+name = "regintel-admin-proxy"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# Secrets (set via `wrangler secret put <NAME>`, never committed here):
+#   GITHUB_TOKEN  - fine-grained GitHub PAT, scoped to the regintel repo only,
+#                   with Contents: Read and write permission and nothing else.
+#   ADMIN_TOKEN   - a long random shared secret the admin tools send as a
+#                   bearer token to authenticate write requests to this Worker.
+
+[vars]
+GITHUB_OWNER = "dalton-ls"
+GITHUB_REPO = "regintel"
+GITHUB_BRANCH = "admin-workflow-redesign"

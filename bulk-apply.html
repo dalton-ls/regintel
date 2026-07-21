@@ -55,6 +55,7 @@
     .hint { font-size: 10px; color: #b0b8cc; margin-top: 3px; }
     .muted { color: #9aaac4; font-size: 13px; }
     .warn-note { background: #fef3e2; border: 1px solid #f5cd87; color: #92620a; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-top: 12px; }
+    .error-banner { background: #fdecec; border: 1px solid #f5b8b8; color: #a12b2b; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-bottom: 20px; }
 
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a2332; color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 999; box-shadow: 0 4px 20px rgba(0,0,0,0.25); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
     .toast.show { opacity: 1; }
@@ -72,7 +73,9 @@
 
   <div class="page-wrap">
     <h1 class="page-title">Filter &rarr; Bulk-Apply</h1>
-    <p class="page-desc">Filter the unified requirements dataset by any combination of fields, preview the matching set, then apply a single field change across all matching records at once. Nothing is written until you review the change preview and click apply. Edits layer on top of <code>requirements.json</code> in this browser; use the Export screen to download a file to commit.</p>
+    <p class="page-desc">Filter the unified requirements dataset by any combination of fields, preview the matching set, then apply a single field change across all matching records at once. Nothing is written until you review the change preview and click apply — applying commits directly to <code>requirements.json</code> on GitHub.</p>
+
+    <div id="globalError"></div>
 
     <div class="card">
       <div class="card-title"><span class="step-num">1</span>Filter</div>
@@ -113,7 +116,9 @@
   <div class="toast" id="toast"></div>
 
   <script>
-  const EDITS_KEY = 'regintel_record_edits';
+  // Set this to the deployed Worker URL from worker/regintel-admin-proxy (see its README).
+  const WORKER_URL = 'https://regintel-admin-proxy.regintel.workers.dev';
+  const TOKEN_KEY = 'regintel_admin_token'; // sessionStorage only — never written into this file
 
   const UNIFIED_FIELDS = [
     "Jurisdiction", "Jurisdiction Setting", "Jurisdiction Role",
@@ -131,28 +136,57 @@
     "Regulation Type", "Requirement Level", "Relationship"
   ];
 
-  let baseRecords = [];
   let records = [];
-  let edits = {};
   let matching = [];
 
   function showToast(msg) {
     const el = document.getElementById('toast');
     el.textContent = msg;
     el.classList.add('show');
-    setTimeout(() => el.classList.remove('show'), 2500);
+    setTimeout(() => el.classList.remove('show'), 3200);
   }
   function esc(s) {
     if (s == null) return '';
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
-  function loadEdits() {
-    try { edits = JSON.parse(localStorage.getItem(EDITS_KEY) || '{}'); }
-    catch { edits = {}; }
+
+  // ─── Worker API ───
+
+  function getToken() {
+    let t = sessionStorage.getItem(TOKEN_KEY);
+    if (!t) {
+      t = prompt('Enter the RegIntel admin token (asked once per browser session):');
+      if (t) sessionStorage.setItem(TOKEN_KEY, t);
+    }
+    return t;
   }
-  function applyEdits() {
-    records = baseRecords.map(r => edits[r['Record ID']] ? { ...r, ...edits[r['Record ID']] } : r);
+
+  async function fetchLatestRecords() {
+    const res = await fetch(WORKER_URL + '/file?path=requirements.json');
+    if (!res.ok) throw new Error('Failed to load requirements.json (HTTP ' + res.status + ')');
+    const body = await res.json();
+    return body.content;
   }
+
+  async function commitRecords(newRecords, message) {
+    const token = getToken();
+    if (!token) throw new Error('Admin token is required to save.');
+    const res = await fetch(WORKER_URL + '/commit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ path: 'requirements.json', message, content: newRecords })
+    });
+    if (res.status === 401) {
+      sessionStorage.removeItem(TOKEN_KEY);
+      throw new Error('Admin token was rejected. It has been cleared — try applying again to re-enter it.');
+    }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || ('Save failed (HTTP ' + res.status + ')'));
+    }
+    return res.json();
+  }
+
   function displayVal(v) {
     if (v == null || v === '') return '(empty)';
     if (Array.isArray(v)) return v.length ? v.join(', ') : '(empty)';
@@ -283,39 +317,54 @@
     applyBtn.dataset.newval = JSON.stringify(newVal);
   }
 
-  function applyChanges() {
+  async function applyChanges() {
     const applyBtn = document.getElementById('applyBtn');
     const field = applyBtn.dataset.field;
     const newVal = JSON.parse(applyBtn.dataset.newval);
     const filters = currentFilters();
-    const targets = records.filter(r =>
-      recordMatches(r, filters) && JSON.stringify(r[field] ?? null) !== JSON.stringify(newVal));
 
-    targets.forEach(r => {
-      const id = r['Record ID'];
-      edits[id] = { ...(edits[id] || {}), [field]: newVal };
-    });
-    try { localStorage.setItem(EDITS_KEY, JSON.stringify(edits)); }
-    catch (e) { showToast('Storage error: ' + e.message); return; }
+    applyBtn.disabled = true;
+    const originalLabel = applyBtn.textContent;
+    applyBtn.textContent = 'Fetching latest and committing…';
 
-    applyEdits();
-    buildFilters();          // value lists may have shifted
-    recomputeMatch();
-    document.getElementById('previewCard').style.display = 'none';
-    showToast('Applied "' + field + '" to ' + targets.length + ' record' + (targets.length === 1 ? '' : 's'));
+    try {
+      // Re-fetch the freshest copy so we don't stomp a change made from
+      // another tab/device since this page loaded.
+      const latest = await fetchLatestRecords();
+      const targetIds = new Set(
+        latest.filter(r => recordMatches(r, filters) && JSON.stringify(r[field] ?? null) !== JSON.stringify(newVal))
+              .map(r => r['Record ID'])
+      );
+      const updated = latest.map(r => targetIds.has(r['Record ID']) ? { ...r, [field]: newVal } : r);
+
+      const result = await commitRecords(updated, 'Bulk-apply "' + field + '" to ' + targetIds.size + ' record(s)');
+
+      records = updated;
+      buildFilters();          // value lists may have shifted
+      recomputeMatch();
+      document.getElementById('previewCard').style.display = 'none';
+      showToast('Applied "' + field + '" to ' + targetIds.size + ' record(s)' + (result.commitUrl ? ' — ' + result.commitUrl : ''));
+    } catch (err) {
+      document.getElementById('globalError').innerHTML = '<div class="error-banner">' + esc(err.message) + '</div>';
+      applyBtn.textContent = originalLabel;
+      applyBtn.disabled = false;
+      return;
+    }
+    applyBtn.disabled = false;
   }
 
   async function init() {
-    loadEdits();
+    if (WORKER_URL === 'REPLACE_WITH_WORKER_URL') {
+      document.getElementById('globalError').innerHTML =
+        '<div class="error-banner">This screen has not been pointed at a deployed admin proxy yet. See <code>worker/regintel-admin-proxy/README.md</code> for setup, then set <code>WORKER_URL</code> at the top of this file.</div>';
+      return;
+    }
     try {
-      const res = await fetch('requirements.json');
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      baseRecords = await res.json();
+      records = await fetchLatestRecords();
     } catch (err) {
       document.getElementById('filterGrid').innerHTML = '<p class="muted">Could not load requirements.json: ' + esc(err.message) + '</p>';
       return;
     }
-    applyEdits();
     buildFilters();
     buildTargetField();
     recomputeMatch();

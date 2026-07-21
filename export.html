@@ -54,7 +54,7 @@
 
   <div class="page-wrap">
     <h1 class="page-title">Export</h1>
-    <p class="page-desc">Download the current dataset as JSON. The Requirements export reflects every local edit and added record layered on top of <code>requirements.json</code>. Choose which datasets to export, then download.</p>
+    <p class="page-desc">Download the current dataset as JSON. Requirements is always read fresh from the latest commit on GitHub — the Record Editor, Bulk-Apply, and Pending Review screens commit directly there, so this always reflects the live state. Choose which datasets to export, then download.</p>
 
     <label class="dataset-card">
       <input type="checkbox" id="chkReq" checked>
@@ -75,24 +75,24 @@
     </label>
 
     <div class="commit-note">
-      This tool does <strong>not</strong> commit anything to the repository. It downloads files to your machine; you review them and commit into version control yourself &mdash; e.g. replace the repo's <code>requirements.json</code> with the downloaded file, then <code>git add</code> / <code>commit</code> / <code>push</code>.
+      Requirements edits already live on GitHub once saved elsewhere in the admin tools &mdash; this screen is for a manual backup snapshot, not a required step. <code>wr.json</code> is unchanged by any of the admin tools, so its download here is the only way to get a current copy out of the repo.
     </div>
 
     <div class="actions">
       <button class="btn primary" id="downloadBtn">Download selected</button>
-      <button class="btn" id="clearBtn">Clear local edits</button>
+      <button class="btn" id="refreshBtn">Refresh from GitHub</button>
     </div>
   </div>
 
   <div class="toast" id="toast"></div>
 
   <script>
-  const EDITS_KEY = 'regintel_record_edits';
-  const ADDS_KEY = 'regintel_record_adds';
+  // Set this to the deployed Worker URL from worker/regintel-admin-proxy (see its README).
+  // Export still works without it configured — it just falls back to a plain
+  // relative fetch of requirements.json as served by whatever's hosting this page.
+  const WORKER_URL = 'https://regintel-admin-proxy.regintel.workers.dev';
 
   let baseRecords = [];
-  let edits = {};
-  let adds = [];
   let wrData = null;
 
   function showToast(msg) {
@@ -106,9 +106,15 @@
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
 
-  function effectiveRequirements() {
-    const merged = baseRecords.map(r => edits[r['Record ID']] ? { ...r, ...edits[r['Record ID']] } : r);
-    return merged.concat(adds);
+  async function fetchLatestRequirements() {
+    if (WORKER_URL !== 'REPLACE_WITH_WORKER_URL') {
+      const res = await fetch(WORKER_URL + '/file?path=requirements.json');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return (await res.json()).content;
+    }
+    const res = await fetch('requirements.json');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
   }
 
   function download(filename, data) {
@@ -121,19 +127,9 @@
   }
 
   async function init() {
-    try { edits = JSON.parse(localStorage.getItem(EDITS_KEY) || '{}'); } catch { edits = {}; }
-    try { adds = JSON.parse(localStorage.getItem(ADDS_KEY) || '[]'); } catch { adds = []; }
-
     try {
-      const res = await fetch('requirements.json');
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      baseRecords = await res.json();
-      const editCount = Object.keys(edits).length;
-      const meta = baseRecords.length + adds.length + ' records (' + baseRecords.length + ' base' +
-        (adds.length ? ' + ' + adds.length + ' added' : '') + ')';
-      document.getElementById('reqMeta').innerHTML = editCount || adds.length
-        ? esc(meta) + ' &middot; <span class="edited">' + editCount + ' edited, ' + adds.length + ' added locally</span>'
-        : esc(meta) + ' &middot; no local changes';
+      baseRecords = await fetchLatestRequirements();
+      document.getElementById('reqMeta').textContent = baseRecords.length + ' records · loaded fresh from GitHub';
     } catch (err) {
       document.getElementById('reqMeta').textContent = 'Could not load requirements.json: ' + err.message;
       document.getElementById('chkReq').checked = false;
@@ -153,7 +149,7 @@
     }
 
     document.getElementById('downloadBtn').addEventListener('click', doDownload);
-    document.getElementById('clearBtn').addEventListener('click', clearEdits);
+    document.getElementById('refreshBtn').addEventListener('click', () => { showToast('Refreshing…'); init(); });
   }
 
   function doDownload() {
@@ -162,20 +158,9 @@
     if (!wantReq && !wantWr) { showToast('Select at least one dataset'); return; }
 
     let n = 0;
-    if (wantReq && baseRecords.length) { download('requirements.json', effectiveRequirements()); n++; }
+    if (wantReq && baseRecords.length) { download('requirements.json', baseRecords); n++; }
     if (wantWr && wrData) { download('wr.json', wrData); n++; }
     showToast('Downloaded ' + n + ' file' + (n === 1 ? '' : 's'));
-  }
-
-  function clearEdits() {
-    const editCount = Object.keys(edits).length;
-    if (!editCount && !adds.length) { showToast('No local edits to clear'); return; }
-    if (!confirm('Clear ' + editCount + ' local edit(s) and ' + adds.length + ' added record(s)? This cannot be undone.')) return;
-    localStorage.removeItem(EDITS_KEY);
-    localStorage.removeItem(ADDS_KEY);
-    edits = {}; adds = [];
-    showToast('Cleared all local edits');
-    init();
   }
 
   init();
