@@ -289,12 +289,17 @@
     document.getElementById('discardBtn').addEventListener('click', () => renderEditor(records.find(r => r['Record ID'] === record['Record ID'])));
   }
 
-  function readFormValues() {
+  // Only returns fields whose displayed text actually changed, so untouched
+  // fields keep their original value/type (e.g. a numeric Hours Required
+  // isn't silently rewritten as a string just because another field changed).
+  function readChangedValues(record) {
     const panel = document.getElementById('editorPanel');
     const values = {};
     panel.querySelectorAll('[data-field]').forEach(el => {
       const field = el.dataset.field;
-      let val = el.value.trim();
+      const val = el.value.trim();
+      if (val === fieldValue(record, field)) return; // unchanged — preserve original
+
       if (ARRAY_FIELDS.has(field)) {
         values[field] = val ? val.split(',').map(s => s.trim()).filter(Boolean) : [];
       } else {
@@ -305,13 +310,17 @@
   }
 
   async function saveRecord(id) {
-    const values = readFormValues();
+    const original = records.find(r => r['Record ID'] === id);
+    const values = readChangedValues(original);
+    const merged = { ...original, ...values };
 
-    if (!values['Jurisdiction Setting'] && !values['Jurisdiction Role']) {
+    if (!merged['Jurisdiction Setting'] && !merged['Jurisdiction Role']) {
       document.getElementById('validationWarning').innerHTML =
         '<div class="validation-warning">Cannot save: at least one of Jurisdiction Setting or Jurisdiction Role is required.</div>';
       return;
     }
+
+    if (!Object.keys(values).length) { showToast('No changes to save'); return; }
 
     const saveBtn = document.getElementById('saveBtn');
     const status = document.getElementById('saveStatus');
