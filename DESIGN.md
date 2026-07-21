@@ -1,5 +1,12 @@
 # RegIntel Data Model & Admin Workflow — Design Document
 
+> **Status: implemented and live.** The schema in §2, the migration in §4,
+> and all four screens in §5 exist and are merged into the deployment
+> branch. See [README.md](README.md) for the current file layout and
+> [worker/regintel-admin-proxy/README.md](worker/regintel-admin-proxy/README.md)
+> for how the admin tools actually commit changes (a detail this design
+> doc doesn't specify — it was decided during implementation, see below).
+
 ## 1. Overview
 
 RegIntel currently stores regulatory content as separate JSON files per content type (Workforce Readiness, Role, Care Setting), edited only through read-only preview/upload "ingest" tools, with no ability to edit individual records or push edits back into version-controlled files. As research scales to all 50 states plus federal, and as OpenLaws/RegWatch begins feeding data in at volume, this document defines a unified data model and an admin workflow that supports rapid bulk ingestion, individual and at-scale editing, and safe handling of conflicting updates.
@@ -51,7 +58,9 @@ Four screens support the workflow:
 1. Individual Record Editor — search/select a single record, edit any field in a form, save. Used for spot corrections.
 2. Filter -> Bulk-Apply Tool — filter records by any combination of Jurisdiction, HSTM Setting, HSTM Role, Regulation Type, etc.; preview the matching set; apply a single field change across all matching records at once, with a preview step before committing.
 3. Pending Review Queue — lists every incoming record that conflicts with existing data, showing a field-by-field diff (existing vs. incoming); the reviewer chooses to keep existing, use incoming, or manually reconcile. Nothing here applies automatically.
-4. Export — generates the current dataset as JSON (Requirements and/or Workforce Readiness), downloaded for you to commit into the repository yourself; this tool does not commit on your behalf.
+4. Export — generates the current dataset as JSON (Requirements and/or Workforce Readiness) as a manual backup download.
+
+**Implementation note:** screens 1–3 commit directly to `requirements.json` on GitHub as each save/apply happens (via the Cloudflare Worker proxy — see the README linked above), rather than requiring a separate manual "commit into the repository yourself" step as originally envisioned here. This was a deliberate scope decision to support one operator working from multiple computers without a localStorage-based handoff. Export's role changed accordingly: it's now a convenience snapshot, not the mechanism by which edits reach the repository.
 
 ## 6. Out of Scope (for now)
 

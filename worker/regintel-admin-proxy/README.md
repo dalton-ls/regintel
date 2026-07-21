@@ -3,9 +3,11 @@
 A small Cloudflare Worker that lets the RegIntel admin screens
 (`record-editor.html`, `bulk-apply.html`, `pending-review.html`) commit
 edits directly to `requirements.json` on GitHub, instead of stashing them
-in browser `localStorage`. Because the committed file is the single source
-of truth, this lets one person work from multiple computers/browsers
-without losing edits or needing to manually re-export/re-commit.
+in browser `localStorage`. `export.html` also reads through it (no auth
+needed for reads) so its snapshot always reflects the live committed data.
+Because the committed file is the single source of truth, this lets one
+person work from multiple computers/browsers without losing edits or
+needing to manually re-export/re-commit.
 
 This is deliberately **not** a multi-user system — it's a single shared
 secret gating write access for one trusted operator.
@@ -51,7 +53,7 @@ Each admin screen prompts once per browser session for the `ADMIN_TOKEN`
 never written into the HTML/JS source, so it isn't exposed by "view
 source" on the static site. Enter it once per browser/device; after that,
 edits, bulk-applies, and conflict resolutions commit straight to the
-`admin-workflow-redesign` branch on save.
+`claude/create-website-skeleton-hYJMa` branch on save (the branch GitHub Pages actually serves).
 
 ## Rotating the token
 
@@ -66,5 +68,6 @@ will start failing with 401s).
 - No per-user identity — anyone with the `ADMIN_TOKEN` can write.
 - No merge/conflict UI beyond a single retry-on-409 — built for one
   operator, not concurrent multi-user editing.
-- Only touches `requirements.json` on the `admin-workflow-redesign`
-  branch — `wr.json` and `main` are untouched.
+- Only touches `requirements.json` on the `claude/create-website-skeleton-hYJMa`
+  branch — `wr.json` is untouched (Workforce Readiness is intentionally
+  outside the unified schema; see the repo's DESIGN.md).
