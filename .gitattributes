@@ -1,0 +1,24 @@
+# Normalize all text files to LF in the repository.
+#
+# Why: this repo is cloned into a OneDrive-synced folder on Windows, which
+# checked every file out with CRLF endings. Without this file, `git status`
+# reports all 25 tracked files as fully modified (~31.5k insertions and an
+# identical 31.5k deletions) even when no content has changed. That makes
+# per-file diffs unreadable and destroys the ability to revert a data
+# migration independently of a UI change -- which is the whole point of
+# committing requirements.json separately from the admin tools.
+#
+# `text=auto eol=lf` stores LF in the object database and checks out LF,
+# so the working tree matches the index on every platform.
+* text=auto eol=lf
+
+# Binary: never touch these.
+*.xlsx binary
+*.png  binary
+*.jpg  binary
+*.gif  binary
+*.pdf  binary
+*.ico  binary
+
+# Large generated data files -- mark as JSON for better diff context.
+*.json diff=json
