@@ -123,18 +123,36 @@
   const UNIFIED_FIELDS = [
     "Jurisdiction", "Jurisdiction Setting", "Jurisdiction Role",
     "HSTM Setting", "HSTM Role", "Regulation Type",
-    "Oversight / Professional Agency", "Requirement Level", "Explicit Training",
+    "Oversight / Professional Agency", "Requirement Level", "Authority Level",
+    "Explicit Training",
     "Citation", "Training Topic / Competency Item", "Relationship", "Purpose",
-    "Approval Required", "Hours Required", "Frequency", "Source URL",
-    "Notes / Research Flags"
+    "Approval Required", "Approval Basis", "Hours Required", "Frequency",
+    "Source URL", "Notes / Research Flags"
   ];
   const ARRAY_FIELDS = new Set(["HSTM Role"]);
 
   // Fields offered as filters (single-value dropdowns).
   const FILTER_FIELDS = [
     "Source Dataset", "Jurisdiction", "HSTM Setting", "HSTM Role",
-    "Regulation Type", "Requirement Level", "Relationship"
+    "Regulation Type", "Requirement Level", "Authority Level", "Relationship"
   ];
+
+  // Closed vocabularies — mirrors record-editor.html. A bulk change into one of
+  // these fields is validated against the list before it can be applied.
+  const SELECT_OPTIONS = {
+    "Requirement Level": ["Explicit Training", "Other Training Reference"],
+    "Authority Level": ["Federal Floor", "State Floor", "Competency"],
+    "Approval Required": ["Yes", "No"]
+  };
+
+  const LEGACY_REQUIREMENT_LEVELS = ["State Floor", "Federal Floor", "Competency"];
+
+  // Derived from Requirement Level — never a valid bulk-apply target on its own.
+  const COMPUTED_FIELDS = new Set(["Explicit Training"]);
+
+  function deriveExplicitTraining(requirementLevel) {
+    return requirementLevel === 'Explicit Training' ? 'Yes' : 'No';
+  }
 
   let records = [];
   let matching = [];
@@ -270,6 +288,31 @@
 
     const changed = matching.filter(r => JSON.stringify(r[field] ?? null) !== JSON.stringify(newVal));
 
+    // Validation: block a bulk change into a closed vocabulary with an illegal
+    // value. Catching it here rather than at commit time means the operator
+    // can't push 286 records into a state the record editor would refuse.
+    let vocabError = '';
+    if (COMPUTED_FIELDS.has(field)) {
+      vocabError = 'Explicit Training is derived from Requirement Level and cannot be bulk-set directly. ' +
+        'Change Requirement Level instead — Explicit Training is recomputed automatically.';
+    } else if (SELECT_OPTIONS[field] && !SELECT_OPTIONS[field].includes(newVal)) {
+      vocabError = esc(field) + ' must be one of ' + SELECT_OPTIONS[field].join(' / ') +
+        '. Got ' + JSON.stringify(newVal) + '.';
+      if (field === 'Requirement Level' && LEGACY_REQUIREMENT_LEVELS.includes(newVal)) {
+        vocabError += ' That is a pre-migration value — it belongs in Authority Level now.';
+      }
+      if (field === 'Approval Required') {
+        vocabError += ' Any rationale belongs in Approval Basis.';
+      }
+    }
+
+    // A Requirement Level change desynchronizes Explicit Training unless both
+    // move in the same commit. Compute the companion change now so the preview
+    // shows it and applyChanges() writes it atomically.
+    const derivedExplicit = field === 'Requirement Level' ? deriveExplicitTraining(newVal) : null;
+    const explicitAlsoChanging = derivedExplicit === null ? [] :
+      changed.filter(r => r['Explicit Training'] !== derivedExplicit);
+
     // Validation: block a bulk change that would strip the last jurisdiction anchor.
     let violations = 0;
     if (field === 'Jurisdiction Setting' || field === 'Jurisdiction Role') {
@@ -287,8 +330,18 @@
       '<span class="match-count">' + changed.length + '</span>' +
       '<span>of ' + matching.length + ' matching records will change &rarr; <strong>' + esc(field) + '</strong> = <span class="val-new">' + esc(displayVal(newVal)) + '</span></span></div>';
 
+    if (vocabError) {
+      body += '<div class="warn-note">Blocked: ' + vocabError + '</div>';
+    }
+
     if (violations > 0) {
       body += '<div class="warn-note">Blocked: ' + violations + ' record(s) would be left with neither Jurisdiction Setting nor Jurisdiction Role. Clearing this field on those records violates the schema rule. Narrow the filter or choose a non-empty value.</div>';
+    }
+
+    if (explicitAlsoChanging.length) {
+      body += '<div class="warn-note">Companion change: <strong>Explicit Training</strong> will also be set to <span class="val-new">' +
+        esc(derivedExplicit) + '</span> on ' + explicitAlsoChanging.length +
+        ' of these record(s), in the same commit. It is derived from Requirement Level, so the two must move together.</div>';
     }
 
     if (!changed.length) {
@@ -311,16 +364,18 @@
     document.getElementById('previewCard').style.display = 'block';
 
     const applyBtn = document.getElementById('applyBtn');
-    applyBtn.disabled = !changed.length || violations > 0;
+    applyBtn.disabled = !changed.length || violations > 0 || !!vocabError;
     applyBtn.textContent = 'Apply to ' + changed.length + ' record' + (changed.length === 1 ? '' : 's');
     applyBtn.dataset.field = field;
     applyBtn.dataset.newval = JSON.stringify(newVal);
+    applyBtn.dataset.derivedexplicit = derivedExplicit === null ? '' : derivedExplicit;
   }
 
   async function applyChanges() {
     const applyBtn = document.getElementById('applyBtn');
     const field = applyBtn.dataset.field;
     const newVal = JSON.parse(applyBtn.dataset.newval);
+    const derivedExplicit = applyBtn.dataset.derivedexplicit || null;
     const filters = currentFilters();
 
     applyBtn.disabled = true;
@@ -335,9 +390,19 @@
         latest.filter(r => recordMatches(r, filters) && JSON.stringify(r[field] ?? null) !== JSON.stringify(newVal))
               .map(r => r['Record ID'])
       );
-      const updated = latest.map(r => targetIds.has(r['Record ID']) ? { ...r, [field]: newVal } : r);
+      // When Requirement Level moves, Explicit Training moves with it in the
+      // same object spread — and therefore the same commit. Doing it in a
+      // second pass would leave a window where the batch is desynchronized.
+      const updated = latest.map(r => {
+        if (!targetIds.has(r['Record ID'])) return r;
+        const next = { ...r, [field]: newVal };
+        if (derivedExplicit !== null) next['Explicit Training'] = derivedExplicit;
+        return next;
+      });
 
-      const result = await commitRecords(updated, 'Bulk-apply "' + field + '" to ' + targetIds.size + ' record(s)');
+      const commitMsg = 'Bulk-apply "' + field + '" to ' + targetIds.size + ' record(s)' +
+        (derivedExplicit !== null ? ' (+ derived Explicit Training)' : '');
+      const result = await commitRecords(updated, commitMsg);
 
       records = updated;
       buildFilters();          // value lists may have shifted

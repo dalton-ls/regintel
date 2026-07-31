@@ -25,6 +25,48 @@ schema — it's an internally authored competency framework (Domain/KSA model),
 not jurisdiction-driven regulatory content, and none of the admin tools below
 write to it.
 
+### The 20 columns, in emission order
+
+Batch sheets are read by **exact header name**. All 20 columns, in the order
+they are emitted:
+
+```
+Jurisdiction, Jurisdiction Setting, Jurisdiction Role, HSTM Setting, HSTM Role,
+Regulation Type, Oversight / Professional Agency, Requirement Level, Authority Level,
+Explicit Training, Citation, Training Topic / Competency Item, Relationship, Purpose,
+Approval Required, Approval Basis, Hours Required, Frequency, Source URL,
+Notes / Research Flags
+```
+
+`Authority Level` and `Approval Basis` were added in the 18 → 20 split. Two
+axes that used to be conflated in `Requirement Level` are now separate:
+
+| Field | Axis | Values |
+|---|---|---|
+| `Requirement Level` | specificity | `Explicit Training`, `Other Training Reference` |
+| `Authority Level` | authority | `Federal Floor`, `State Floor`, `Competency` |
+
+`Approval Required` is now bare `Yes`/`No` so it stays filterable; the rationale
+clause lives in `Approval Basis`. `Explicit Training` is **derived** from
+`Requirement Level` — read-only in the record editor, recomputed automatically on
+bulk apply. Don't try to set it directly.
+
+See [DESIGN.md §2.1](DESIGN.md) for the full rationale, and for why neither new
+field could affect an existing `Record ID`.
+
+#### Operator notes
+
+- **`Jurisdiction` must be `US` for federal, never `Federal`.** The live dataset
+  uses `US`. A batch using `Federal` breaks no schema rule, so nothing downstream
+  blocks it — it just silently adds a duplicate `Jurisdiction` filter option on
+  the research view for every row in the batch. `normalize_batch.py` raises a hard
+  warning on this.
+- **`Hours Required` should be `NR` when the regulation doesn't state a number,
+  not `0`.** The live data currently uses `0` for both "zero hours" and "not
+  stated", which makes the field unfilterable — you can't distinguish the two.
+  New batches should use `NR`. Existing `0` values have **deliberately not been
+  bulk-converted**: some are genuinely zero and need reviewing by hand.
+
 `role.json` / `caresetting.json` are the original per-type source files.
 `migrate_to_unified.py` reads them and produces `requirements.json`:
 
@@ -56,10 +98,32 @@ python3 normalize_batch.py incoming_sheet.xlsx --source-dataset Role
 This computes the same stable Record IDs as `migrate_to_unified.py` (so a
 resubmission of an existing regulation is recognized as an update, not a
 duplicate), validates the anchor rule, and warns — without blocking output —
-on likely vocabulary drift (a `Jurisdiction`, `HSTM Setting`, or `HSTM Role`
-value not seen in the reference `requirements.json`). It writes a flat JSON
-array; upload that into `pending-review.html` to classify against the live
-dataset and resolve any conflicts.
+on likely vocabulary drift. Warnings raised:
+
+- `Jurisdiction`, `HSTM Setting`, or `HSTM Role` value not seen in the reference
+  `requirements.json`
+- **`Jurisdiction` is `Federal`** rather than `US` — hard warning, see the
+  operator notes above
+- `Requirement Level` arriving as `State Floor` / `Federal Floor` / `Competency`,
+  which means the sheet predates the 18 → 20 split and those values belong in
+  `Authority Level` now
+- `Authority Level` missing, or outside `Federal Floor` / `State Floor` /
+  `Competency`
+- `Approval Required` still carrying its rationale clause (e.g.
+  `No - employer-administered`) instead of being bare `Yes`/`No`
+- `Explicit Training` disagreeing with `Requirement Level` — it's derived, so it
+  shouldn't be supplied independently
+
+It writes a flat JSON array; upload that into `pending-review.html` to classify
+against the live dataset and resolve any conflicts.
+
+> **Uploading a pre-migration sheet is safe but lossy.** `pending-review.html`
+> distinguishes a field that is *absent* from an incoming record ("this sheet has
+> no opinion — keep what we have") from one that is *present and empty* ("clear
+> this"). So an old 18-column sheet can't blank `Approval Basis` or
+> `Authority Level` on records you already have. But a genuinely *new* record from
+> such a sheet enters without those fields at all, and will fail validation on its
+> next edit — the queue flags this before you commit.
 
 ## Unified admin tools (requirements.json)
 

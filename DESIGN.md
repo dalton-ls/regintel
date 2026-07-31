@@ -23,19 +23,68 @@ Care Setting and Role data merge into one table, since a single regulation frequ
 - HSTM Role — canonical HealthStream role taxonomy value mapped from Jurisdiction Role.
 - Regulation Type — Facility-based/Organizational training, Individual/Continuing Education, or Organizational Policy. This field also acts as the signal for which admin "lane" (Care Setting vs. Role) a record is primarily associated with.
 - Oversight / Professional Agency — the regulatory/licensing body with enforcement authority.
-- Requirement Level — Explicit Training or Other Training Reference.
-- Explicit Training — boolean, derived from Requirement Level.
+- Requirement Level — Explicit Training or Other Training Reference. **Specificity axis only** (see §2.1).
+- Authority Level — Federal Floor, State Floor, or Competency. **Authority axis only** (see §2.1).
+- Explicit Training — Yes/No, derived from Requirement Level. Not independently editable.
 - Citation — full regulatory citation, BB-style per OpenLaws formatting.
 - Training Topic / Competency Item — the specific training subject, one per row.
 - Relationship — Parent (domain) or Child (KSA/sub-topic).
 - Purpose — brief explanation of the training's regulatory intent.
-- Approval Required — Yes/No.
+- Approval Required — bare Yes/No, so the field stays filterable.
+- Approval Basis — freeform rationale for the approval determination (e.g. "CDPH-approved program"). Empty when there is none.
 - Hours Required — numeric value or "NR."
 - Frequency — One-time, Annual, Biennial, Upon hire, Before performing duties, Ongoing, etc.
 - Source URL — link to the primary regulatory source.
 - Notes / Research Flags — free-text internal annotation.
 
 Validation rule: every record must have at least one of Jurisdiction Setting or Jurisdiction Role populated (both, when the regulation applies to both).
+
+Additional validation rules, enforced at all four write paths (`migrate_to_unified.py`, `record-editor.html`, `bulk-apply.html`, `pending-review.html`):
+
+- `Requirement Level` ∈ {`Explicit Training`, `Other Training Reference`}
+- `Authority Level` ∈ {`Federal Floor`, `State Floor`, `Competency`}
+- `Approval Required` ∈ {`Yes`, `No`} — the old verbose forms are rejected so vocabulary drift cannot reappear
+- `Explicit Training` == `Yes` iff `Requirement Level` == `Explicit Training`. It is *derived*, never set independently.
+
+### 2.1 The two-axis split (18 → 20 fields)
+
+The original schema had 18 fields and a single `Requirement Level` that silently
+conflated two independent dimensions:
+
+| Value | Dimension it actually described |
+|---|---|
+| `Explicit Training` | specificity — how detailed is the mandate |
+| `Competency` | specificity |
+| `State Floor` | authority — whose floor is it |
+| `Federal Floor` | authority |
+
+Because the two axes shared one field, a record could not express "an explicit
+training mandate that is a state floor" — picking one value discarded the other.
+Splitting them into `Requirement Level` (specificity) and `Authority Level`
+(authority) makes both independently filterable.
+
+`Approval Required` had drifted the same way: 51 distinct values across 286
+records, most carrying a trailing rationale (`No - employer-administered`,
+`Yes - CDPH-approved program`), which made the field useless as a filter. It is
+now bare `Yes`/`No`, with the rationale clause preserved verbatim in
+`Approval Basis`.
+
+**Neither new field participates in the Record ID hash.** The ID is
+
+```
+req_ + sha1(Source Dataset | Citation | Training Topic / Competency Item |
+            Jurisdiction | Jurisdiction Role | Jurisdiction Setting)[:12]
+```
+
+so the 18 → 20 migration was purely additive: no re-hash, no orphaned admin
+edits keyed to an old ID, and no false "new record" classifications in the
+Pending Review Queue. `migrate_18_to_20.py` verifies this by recomputing every
+Record ID after migrating and asserting the set is unchanged.
+
+`Explicit Training` was previously both editable and derived at the same time,
+which is how it could disagree with `Requirement Level`. It is now a computed,
+read-only display in `record-editor.html`; `bulk-apply.html` recomputes it in the
+same commit whenever `Requirement Level` changes, so a batch cannot desynchronize.
 
 ## 3. Workforce Readiness Schema
 

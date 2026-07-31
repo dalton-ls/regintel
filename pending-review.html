@@ -70,6 +70,7 @@
     .empty-state { text-align: center; padding: 50px 24px; color: #9aaac4; }
     .empty-state p { font-size: 14px; }
     .muted { color: #9aaac4; font-size: 13px; }
+    .warn-note { background: #fef3e2; border: 1px solid #f5cd87; color: #92620a; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin: 12px 0; }
 
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a2332; color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 999; box-shadow: 0 4px 20px rgba(0,0,0,0.25); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
     .toast.show { opacity: 1; }
@@ -108,6 +109,8 @@
       </div>
     </div>
 
+    <div id="schemaBanner"></div>
+
     <div id="results">
       <div class="empty-state"><p>Upload an incoming file to see new records and conflicts.</p></div>
     </div>
@@ -123,12 +126,32 @@
   const UNIFIED_FIELDS = [
     "Jurisdiction", "Jurisdiction Setting", "Jurisdiction Role",
     "HSTM Setting", "HSTM Role", "Regulation Type",
-    "Oversight / Professional Agency", "Requirement Level", "Explicit Training",
+    "Oversight / Professional Agency", "Requirement Level", "Authority Level",
+    "Explicit Training",
     "Citation", "Training Topic / Competency Item", "Relationship", "Purpose",
-    "Approval Required", "Hours Required", "Frequency", "Source URL",
-    "Notes / Research Flags"
+    "Approval Required", "Approval Basis", "Hours Required", "Frequency",
+    "Source URL", "Notes / Research Flags"
   ];
   const ARRAY_FIELDS = new Set(["HSTM Role"]);
+
+  // Fields added in the 18 -> 20 schema split. A batch produced by an older
+  // sheet simply won't have these keys, which is NOT the same as arriving with
+  // an empty value — see hasIncomingValue() below.
+  const FIELDS_ADDED_IN_20 = new Set(["Authority Level", "Approval Basis"]);
+
+  function deriveExplicitTraining(requirementLevel) {
+    return requirementLevel === 'Explicit Training' ? 'Yes' : 'No';
+  }
+
+  // The critical distinction for backward compatibility: a field ABSENT from an
+  // incoming record means "this sheet has no opinion, keep what we have", while
+  // a field PRESENT and empty means "the operator intends to clear this".
+  // Collapsing the two would let a pre-migration sheet uploaded after migration
+  // silently wipe Approval Basis and Authority Level across every record it
+  // touches.
+  function hasIncomingValue(rec, field) {
+    return Object.prototype.hasOwnProperty.call(rec, field);
+  }
 
   let baseRecords = [];
   let currentById = {};
@@ -192,8 +215,11 @@
     if (Array.isArray(v)) return v.length ? v.join(', ') : '(empty)';
     return String(v);
   }
+  // b is the incoming record. A field it does not carry cannot be a difference,
+  // otherwise every record in an older sheet would be flagged as conflicting
+  // purely because the sheet predates the 20-field schema.
   function recordsDiffer(a, b) {
-    return UNIFIED_FIELDS.some(f => normVal(a[f]) !== normVal(b[f]));
+    return UNIFIED_FIELDS.some(f => hasIncomingValue(b, f) && normVal(a[f]) !== normVal(b[f]));
   }
 
   async function init() {
@@ -257,6 +283,25 @@
       }
     });
 
+    // A brand-new record from a pre-migration sheet arrives with no Authority
+    // Level or Approval Basis at all. Unlike a conflict, there is no existing
+    // value to fall back on, so it would enter the dataset schema-incomplete.
+    // Surface that before the operator commits rather than after.
+    const incompleteNew = newRecords.filter(
+      r => [...FIELDS_ADDED_IN_20].some(f => !hasIncomingValue(r, f))
+    );
+    const banner = document.getElementById('schemaBanner');
+    if (banner) {
+      banner.innerHTML = incompleteNew.length
+        ? '<div class="warn-note">' + incompleteNew.length + ' of ' + newRecords.length +
+          ' new record(s) are missing <strong>Authority Level</strong> and/or ' +
+          '<strong>Approval Basis</strong> — this batch predates the 20-field schema. ' +
+          'They will be added without those fields and will fail validation on the ' +
+          'next edit. Re-export the batch from the current parser, or fill the fields ' +
+          'in the record editor afterwards.</div>'
+        : '';
+    }
+
     document.getElementById('statTotal').textContent = incoming.length;
     document.getElementById('statNew').textContent = newRecords.length;
     document.getElementById('statConflict').textContent = conflicts.length;
@@ -273,12 +318,26 @@
       html += '<div class="section-title">Conflicts &mdash; ' + conflicts.length + ' record(s) differ from existing data</div>';
       conflicts.forEach((c, idx) => {
         const rows = UNIFIED_FIELDS.map(f => {
-          const changed = normVal(c.existing[f]) !== normVal(c.incoming[f]);
+          const present = hasIncomingValue(c.incoming, f);
+          const changed = present && normVal(c.existing[f]) !== normVal(c.incoming[f]);
+
+          // An absent field is rendered distinctly from an empty one, and its
+          // manual-reconcile input is pre-filled with the EXISTING value so
+          // that hitting Reconcile on an older sheet preserves what we have
+          // instead of clearing it.
+          const incomingCell = present
+            ? esc(displayVal(c.incoming[f]))
+            : '<span class="muted">(not in sheet)</span>';
+          const seed = present ? c.incoming[f] : c.existing[f];
+          const seedText = (seed == null) ? '' : (Array.isArray(seed) ? seed.join(', ') : String(seed));
+
           return '<tr class="diff-row' + (changed ? ' changed' : '') + '">' +
-            '<td class="field-name">' + esc(f) + '</td>' +
+            '<td class="field-name">' + esc(f) +
+              (FIELDS_ADDED_IN_20.has(f) && !present ? ' <span class="muted">(new in 20-field schema)</span>' : '') +
+            '</td>' +
             '<td class="val-existing">' + esc(displayVal(c.existing[f])) + '</td>' +
-            '<td class="val-incoming">' + esc(displayVal(c.incoming[f])) +
-              '<input class="manual-input" data-conflict="' + idx + '" data-field="' + esc(f) + '" value="' + esc(displayVal(c.incoming[f]) === '(empty)' ? '' : (Array.isArray(c.incoming[f]) ? c.incoming[f].join(', ') : (c.incoming[f] ?? ''))) + '"></td>' +
+            '<td class="val-incoming">' + incomingCell +
+              '<input class="manual-input" data-conflict="' + idx + '" data-field="' + esc(f) + '" value="' + esc(seedText) + '"></td>' +
             '</tr>';
         }).join('');
 
@@ -340,7 +399,13 @@
       let resolved;
       if (c.choice === 'incoming') {
         resolved = {};
-        UNIFIED_FIELDS.forEach(f => { resolved[f] = c.incoming[f] ?? null; });
+        UNIFIED_FIELDS.forEach(f => {
+          // Only fields the incoming record actually carries are written. A
+          // field it omits falls back to the existing value, so an older sheet
+          // cannot blank Approval Basis or Authority Level.
+          if (hasIncomingValue(c.incoming, f)) resolved[f] = c.incoming[f] ?? null;
+          else resolved[f] = c.existing[f] ?? null;
+        });
       } else { // manual
         resolved = {};
         const card = document.querySelector('.conflict-card[data-idx="' + idx + '"]');
@@ -349,6 +414,11 @@
           resolved[f] = parseField(f, inp ? inp.value : null);
         });
       }
+
+      // Explicit Training is derived, never taken from the incoming sheet — an
+      // upstream batch is free to disagree with itself, and this is where that
+      // gets settled in favour of Requirement Level.
+      resolved['Explicit Training'] = deriveExplicitTraining(resolved['Requirement Level']);
 
       // Enforce the schema anchor rule before writing.
       const hasSetting = resolved['Jurisdiction Setting'] != null && resolved['Jurisdiction Setting'] !== '';

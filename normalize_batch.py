@@ -38,7 +38,31 @@ derived purely from content that identifies the regulation itself:
                 Jurisdiction Role|Jurisdiction Setting)[:12]
 
 Re-running this script against the same rows (from any sheet, any tab
-name) reproduces the same IDs.
+name) reproduces the same IDs. Neither field added in the 20-column schema
+("Authority Level", "Approval Basis") participates in the hash, so the
+18 -> 20 migration could not and did not change any existing Record ID.
+
+Expected headers (20 columns, read by exact header name)
+---------------------------------------------------------------------------
+    Jurisdiction, Jurisdiction Setting, Jurisdiction Role, HSTM Setting,
+    HSTM Role, Regulation Type, Oversight / Professional Agency,
+    Requirement Level, Authority Level, Explicit Training, Citation,
+    Training Topic / Competency Item, Relationship, Purpose,
+    Approval Required, Approval Basis, Hours Required, Frequency,
+    Source URL, Notes / Research Flags
+
+Drift warnings raised (never blocking, never silently rewritten)
+---------------------------------------------------------------------------
+  * Jurisdiction == "Federal" -- the live dataset uses "US"; "Federal" would
+    add a duplicate filter option on the research view for every row
+  * Requirement Level == State Floor / Federal Floor / Competency -- a
+    pre-migration sheet; those values belong in Authority Level now
+  * Authority Level missing or outside {Federal Floor, State Floor,
+    Competency}
+  * Approval Required still carrying a rationale clause instead of bare
+    Yes / No -- the rationale belongs in Approval Basis
+  * Explicit Training disagreeing with Requirement Level (it is derived)
+  * Jurisdiction / HSTM Setting / HSTM Role values not seen before
 
 Usage
 ---------------------------------------------------------------------------
@@ -62,6 +86,7 @@ Writes:
 """
 
 import sys
+import re
 import json
 import hashlib
 import argparse
@@ -81,12 +106,14 @@ UNIFIED_FIELDS = [
     "Regulation Type",
     "Oversight / Professional Agency",
     "Requirement Level",
+    "Authority Level",
     "Explicit Training",
     "Citation",
     "Training Topic / Competency Item",
     "Relationship",
     "Purpose",
     "Approval Required",
+    "Approval Basis",
     "Hours Required",
     "Frequency",
     "Source URL",
@@ -96,6 +123,34 @@ UNIFIED_FIELDS = [
 ARRAY_FIELDS = {"HSTM Role"}
 INTEGER_FIELDS = {"Hours Required"}
 PIPE_NULL = {"nan", "NaN", "None", "none", ""}
+
+# --- 20-field schema vocabularies -------------------------------------------
+# Requirement Level carries the specificity axis; Authority Level carries the
+# authority axis. See DESIGN.md §2 for why they were split.
+REQUIREMENT_LEVEL_VALUES = {"Explicit Training", "Other Training Reference"}
+AUTHORITY_LEVEL_VALUES = {"Federal Floor", "State Floor", "Competency"}
+APPROVAL_REQUIRED_VALUES = {"Yes", "No"}
+
+# A Requirement Level of State Floor / Federal Floor / Competency means the
+# sheet predates the 18 -> 20 split. "Explicit Training" is deliberately NOT in
+# this set: it is valid in both schemas and so cannot mark a pre-migration sheet.
+LEGACY_REQUIREMENT_LEVEL_VALUES = {"State Floor", "Federal Floor", "Competency"}
+
+# The live dataset uses "US" as the federal marker. A batch arriving with
+# "Federal" would create a second, duplicate filter option on the research view
+# for every row it contains.
+FEDERAL_JURISDICTION_ALIASES = {"Federal", "federal", "FEDERAL", "US Federal", "Fed"}
+
+# Matches a verbose Approval Required, i.e. one that still has its rationale
+# clause attached instead of it living in Approval Basis. Both ASCII hyphen and
+# en/em-dash separators appear in real sheets.
+VERBOSE_APPROVAL_RE = re.compile(r"^(Yes|No)\s*[-–—:;]\s*(.+)$", re.DOTALL)
+
+
+def derive_explicit_training(requirement_level):
+    """Explicit Training is a derived view of Requirement Level, never an
+    independently supplied column."""
+    return "Yes" if requirement_level == "Explicit Training" else "No"
 
 
 def source_dataset_from_sheet_name(name):
@@ -177,12 +232,15 @@ def load_reference_values(reference_path):
         existing = json.loads(Path(reference_path).read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return {}
-    known = {"Jurisdiction": set(), "HSTM Setting": set(), "HSTM Role": set()}
+    known = {"Jurisdiction": set(), "HSTM Setting": set(), "HSTM Role": set(),
+             "Authority Level": set()}
     for r in existing:
         if r.get("Jurisdiction"):
             known["Jurisdiction"].add(r["Jurisdiction"])
         if r.get("HSTM Setting"):
             known["HSTM Setting"].add(r["HSTM Setting"])
+        if r.get("Authority Level"):
+            known["Authority Level"].add(r["Authority Level"])
         hstm_role = r.get("HSTM Role")
         if isinstance(hstm_role, list):
             known["HSTM Role"].update(hstm_role)
@@ -206,6 +264,86 @@ def validate(records, known_values):
                 "Citation/Training Topic/Jurisdiction/Role/Setting combos)"
             )
         seen_ids[record_id] = True
+
+        # --- HARD WARNING: Jurisdiction must be "US", never "Federal" --------
+        # The live dataset uses "US". A batch using "Federal" does not fail any
+        # schema rule, so nothing downstream would stop it -- it would just
+        # quietly add a duplicate Jurisdiction filter option on the research
+        # view for every row in the batch. Cheapest place to catch it is here.
+        jurisdiction = record.get("Jurisdiction")
+        if jurisdiction in FEDERAL_JURISDICTION_ALIASES:
+            warnings.append(
+                record_id + ": *** Jurisdiction is " + repr(jurisdiction)
+                + " -- the live dataset uses 'US' for federal. Uploading this "
+                "batch as-is would create a duplicate Jurisdiction filter "
+                "option on the research view for every row. Fix the sheet "
+                "before uploading."
+            )
+
+        # --- Requirement Level -----------------------------------------------
+        requirement_level = record.get("Requirement Level")
+        if requirement_level in LEGACY_REQUIREMENT_LEVEL_VALUES:
+            warnings.append(
+                record_id + ": Requirement Level is " + repr(requirement_level)
+                + " -- that is a pre-migration (18-field) value and belongs in "
+                "Authority Level now. This sheet was produced before the 18 -> 20 "
+                "split; re-export it from the current parser before uploading."
+            )
+        elif requirement_level not in REQUIREMENT_LEVEL_VALUES:
+            warnings.append(
+                record_id + ": Requirement Level " + repr(requirement_level)
+                + " is not one of " + ", ".join(sorted(REQUIREMENT_LEVEL_VALUES))
+            )
+
+        # --- Authority Level --------------------------------------------------
+        authority_level = record.get("Authority Level")
+        if authority_level is None or authority_level == "":
+            warnings.append(
+                record_id + ": Authority Level is empty -- required in the "
+                "20-field schema (one of " + ", ".join(sorted(AUTHORITY_LEVEL_VALUES)) + ")"
+            )
+        elif authority_level not in AUTHORITY_LEVEL_VALUES:
+            warnings.append(
+                record_id + ": Authority Level " + repr(authority_level)
+                + " is not one of " + ", ".join(sorted(AUTHORITY_LEVEL_VALUES))
+                + " -- possible vocabulary drift"
+            )
+        elif (known_values.get("Authority Level")
+              and authority_level not in known_values["Authority Level"]):
+            warnings.append(
+                record_id + ": Authority Level " + repr(authority_level)
+                + " not seen in the reference dataset (known values: "
+                + ", ".join(sorted(known_values["Authority Level"]))
+                + ") -- possible vocabulary drift"
+            )
+
+        # --- Approval Required / Approval Basis -------------------------------
+        approval_required = record.get("Approval Required")
+        approval_text = approval_required if isinstance(approval_required, str) else ""
+        verbose = VERBOSE_APPROVAL_RE.match(approval_text.strip())
+        if verbose:
+            warnings.append(
+                record_id + ": Approval Required " + repr(approval_required)
+                + " still carries its rationale clause. In the 20-field schema "
+                "Approval Required is bare " + "/".join(sorted(APPROVAL_REQUIRED_VALUES))
+                + " and the rationale (" + repr(verbose.group(2).strip())
+                + ") belongs in Approval Basis."
+            )
+        elif approval_required not in APPROVAL_REQUIRED_VALUES:
+            warnings.append(
+                record_id + ": Approval Required " + repr(approval_required)
+                + " must be bare 'Yes' or 'No'"
+            )
+
+        # --- Explicit Training must agree with Requirement Level --------------
+        expected_explicit = derive_explicit_training(requirement_level)
+        if record.get("Explicit Training") != expected_explicit:
+            warnings.append(
+                record_id + ": Explicit Training " + repr(record.get("Explicit Training"))
+                + " disagrees with Requirement Level " + repr(requirement_level)
+                + " (expected " + repr(expected_explicit) + ") -- it is a derived "
+                "field and should not be supplied independently"
+            )
 
         if known_values.get("Jurisdiction") and record.get("Jurisdiction") not in known_values["Jurisdiction"]:
             warnings.append(

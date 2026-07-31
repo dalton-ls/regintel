@@ -841,13 +841,21 @@ let selectedRole        = null;
   let CARE_SETTINGS_LIST = [];
 
   let ALL_JURISDICTIONS = ['CA','FL','US'];
-  let ALL_REQUIREMENT_LEVELS  = ['Federal Floor','State Floor','Competency'];
+  // Two independent axes since the 18 -> 20 schema split. Requirement Level is
+  // specificity (how detailed the mandate is); Authority Level is authority
+  // (whose floor it is). Before the split a single "Requirement Level" field
+  // conflated them, and this facet was in practice filtering on authority.
+  // Both lists are rebuilt from the loaded data in applyDataDerivedFacets(),
+  // so these are only pre-load defaults.
+  let ALL_REQUIREMENT_LEVELS = ['Explicit Training','Other Training Reference'];
+  let ALL_AUTHORITY_LEVELS   = ['Federal Floor','State Floor','Competency'];
   const STATE_NAMES       = {CA:'California', FL:'Florida', US:'United States'};
   const STATE_ORDER       = ['CA','FL','US'];
 
   const filterState = {
     jurisdictions: new Set(),
-    requirementLevels:   new Set()
+    requirementLevels:   new Set(),
+    authorityLevels:     new Set()
   };
 
   const openJurisdictions = new Set();
@@ -871,6 +879,7 @@ let selectedRole        = null;
     return src.filter(r => {
       if (!filterState.jurisdictions.has(r.state))     return false;
       if (!filterState.requirementLevels.has(r.requirement_level)) return false;
+      if (!filterState.authorityLevels.has(r.authority_level)) return false;
       return true;
     });
   }
@@ -980,9 +989,11 @@ let selectedRole        = null;
     ` : '';
     const metaContent = row ? `
       ${row.requirement_level ? `<div class="drawer-row"><span class="drawer-label">Requirement</span><span class="drawer-value">${esc(row.requirement_level)}</span></div>` : ''}
+      ${row.authority_level ? `<div class="drawer-row"><span class="drawer-label">Authority</span><span class="drawer-value">${esc(row.authority_level)}</span></div>` : ''}
       <div class="drawer-row"><span class="drawer-label">Agency</span><span class="drawer-value">${esc(row.oversight_agency)}</span></div>
       <div class="drawer-row"><span class="drawer-label">Citation</span><span class="drawer-value">${esc(row.citation)}</span></div>
       <div class="drawer-row"><span class="drawer-label">Approval</span><span class="drawer-value">${approval}</span></div>
+      ${row.approval_basis ? `<div class="drawer-row"><span class="drawer-label">Approval basis</span><span class="drawer-value">${esc(row.approval_basis)}</span></div>` : ''}
       ${row.notes ? `<div class="drawer-row"><span class="drawer-label">Notes</span><span class="drawer-value"><div class="notes-box">${esc(row.notes)}</div></span></div>` : ''}
       <div class="drawer-row"><span class="drawer-label">Source</span><span class="drawer-value">${src}</span></div>
     ` : '';
@@ -1087,6 +1098,7 @@ let selectedRole        = null;
   ${settingDD}
   ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
   ${renderDropdown('requirementLevels', 'Requirement', ALL_REQUIREMENT_LEVELS, filterState.requirementLevels)}
+  ${renderDropdown('authorityLevels', 'Authority', ALL_AUTHORITY_LEVELS, filterState.authorityLevels)}
   ${exportBtn}
 </div>`;
   }
@@ -1103,6 +1115,7 @@ let selectedRole        = null;
   ${roleDD}
   ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
   ${renderDropdown('requirementLevels', 'Requirement', ALL_REQUIREMENT_LEVELS, filterState.requirementLevels)}
+  ${renderDropdown('authorityLevels', 'Authority', ALL_AUTHORITY_LEVELS, filterState.authorityLevels)}
   ${exportBtn}
 </div>`;
   }
@@ -1230,6 +1243,7 @@ let selectedRole        = null;
         if (r.hstm_setting !== selectedCareSetting) return false;
         if (!filterState.jurisdictions.has(r.state))     return false;
         if (!filterState.requirementLevels.has(r.requirement_level)) return false;
+        if (!filterState.authorityLevels.has(r.authority_level)) return false;
         return true;
       });
       const groups = groupByHstmSetting(careFiltered);
@@ -1328,7 +1342,7 @@ let selectedRole        = null;
     if (opt) {
       const dim = opt.dataset.dropdown;
       const val = opt.dataset.value;
-      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS };
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS };
       const s = filterState[dim];
       if (s.has(val)) s.delete(val);
       else s.add(val);
@@ -1339,7 +1353,7 @@ let selectedRole        = null;
     const allBtn = e.target.closest('[data-dropdown-all]');
     if (allBtn) {
       const dim = allBtn.dataset.dropdownAll;
-      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS };
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS };
       allMap[dim].forEach(v => filterState[dim].add(v));
       render();
       e.stopPropagation();
@@ -1349,7 +1363,7 @@ let selectedRole        = null;
     const clearBtn = e.target.closest('[data-dropdown-clear]');
     if (clearBtn) {
       const dim = clearBtn.dataset.dropdownClear;
-      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS };
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS };
       filterState[dim].clear();
       render();
       e.stopPropagation();
@@ -1413,10 +1427,12 @@ let selectedRole        = null;
       jurisdictional_name: r['Jurisdiction Role'],
       oversight_agency:    r['Oversight / Professional Agency'],
       requirement_level:   r['Requirement Level'],
+      authority_level:     r['Authority Level'],
       citation:            r['Citation'],
       type:                r['Purpose'],
       training_topic:      r['Training Topic / Competency Item'],
       approval_required:   r['Approval Required'],
+      approval_basis:      r['Approval Basis'] || '',
       hours_required:      Number(r['Hours Required']) || 0,
       hours_raw:           String(r['Hours Required'] || ''),
       frequency:           r['Frequency'],
@@ -1472,8 +1488,10 @@ let selectedRole        = null;
     // Seed filter state from loaded data (select all by default)
     ALL_JURISDICTIONS = [...new Set([...DATA, ...CARE_DATA].map(r => r.state).filter(Boolean))].sort();
     ALL_REQUIREMENT_LEVELS  = [...new Set([...DATA, ...CARE_DATA].map(r => r.requirement_level).filter(Boolean))];
+    ALL_AUTHORITY_LEVELS    = [...new Set([...DATA, ...CARE_DATA].map(r => r.authority_level).filter(Boolean))];
     filterState.jurisdictions = new Set(ALL_JURISDICTIONS);
     filterState.requirementLevels   = new Set(ALL_REQUIREMENT_LEVELS);
+    filterState.authorityLevels     = new Set(ALL_AUTHORITY_LEVELS);
   }
 
   // parseData() expects the legacy sheet-keyed shape ({ "R <role>": [...],
@@ -1633,6 +1651,7 @@ let selectedRole        = null;
         if (selectedCareSetting && r.hstm_setting !== selectedCareSetting) return false;
         if (!filterState.jurisdictions.has(r.state)) return false;
         if (!filterState.requirementLevels.has(r.requirement_level)) return false;
+        if (!filterState.authorityLevels.has(r.authority_level)) return false;
         return true;
       });
       filename = `regintel-care-settings-${(selectedCareSetting || 'all').replace(/\s+/g, '-').toLowerCase()}`;
@@ -1658,10 +1677,12 @@ let selectedRole        = null;
       'HSTM Setting':              r.hstm_setting || '',
       'Oversight Agency':          r.oversight_agency || '',
       'Requirement Level':         r.requirement_level || '',
+      'Authority Level':           r.authority_level || '',
       'Citation':                  r.citation || '',
       'Training Topic':            r.training_topic || '',
       'Purpose':                   r.type || '',
       'Approval Required':         r.approval_required || '',
+      'Approval Basis':            r.approval_basis || '',
       'Hours Required':            r.hours_required || 0,
       'Frequency':                 r.frequency || '',
       'Notes':                     r.notes || '',
@@ -1787,8 +1808,10 @@ let selectedRole        = null;
     // Update dynamic lists
     ALL_JURISDICTIONS = [...new Set([...DATA, ...CARE_DATA].map(r => r.state))].sort();
     ALL_REQUIREMENT_LEVELS = [...new Set([...DATA, ...CARE_DATA].map(r => r.requirement_level).filter(Boolean))];
+    ALL_AUTHORITY_LEVELS   = [...new Set([...DATA, ...CARE_DATA].map(r => r.authority_level).filter(Boolean))];
     filterState.jurisdictions = new Set(ALL_JURISDICTIONS);
     filterState.requirementLevels = new Set(ALL_REQUIREMENT_LEVELS);
+    filterState.authorityLevels = new Set(ALL_AUTHORITY_LEVELS);
     render();
     closeImportModal();
     showToast('Data merged successfully');

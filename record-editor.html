@@ -58,6 +58,10 @@
     .field textarea { resize: vertical; min-height: 56px; }
     .field .hint { font-size: 10px; color: #b0b8cc; margin-top: 3px; }
 
+    .validation-warning ul { margin: 6px 0 0; padding-left: 18px; }
+    .validation-warning li { margin: 2px 0; }
+    .field select { width: 100%; padding: 8px 10px; border: 1px solid #d2dbe8; border-radius: 6px; font-size: 13px; background: #fff; font-family: inherit; }
+    .field input[readonly], .field input[disabled] { background: #f1f5f9; color: #64748b; cursor: not-allowed; }
     .validation-warning { background: #fef3e2; border: 1px solid #f5cd87; color: #92620a; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-bottom: 16px; }
     .error-banner { background: #fdecec; border: 1px solid #f5b8b8; color: #a12b2b; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-bottom: 16px; }
 
@@ -115,14 +119,35 @@
   const UNIFIED_FIELDS = [
     "Jurisdiction", "Jurisdiction Setting", "Jurisdiction Role",
     "HSTM Setting", "HSTM Role", "Regulation Type",
-    "Oversight / Professional Agency", "Requirement Level", "Explicit Training",
+    "Oversight / Professional Agency", "Requirement Level", "Authority Level",
+    "Explicit Training",
     "Citation", "Training Topic / Competency Item", "Relationship", "Purpose",
-    "Approval Required", "Hours Required", "Frequency", "Source URL",
-    "Notes / Research Flags"
+    "Approval Required", "Approval Basis", "Hours Required", "Frequency",
+    "Source URL", "Notes / Research Flags"
   ];
 
-  const TEXTAREA_FIELDS = new Set(["Training Topic / Competency Item", "Purpose", "Notes / Research Flags", "Source URL"]);
+  const TEXTAREA_FIELDS = new Set(["Training Topic / Competency Item", "Purpose", "Notes / Research Flags", "Source URL", "Approval Basis"]);
   const ARRAY_FIELDS = new Set(["HSTM Role"]);
+
+  // Closed vocabularies. Requirement Level carries the specificity axis only;
+  // Authority Level carries the authority axis. The 18-field schema conflated
+  // the two — see DESIGN.md §2.
+  const SELECT_OPTIONS = {
+    "Requirement Level": ["Explicit Training", "Other Training Reference"],
+    "Authority Level": ["Federal Floor", "State Floor", "Competency"],
+    // Bare Yes/No so the field stays filterable. Any rationale goes in
+    // Approval Basis; the old verbose forms are rejected on save so the
+    // 51-distinct-value drift we just migrated away from can't reappear.
+    "Approval Required": ["Yes", "No"]
+  };
+
+  // Derived from Requirement Level, never independently editable. Being both
+  // editable and derived at once is how the two came to disagree.
+  const COMPUTED_FIELDS = new Set(["Explicit Training"]);
+
+  function deriveExplicitTraining(requirementLevel) {
+    return requirementLevel === 'Explicit Training' ? 'Yes' : 'No';
+  }
 
   let records = [];
   let selectedId = null;
@@ -264,10 +289,39 @@
     UNIFIED_FIELDS.forEach(field => {
       const isWide = TEXTAREA_FIELDS.has(field);
       const value = fieldValue(record, field);
-      const inputEl = isWide
-        ? '<textarea data-field="' + esc(field) + '">' + esc(value) + '</textarea>'
-        : '<input type="text" data-field="' + esc(field) + '" value="' + esc(value) + '">';
-      const hint = ARRAY_FIELDS.has(field) ? '<div class="hint">Comma-separated list</div>' : '';
+      let inputEl;
+      let hint = ARRAY_FIELDS.has(field) ? '<div class="hint">Comma-separated list</div>' : '';
+
+      if (COMPUTED_FIELDS.has(field)) {
+        // Read-only mirror of Requirement Level. Deliberately NOT given a
+        // data-field attribute, so readChangedValues() can never pick it up
+        // and write a user-supplied value back into the record.
+        const derived = deriveExplicitTraining(record['Requirement Level']);
+        inputEl = '<input type="text" id="explicitTrainingDisplay" value="' + esc(derived) + '" readonly disabled>';
+        hint = '<div class="hint">Computed from Requirement Level — not editable</div>';
+      } else if (SELECT_OPTIONS[field]) {
+        const opts = SELECT_OPTIONS[field];
+        // Keep an off-vocabulary existing value selectable so the editor
+        // renders faithfully rather than silently snapping it to a legal
+        // value; the save-path validator is what forces the correction.
+        const known = opts.includes(value);
+        let optsHtml = '<option value=""' + (value === '' ? ' selected' : '') + '>— none —</option>';
+        opts.forEach(o => {
+          optsHtml += '<option value="' + esc(o) + '"' + (o === value ? ' selected' : '') + '>' + esc(o) + '</option>';
+        });
+        if (value !== '' && !known) {
+          optsHtml += '<option value="' + esc(value) + '" selected>' + esc(value) + ' (legacy — must be corrected)</option>';
+        }
+        inputEl = '<select data-field="' + esc(field) + '">' + optsHtml + '</select>';
+        if (value !== '' && !known) {
+          hint = '<div class="hint">Legacy value outside the canonical vocabulary — pick a valid option to save.</div>';
+        }
+      } else {
+        inputEl = isWide
+          ? '<textarea data-field="' + esc(field) + '">' + esc(value) + '</textarea>'
+          : '<input type="text" data-field="' + esc(field) + '" value="' + esc(value) + '">';
+      }
+
       fieldsHtml += '<div class="field' + (isWide ? ' span-2' : '') + '">' +
         '<label>' + esc(field) + '</label>' + inputEl + hint + '</div>';
     });
@@ -284,6 +338,17 @@
         '<button class="btn" id="discardBtn">Discard changes</button>' +
         '<span class="save-status" id="saveStatus"></span>' +
       '</div>';
+
+    // Keep the computed Explicit Training display honest while editing, so the
+    // operator sees the consequence of a Requirement Level change immediately
+    // rather than discovering it after the commit.
+    const rlSelect = panel.querySelector('[data-field="Requirement Level"]');
+    const etDisplay = panel.querySelector('#explicitTrainingDisplay');
+    if (rlSelect && etDisplay) {
+      rlSelect.addEventListener('change', () => {
+        etDisplay.value = deriveExplicitTraining(rlSelect.value);
+      });
+    }
 
     document.getElementById('saveBtn').addEventListener('click', () => saveRecord(record['Record ID']));
     document.getElementById('discardBtn').addEventListener('click', () => renderEditor(records.find(r => r['Record ID'] === record['Record ID'])));
@@ -309,16 +374,61 @@
     return values;
   }
 
+  // Returns an array of human-readable reasons the record cannot be saved.
+  // Enforced here, and mirrored in bulk-apply.html, pending-review.html and
+  // migrate_to_unified.py — all four write paths apply the same rules.
+  function validationErrors(merged) {
+    const errors = [];
+
+    if (!merged['Jurisdiction Setting'] && !merged['Jurisdiction Role']) {
+      errors.push('At least one of Jurisdiction Setting or Jurisdiction Role is required.');
+    }
+
+    const rl = merged['Requirement Level'];
+    if (!SELECT_OPTIONS['Requirement Level'].includes(rl)) {
+      const legacy = ['State Floor', 'Federal Floor', 'Competency'].includes(rl);
+      errors.push('Requirement Level must be one of ' +
+        SELECT_OPTIONS['Requirement Level'].join(' / ') + '. Got ' + JSON.stringify(rl) + '.' +
+        (legacy ? ' That is a pre-migration value — it belongs in Authority Level now.' : ''));
+    }
+
+    const al = merged['Authority Level'];
+    if (!SELECT_OPTIONS['Authority Level'].includes(al)) {
+      errors.push('Authority Level must be one of ' +
+        SELECT_OPTIONS['Authority Level'].join(' / ') + '. Got ' + JSON.stringify(al) + '.');
+    }
+
+    const ar = merged['Approval Required'];
+    if (!SELECT_OPTIONS['Approval Required'].includes(ar)) {
+      errors.push('Approval Required must be bare Yes or No. Got ' + JSON.stringify(ar) +
+        '. Any rationale belongs in Approval Basis.');
+    }
+
+    return errors;
+  }
+
   async function saveRecord(id) {
     const original = records.find(r => r['Record ID'] === id);
     const values = readChangedValues(original);
+
+    // Explicit Training is derived, so a Requirement Level edit must carry the
+    // recomputed value into the same commit. Without this the read-only display
+    // and the stored field silently diverge.
+    if ('Requirement Level' in values) {
+      const derived = deriveExplicitTraining(values['Requirement Level']);
+      if (derived !== original['Explicit Training']) values['Explicit Training'] = derived;
+    }
+
     const merged = { ...original, ...values };
 
-    if (!merged['Jurisdiction Setting'] && !merged['Jurisdiction Role']) {
+    const errors = validationErrors(merged);
+    if (errors.length) {
       document.getElementById('validationWarning').innerHTML =
-        '<div class="validation-warning">Cannot save: at least one of Jurisdiction Setting or Jurisdiction Role is required.</div>';
+        '<div class="validation-warning">Cannot save:<ul><li>' +
+        errors.map(esc).join('</li><li>') + '</li></ul></div>';
       return;
     }
+    document.getElementById('validationWarning').innerHTML = '';
 
     if (!Object.keys(values).length) { showToast('No changes to save'); return; }
 
