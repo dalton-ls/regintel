@@ -605,6 +605,17 @@
       .header-subtitle { display: none; }
 .detail-row { grid-template-columns: 100px 1fr; }
     }
+  
+    .req-row { align-items: flex-start; }
+    .req-main { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+    .req-purpose { font-size: 11.5px; color: #8a94a6; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+    .badge-setting { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+    .badge-regtype { border: 1px solid transparent; }
+    .badge-regtype.regtype-ce { background: #eef3fb; color: #2463eb; }
+    .badge-regtype.regtype-facility { background: #f5f3ff; color: #7c3aed; }
+    .badge-regtype.regtype-policy { background: #fffbeb; color: #b45309; }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip { display: inline-flex; align-items: center; background: #f1f5f9; color: #1a2332; font-size: 11.5px; font-weight: 500; padding: 3px 9px; border-radius: 20px; border: 1px solid #e8ecf0; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -849,13 +860,15 @@ let selectedRole        = null;
   // so these are only pre-load defaults.
   let ALL_REQUIREMENT_LEVELS = ['Explicit Training','Other Training Reference'];
   let ALL_AUTHORITY_LEVELS   = ['Federal Floor','State Floor','Competency'];
+  let ALL_REGULATION_TYPES = [];
   const STATE_NAMES       = {CA:'California', FL:'Florida', US:'United States'};
   const STATE_ORDER       = ['CA','FL','US'];
 
   const filterState = {
     jurisdictions: new Set(),
     requirementLevels:   new Set(),
-    authorityLevels:     new Set()
+    authorityLevels:     new Set(),
+    regulationTypes:     new Set()
   };
 
   const openJurisdictions = new Set();
@@ -871,15 +884,17 @@ let selectedRole        = null;
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
   function truncUrl(u, n=52) { return u && u.length > n ? u.slice(0,n)+'…' : (u||''); }
-  function cardKey(row) { return row.state+'||'+row.citation+'||'+row.training_topic.slice(0,80); }
+  function cardKey(row) { return row.record_id ? ('id:' + row.record_id) : (row.state+'||'+row.citation+'||'+row.training_topic.slice(0,80)); }
+  function groupKey(row) { return row.citation + '␟' + row.training_topic + '␟' + (row.type || ''); }
 
   // ─── Filter & group ───
   function filterData() {
     const src = selectedRole ? (ROLE_DATA[selectedRole] || []) : DATA;
     return src.filter(r => {
-      if (!filterState.jurisdictions.has(r.state))     return false;
+      if (!filterState.jurisdictions.has(r.state))         return false;
       if (!filterState.requirementLevels.has(r.requirement_level)) return false;
       if (!filterState.authorityLevels.has(r.authority_level)) return false;
+      if (!filterState.regulationTypes.has(r.regulation_type)) return false;
       return true;
     });
   }
@@ -905,9 +920,35 @@ let selectedRole        = null;
     }));
   }
 
+  function mergeSettingVariants(rows) {
+    const groups = {};
+    rows.forEach(r => { const k = groupKey(r); (groups[k] || (groups[k] = [])).push(r); });
+    const merged = [];
+    Object.entries(groups).forEach(([k, group]) => {
+      if (group.length > 1) {
+        const settings = [...new Set(group.map(g => g.hstm_setting).filter(Boolean))];
+        const sameDetails = group.every(g =>
+          g.hours_required === group[0].hours_required &&
+          g.frequency === group[0].frequency &&
+          g.approval_required === group[0].approval_required &&
+          g.approval_basis === group[0].approval_basis
+        );
+        if (settings.length > 1 && sameDetails) {
+          const base = group.find(g => g.row_type !== 'Child') || group[0];
+          merged.push(Object.assign({}, base, { hstm_setting: null, settings, variants: group, _mergedKey: 'grp:' + k }));
+          return;
+        }
+      }
+      group.forEach(g => merged.push(Object.assign({}, g, { settings: g.hstm_setting ? [g.hstm_setting] : [], variants: [g] })));
+    });
+    return merged;
+  }
+
   function groupData(rows) {
+    const merged = mergeSettingVariants(rows);
+    merged.forEach(r => { rowMap[r._mergedKey || cardKey(r)] = r; });
     const map = {};
-    rows.forEach(r => {
+    merged.forEach(r => {
       if (!map[r.state]) map[r.state] = {};
       if (!map[r.state][r.oversight_agency]) map[r.state][r.oversight_agency] = [];
       map[r.state][r.oversight_agency].push(r);
@@ -915,12 +956,12 @@ let selectedRole        = null;
     return statesInOrder(map).map(s => ({
       state: s,
       name:  STATE_NAMES[s] || s,
-      total: rows.filter(r => r.state === s).length,
+      total: merged.filter(r => r.state === s).length,
       agencies: Object.entries(map[s])
     }));
   }
 
-  // ─── Sub-topic detection (data-driven) ───
+  // ─── Sub-topic detection (data-driven) ─── 
   function isSubTopic(row) {
     if (row.row_type === 'Child') return true;
     const h = (row.hours_raw || '').toLowerCase();
@@ -931,22 +972,33 @@ let selectedRole        = null;
 
   // ─── Flat row ───
   function renderRow(row) {
-    const key = cardKey(row);
+    const key = row._mergedKey || cardKey(row);
     const sub = isSubTopic(row) ? ' sub-topic' : '';
     const isSelected = selectedCardKey === key;
     const srcHref = row.source_url ? esc(row.source_url) : null;
+    const settings = row.settings || (row.hstm_setting ? [row.hstm_setting] : []);
+    const settingBadge = settings.length > 1
+      ? `<span class="badge badge-setting" title="${esc(settings.join(', '))}">${settings.length} settings</span>`
+      : settings.length === 1 ? `<span class="badge badge-setting">${esc(settings[0])}</span>` : '';
+    const regTypeClass = row.regulation_type === 'Individual/Continuing Education' ? 'regtype-ce'
+      : row.regulation_type === 'Facility-Based/Organizational Training' ? 'regtype-facility'
+      : row.regulation_type === 'Organizational Policy' ? 'regtype-policy' : '';
+    const regTypeBadge = row.regulation_type ? `<span class="badge badge-regtype ${regTypeClass}">${esc(row.regulation_type)}</span>` : '';
     return `<div class="req-row${sub}${isSelected ? ' selected' : ''}" data-card-key="${esc(key)}">
-  <span class="req-topic">${esc(row.training_topic)}</span>
+  <div class="req-main">
+    <span class="req-topic">${esc(row.training_topic)}</span>
+    ${row.type ? `<span class="req-purpose">${esc(row.type)}</span>` : ''}
+  </div>
   <div class="req-badges">
+    ${settingBadge}
+    ${regTypeBadge}
     ${row.hours_required > 0 ? `<span class="badge badge-hours">${row.hours_required} hr${row.hours_required !== 1 ? 's' : ''}</span>` : ''}
-    ${row.type ? `<span class="badge badge-type">${esc(row.type)}</span>` : ''}
     ${srcHref ? `<a href="${srcHref}" target="_blank" rel="noopener" class="badge badge-source" onclick="event.stopPropagation()">Source ↗</a>` : ''}
   </div>
   <svg class="req-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
 </div>`;
   }
 
-  // ─── Group section (static header + flat rows) ───
   function renderGroupSection(label, rows) {
     return `<div class="req-list">
   <div class="group-header">
@@ -979,10 +1031,12 @@ let selectedRole        = null;
     const isOpen = selectedCardKey !== null;
     const row = isOpen ? rowMap[selectedCardKey] : null;
     const approval = row && row.approval_required != null ? esc(String(row.approval_required)) : '—';
-    const src = row && row.source_url
-      ? `<a href="${esc(row.source_url)}" target="_blank" rel="noopener" class="source-link">${esc(truncUrl(row.source_url))}</a>`
-      : '—';
+    const src = row && row.source_url ? `<a href="${esc(row.source_url)}" target="_blank" rel="noopener" class="source-link">${esc(truncUrl(row.source_url))}</a>` : '—';
+    const settings = row ? (row.settings || (row.hstm_setting ? [row.hstm_setting] : [])) : [];
+    const settingsChips = settings.length ? `<div class="drawer-row"><span class="drawer-label">Applies To</span><span class="drawer-value"><div class="chip-row">${settings.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div></span></div>` : '';
     const overviewContent = row ? `
+      ${settingsChips}
+      ${row.regulation_type ? `<div class="drawer-row"><span class="drawer-label">Category</span><span class="drawer-value">${esc(row.regulation_type)}</span></div>` : ''}
       ${row.hours_required > 0 ? `<div class="drawer-row"><span class="drawer-label">Hours</span><span class="drawer-value">${row.hours_required} hr${row.hours_required !== 1 ? 's' : ''}</span></div>` : ''}
       ${row.frequency ? `<div class="drawer-row"><span class="drawer-label">Frequency</span><span class="drawer-value">${esc(row.frequency)}</span></div>` : ''}
       ${row.type ? `<div class="drawer-row"><span class="drawer-label">Purpose</span><span class="drawer-value">${esc(row.type)}</span></div>` : ''}
@@ -994,24 +1048,24 @@ let selectedRole        = null;
       <div class="drawer-row"><span class="drawer-label">Citation</span><span class="drawer-value">${esc(row.citation)}</span></div>
       <div class="drawer-row"><span class="drawer-label">Approval</span><span class="drawer-value">${approval}</span></div>
       ${row.approval_basis ? `<div class="drawer-row"><span class="drawer-label">Approval basis</span><span class="drawer-value">${esc(row.approval_basis)}</span></div>` : ''}
-      ${row.notes ? `<div class="drawer-row"><span class="drawer-label">Internal Notes</span><span class="drawer-value"><div class="notes-box">${esc(row.notes)}</div></span></div>` : ''}
+      ${(row.notes && adminMode) ? `<div class="drawer-row"><span class="drawer-label">Research Notes</span><span class="drawer-value"><div class="notes-box">${esc(row.notes)}</div></span></div>` : ''}
       <div class="drawer-row"><span class="drawer-label">Source</span><span class="drawer-value">${src}</span></div>
     ` : '';
     return `
-      <div class="drawer-overlay${isOpen ? ' open' : ''}" id="drawerOverlay"></div>
-      <div class="drawer-panel${isOpen ? ' open' : ''}" id="drawerPanel">
-        <div class="drawer-header">
-          <span class="drawer-title">${row ? esc(row.training_topic) : ''}</span>
-          <button type="button" class="drawer-close" id="drawerClose">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </button>
-        </div>
-        <div class="drawer-tabs">
-          <button type="button" class="drawer-tab${drawerTab === 'overview' ? ' active' : ''}" data-drawer-tab="overview">Overview</button>
-          <button type="button" class="drawer-tab${drawerTab === 'metadata' ? ' active' : ''}" data-drawer-tab="metadata">Metadata</button>
-        </div>
-        <div class="drawer-body">${drawerTab === 'overview' ? overviewContent : metaContent}</div>
-      </div>`;
+    <div class="drawer-overlay${isOpen ? ' open' : ''}" id="drawerOverlay"></div>
+    <div class="drawer-panel${isOpen ? ' open' : ''}" id="drawerPanel">
+      <div class="drawer-header">
+        <span class="drawer-title">${row ? esc(row.training_topic) : ''}</span>
+        <button type="button" class="drawer-close" id="drawerClose">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <div class="drawer-tabs">
+        <button type="button" class="drawer-tab${drawerTab === 'overview' ? ' active' : ''}" data-drawer-tab="overview">Overview</button>
+        <button type="button" class="drawer-tab${drawerTab === 'metadata' ? ' active' : ''}" data-drawer-tab="metadata">Metadata</button>
+      </div>
+      <div class="drawer-body">${drawerTab === 'overview' ? overviewContent : metaContent}</div>
+    </div>`;
   }
 
   function updateDrawer() {
@@ -1095,15 +1149,16 @@ let selectedRole        = null;
     </button>`;
     if (settingOnly) return `<div class="filter-bar">${settingDD}</div>`;
     return `<div class="filter-bar">
-  ${settingDD}
-  ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
-  ${renderDropdown('requirementLevels', 'Requirement', ALL_REQUIREMENT_LEVELS, filterState.requirementLevels)}
-  ${renderDropdown('authorityLevels', 'Authority', ALL_AUTHORITY_LEVELS, filterState.authorityLevels)}
-  ${exportBtn}
-</div>`;
+    ${settingDD}
+    ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
+    ${renderDropdown('requirementLevels', 'Requirement', ALL_REQUIREMENT_LEVELS, filterState.requirementLevels)}
+    ${renderDropdown('authorityLevels', 'Authority', ALL_AUTHORITY_LEVELS, filterState.authorityLevels)}
+    ${renderDropdown('regulationTypes', 'Category', ALL_REGULATION_TYPES, filterState.regulationTypes)}
+    ${exportBtn}
+  </div>`;
   }
 
-  // ─── Filter bar ───
+  // ─── Filter bar ─── 
   function renderFilterBar(roleOnly = false) {
     const roleDD = renderRoleDropdown();
     const exportBtn = `<button class="export-btn" onclick="exportToExcel()" title="Export filtered results to Excel">
@@ -1112,15 +1167,15 @@ let selectedRole        = null;
     </button>`;
     if (roleOnly) return `<div class="filter-bar">${roleDD}</div>`;
     return `<div class="filter-bar">
-  ${roleDD}
-  ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
-  ${renderDropdown('requirementLevels', 'Requirement', ALL_REQUIREMENT_LEVELS, filterState.requirementLevels)}
-  ${renderDropdown('authorityLevels', 'Authority', ALL_AUTHORITY_LEVELS, filterState.authorityLevels)}
-  ${exportBtn}
-</div>`;
+    ${roleDD}
+    ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
+    ${renderDropdown('requirementLevels', 'Requirement', ALL_REQUIREMENT_LEVELS, filterState.requirementLevels)}
+    ${renderDropdown('authorityLevels', 'Authority', ALL_AUTHORITY_LEVELS, filterState.authorityLevels)}
+    ${renderDropdown('regulationTypes', 'Category', ALL_REGULATION_TYPES, filterState.regulationTypes)}
+    ${exportBtn}
+  </div>`;
   }
 
-  // ─── Workforce Readiness dropdowns ───
   function renderWFSingleSelect(id, label, options, selectedValue, dataAttr) {
     const isOpen = openDropdown === id;
     const selLabel = selectedValue ? options.find(o => o.value === selectedValue)?.label : null;
@@ -1342,7 +1397,7 @@ let selectedRole        = null;
     if (opt) {
       const dim = opt.dataset.dropdown;
       const val = opt.dataset.value;
-      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS };
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS, regulationTypes: ALL_REGULATION_TYPES };
       const s = filterState[dim];
       if (s.has(val)) s.delete(val);
       else s.add(val);
@@ -1353,7 +1408,7 @@ let selectedRole        = null;
     const allBtn = e.target.closest('[data-dropdown-all]');
     if (allBtn) {
       const dim = allBtn.dataset.dropdownAll;
-      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS };
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS, regulationTypes: ALL_REGULATION_TYPES };
       allMap[dim].forEach(v => filterState[dim].add(v));
       render();
       e.stopPropagation();
@@ -1363,7 +1418,7 @@ let selectedRole        = null;
     const clearBtn = e.target.closest('[data-dropdown-clear]');
     if (clearBtn) {
       const dim = clearBtn.dataset.dropdownClear;
-      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS };
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS, regulationTypes: ALL_REGULATION_TYPES };
       filterState[dim].clear();
       render();
       e.stopPropagation();
@@ -1438,7 +1493,9 @@ let selectedRole        = null;
       frequency:           r['Frequency'],
       notes:               r['Notes / Research Flags'] === 'None' ? '' : (r['Notes / Research Flags'] || ''),
       source_url:          r['Source URL'],
-      row_type:            r['Relationship'] || ''
+      row_type:            r['Relationship'] || '',
+      record_id:           r['Record ID'] || '',
+      regulation_type:     r['Regulation Type'] || ''
     });
     ROLE_DATA = {};
     CS_DATA   = {};
@@ -1492,9 +1549,11 @@ let selectedRole        = null;
     ALL_JURISDICTIONS = [...new Set([...DATA, ...CARE_DATA].map(r => r.state).filter(Boolean))].sort();
     ALL_REQUIREMENT_LEVELS  = [...new Set([...DATA, ...CARE_DATA].map(r => r.requirement_level).filter(Boolean))];
     ALL_AUTHORITY_LEVELS    = [...new Set([...DATA, ...CARE_DATA].map(r => r.authority_level).filter(Boolean))];
+    ALL_REGULATION_TYPES    = [...new Set([...DATA, ...CARE_DATA].map(r => r.regulation_type).filter(Boolean))];
     filterState.jurisdictions = new Set(ALL_JURISDICTIONS);
     filterState.requirementLevels   = new Set(ALL_REQUIREMENT_LEVELS);
     filterState.authorityLevels     = new Set(ALL_AUTHORITY_LEVELS);
+    filterState.regulationTypes     = new Set(ALL_REGULATION_TYPES);
   }
 
   // parseData() expects the legacy sheet-keyed shape ({ "R <role>": [...],
@@ -1812,9 +1871,11 @@ let selectedRole        = null;
     ALL_JURISDICTIONS = [...new Set([...DATA, ...CARE_DATA].map(r => r.state))].sort();
     ALL_REQUIREMENT_LEVELS = [...new Set([...DATA, ...CARE_DATA].map(r => r.requirement_level).filter(Boolean))];
     ALL_AUTHORITY_LEVELS   = [...new Set([...DATA, ...CARE_DATA].map(r => r.authority_level).filter(Boolean))];
+    ALL_REGULATION_TYPES   = [...new Set([...DATA, ...CARE_DATA].map(r => r.regulation_type).filter(Boolean))];
     filterState.jurisdictions = new Set(ALL_JURISDICTIONS);
     filterState.requirementLevels = new Set(ALL_REQUIREMENT_LEVELS);
     filterState.authorityLevels = new Set(ALL_AUTHORITY_LEVELS);
+    filterState.regulationTypes = new Set(ALL_REGULATION_TYPES);
     render();
     closeImportModal();
     showToast('Data merged successfully');
