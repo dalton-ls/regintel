@@ -1259,7 +1259,7 @@
     "Record ID": "req_9b114dfb94c4"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": null,
     "Jurisdiction Role": "physician assistant",
@@ -1285,7 +1285,7 @@
     "Record ID": "req_8a5de6477d5f"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": null,
     "Jurisdiction Role": "physician assistant",
@@ -1311,7 +1311,7 @@
     "Record ID": "req_64114c2be8f7"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": null,
     "Jurisdiction Role": "physician assistant",
@@ -2989,7 +2989,7 @@
     "Record ID": "req_672f995a0c32"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Hospice",
     "Jurisdiction Role": "Physician; Hospice aide; Social worker; Speech language pathologist; Occupational therapist; Occupational therapy assistant; Physical therapist; Physical therapist assistant; Marriage and family therapist; Mental health counselor; Registered nurse; Licensed practical nurse",
@@ -5868,7 +5868,7 @@
     "Record ID": "req_cbd681d430f9"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -5894,7 +5894,7 @@
     "Record ID": "req_3c35b599fddd"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -5922,7 +5922,7 @@
     "Record ID": "req_356cc7f427c1"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -5948,7 +5948,7 @@
     "Record ID": "req_963e3a680058"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -5974,7 +5974,7 @@
     "Record ID": "req_4e67aa75e00d"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6000,7 +6000,7 @@
     "Record ID": "req_2c74bcb0c016"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6026,7 +6026,7 @@
     "Record ID": "req_8fb63c6f32b1"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6052,7 +6052,7 @@
     "Record ID": "req_9a8d7099b8dd"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6078,7 +6078,7 @@
     "Record ID": "req_caaed58cdda5"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6104,7 +6104,7 @@
     "Record ID": "req_31b7d50c3804"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6130,7 +6130,7 @@
     "Record ID": "req_adf8fb6e59f4"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6156,7 +6156,7 @@
     "Record ID": "req_eb90bde852ce"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6182,7 +6182,7 @@
     "Record ID": "req_063982a7aef3"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6208,7 +6208,7 @@
     "Record ID": "req_a52ba6201562"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6234,7 +6234,7 @@
     "Record ID": "req_022307536bcf"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6260,7 +6260,7 @@
     "Record ID": "req_553d014d3a39"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6286,7 +6286,7 @@
     "Record ID": "req_d8155fe45336"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6312,7 +6312,7 @@
     "Record ID": "req_4a8a9ee36705"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6338,7 +6338,7 @@
     "Record ID": "req_9bfdefdddfa4"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6364,7 +6364,7 @@
     "Record ID": "req_af00470273e1"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6390,7 +6390,7 @@
     "Record ID": "req_752a0376c668"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6416,7 +6416,7 @@
     "Record ID": "req_5ec500d2a259"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6442,7 +6442,7 @@
     "Record ID": "req_5dff955e3067"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6468,7 +6468,7 @@
     "Record ID": "req_7011438f0b7f"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6494,7 +6494,7 @@
     "Record ID": "req_5f7d3d1b1c02"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6520,7 +6520,7 @@
     "Record ID": "req_a7bc4d054fd2"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6546,7 +6546,7 @@
     "Record ID": "req_c1d8296aa0c2"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6572,7 +6572,7 @@
     "Record ID": "req_7fa876e3cbd3"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6598,7 +6598,7 @@
     "Record ID": "req_e16ca89725f0"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6624,7 +6624,7 @@
     "Record ID": "req_ec81f5a07682"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6650,7 +6650,7 @@
     "Record ID": "req_97c89c655340"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6676,7 +6676,7 @@
     "Record ID": "req_353f551c71be"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6702,7 +6702,7 @@
     "Record ID": "req_25feb44e2a94"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6728,7 +6728,7 @@
     "Record ID": "req_54c85a000171"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6754,7 +6754,7 @@
     "Record ID": "req_2a9c1cf2ec9a"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6780,7 +6780,7 @@
     "Record ID": "req_d1589277ca09"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6806,7 +6806,7 @@
     "Record ID": "req_0882b0c1333c"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6832,7 +6832,7 @@
     "Record ID": "req_f051916e0307"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6858,7 +6858,7 @@
     "Record ID": "req_61afdefc94f0"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6884,7 +6884,7 @@
     "Record ID": "req_f0081923962c"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6910,7 +6910,7 @@
     "Record ID": "req_c7b02022402c"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6936,7 +6936,7 @@
     "Record ID": "req_e711a7abf5b3"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6962,7 +6962,7 @@
     "Record ID": "req_33435aa8c198"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -6988,7 +6988,7 @@
     "Record ID": "req_c1be5a5c4126"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -7014,7 +7014,7 @@
     "Record ID": "req_7875543328a1"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -7040,7 +7040,7 @@
     "Record ID": "req_45db816df4e3"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -7066,7 +7066,7 @@
     "Record ID": "req_4af6bf7e6739"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -7092,7 +7092,7 @@
     "Record ID": "req_fc0d95bb0c6e"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -7118,7 +7118,7 @@
     "Record ID": "req_02c62f590a2c"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -7144,7 +7144,7 @@
     "Record ID": "req_a325222054e8"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -7170,7 +7170,7 @@
     "Record ID": "req_4e0f4bf71892"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -7196,7 +7196,7 @@
     "Record ID": "req_b1a106c77f04"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Skilled nursing facility",
     "Jurisdiction Role": "nurse aide",
@@ -7562,7 +7562,7 @@
     "Record ID": "req_0867ffafca4b"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Long-term care facility",
     "Jurisdiction Role": "nurse aide",
@@ -7588,7 +7588,7 @@
     "Record ID": "req_fab1df8a1a48"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Long-term care facility",
     "Jurisdiction Role": "nurse aide",
@@ -9841,7 +9841,7 @@
     "Record ID": "req_ad4477b7aee7"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Home Health Agency (HHA)",
     "Jurisdiction Role": null,
@@ -9871,7 +9871,7 @@
     "Record ID": "req_5e1cff22e565"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Home Health Agency (HHA)",
     "Jurisdiction Role": "Administrator, home health agency",
@@ -9898,7 +9898,7 @@
     "Record ID": "req_4b6135016648"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Home Health Agency (HHA)",
     "Jurisdiction Role": "Audiologist",
@@ -9924,7 +9924,7 @@
     "Record ID": "req_d8224c81313e"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Home Health Agency (HHA)",
     "Jurisdiction Role": "Clinical manager",
@@ -9950,7 +9950,7 @@
     "Record ID": "req_e41ddc8e3425"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Home Health Agency (HHA)",
     "Jurisdiction Role": "Licensed practical (vocational) nurse",
@@ -9976,7 +9976,7 @@
     "Record ID": "req_06917ac5f9aa"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Home Health Agency (HHA)",
     "Jurisdiction Role": "Occupational therapist",
@@ -10002,7 +10002,7 @@
     "Record ID": "req_ebcbd1bba5a7"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Home Health Agency (HHA)",
     "Jurisdiction Role": "Occupational therapy assistant",
@@ -10028,7 +10028,7 @@
     "Record ID": "req_aaddbe499ac7"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Home Health Agency (HHA)",
     "Jurisdiction Role": "Physical therapist",
@@ -10054,7 +10054,7 @@
     "Record ID": "req_0fa421991db0"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Home Health Agency (HHA)",
     "Jurisdiction Role": "Physical therapist assistant",
@@ -10080,7 +10080,7 @@
     "Record ID": "req_1a307c74f203"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Home Health Agency (HHA)",
     "Jurisdiction Role": "Registered nurse",
@@ -10106,7 +10106,7 @@
     "Record ID": "req_d184b9dd9001"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Home Health Agency (HHA)",
     "Jurisdiction Role": "Social Work Assistant",
@@ -10132,7 +10132,7 @@
     "Record ID": "req_415c55fcf647"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Home Health Agency (HHA)",
     "Jurisdiction Role": "Social worker",
@@ -10158,7 +10158,7 @@
     "Record ID": "req_452911fa91bc"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Home Health Agency (HHA)",
     "Jurisdiction Role": "Speech-language pathologist",
@@ -11121,7 +11121,7 @@
     "Record ID": "req_a980c90097df"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Home health agency",
     "Jurisdiction Role": "personal care aide",
@@ -11441,7 +11441,7 @@
     "Record ID": "req_43f5326e9b70"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Critical access hospital",
     "Jurisdiction Role": "clinical nurse specialist; nurse practitioner; physician assistant",
@@ -11999,7 +11999,7 @@
     "Record ID": "req_7fea365653fd"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": null,
     "Jurisdiction Role": "facility physician; licensed practical nurse; orthotist; prosthetist; psychologist; registered nurse; rehabilitation counselor; respiratory therapist; respiratory therapy technician; social worker",
@@ -12027,7 +12027,7 @@
     "Record ID": "req_0ec4c967d597"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": null,
     "Jurisdiction Role": "facility physician",
@@ -12053,7 +12053,7 @@
     "Record ID": "req_40b53a8e328f"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": null,
     "Jurisdiction Role": "licensed practical nurse",
@@ -12079,7 +12079,7 @@
     "Record ID": "req_31873b95367a"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": null,
     "Jurisdiction Role": "orthotist",
@@ -12105,7 +12105,7 @@
     "Record ID": "req_3e0054de311f"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": null,
     "Jurisdiction Role": "prosthetist",
@@ -12131,7 +12131,7 @@
     "Record ID": "req_ac1dc9a29d47"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": null,
     "Jurisdiction Role": "psychologist",
@@ -12157,7 +12157,7 @@
     "Record ID": "req_6b8382eb8e4d"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": null,
     "Jurisdiction Role": "registered nurse",
@@ -12183,7 +12183,7 @@
     "Record ID": "req_d4dba74b8646"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": null,
     "Jurisdiction Role": "rehabilitation counselor",
@@ -12209,7 +12209,7 @@
     "Record ID": "req_588197341179"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": null,
     "Jurisdiction Role": "respiratory therapist",
@@ -12235,7 +12235,7 @@
     "Record ID": "req_784bce1e76ee"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": null,
     "Jurisdiction Role": "respiratory therapy technician",
@@ -12261,7 +12261,7 @@
     "Record ID": "req_94be7530e525"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": null,
     "Jurisdiction Role": "social worker",
@@ -12287,7 +12287,7 @@
     "Record ID": "req_9cb55a0b0e67"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": null,
     "Jurisdiction Role": "administrator; occupational therapist; occupational therapy assistant; physical therapist; physical therapist assistant; social worker; vocational specialist; nurse practitioner; clinical nurse specialist; physician assistant; physician; speech-language pathologist",
@@ -12345,7 +12345,7 @@
     "Record ID": "req_b65a2151f114"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Community mental health center",
     "Jurisdiction Role": "administrator of a CMHC; clinical psychologist; clinical social worker; social worker; mental health counselor; occupational therapist; physician; physician assistant; advanced practice nurse; psychiatric registered nurse; psychiatrist; marriage and family therapist",
@@ -12376,7 +12376,7 @@
     "Record ID": "req_7a09ee5e6adb"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": "Community mental health center",
     "Jurisdiction Role": "psychiatric registered nurse",
@@ -21917,7 +21917,7 @@
     "Record ID": "req_10f72b02c0c8"
   },
   {
-    "Source Dataset": "Care Setting",
+    "Source Dataset": "Role",
     "Jurisdiction": "US",
     "Jurisdiction Setting": null,
     "Jurisdiction Role": "medical director",
