@@ -8,8 +8,8 @@
  * committed file on GitHub is the single source of truth.
  *
  * Endpoints:
- *   GET  /file?path=requirements.json   -> { content, sha }
- *   POST /commit                        -> { path, message, content } -> commits
+ *   GET  /file?path=requirements.json  -> { content, sha }
+ *   POST /commit                       -> { path, message, content } -> commits
  *
  * Auth: Authorization: Bearer <ADMIN_TOKEN>  (checked against the ADMIN_TOKEN
  * secret). This is a shared-secret gate for a single trusted operator, not a
@@ -47,8 +47,8 @@ function base64ToUtf8(b64) {
   return new TextDecoder().decode(bytes);
 }
 
-async function githubRequest(env, path, init = {}) {
-  const url = `https://api.github.com/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/contents/${path}`;
+async function githubApiRequest(env, urlPath, init = {}) {
+  const url = `https://api.github.com/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/${urlPath}`;
   return fetch(url, {
     ...init,
     headers: {
@@ -61,14 +61,23 @@ async function githubRequest(env, path, init = {}) {
 }
 
 async function getFile(env, path, branch) {
-  const res = await githubRequest(env, `${path}?ref=${encodeURIComponent(branch)}`);
+  const res = await githubApiRequest(env, `contents/${path}?ref=${encodeURIComponent(branch)}`);
   if (!res.ok) throw new Error(`GitHub GET ${path} failed: ${res.status} ${await res.text()}`);
   const body = await res.json();
-  return { sha: body.sha, content: base64ToUtf8(body.content.replace(/\n/g, "")) };
+  if (body.content) {
+    return { sha: body.sha, content: base64ToUtf8(body.content.replace(/\n/g, "")) };
+  }
+  // The Contents API omits inline content (encoding: "none") for files over
+  // 1MB. requirements.json has grown past that threshold, so fall back to
+  // the Git Data (blob) API, which supports blobs up to 100MB.
+  const blobRes = await githubApiRequest(env, `git/blobs/${body.sha}`);
+  if (!blobRes.ok) throw new Error(`GitHub blob GET ${path} failed: ${blobRes.status} ${await blobRes.text()}`);
+  const blobBody = await blobRes.json();
+  return { sha: body.sha, content: base64ToUtf8(blobBody.content.replace(/\n/g, "")) };
 }
 
 async function putFile(env, path, branch, message, newContentStr, sha) {
-  const res = await githubRequest(env, path, {
+  const res = await githubApiRequest(env, `contents/${path}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
