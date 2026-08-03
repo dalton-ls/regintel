@@ -985,7 +985,7 @@ let selectedRole        = null;
     const overviewContent = row ? `
       ${row.hours_required > 0 ? `<div class="drawer-row"><span class="drawer-label">Hours</span><span class="drawer-value">${row.hours_required} hr${row.hours_required !== 1 ? 's' : ''}</span></div>` : ''}
       ${row.frequency ? `<div class="drawer-row"><span class="drawer-label">Frequency</span><span class="drawer-value">${esc(row.frequency)}</span></div>` : ''}
-      ${row.type ? `<div class="drawer-row"><span class="drawer-label">Type</span><span class="drawer-value">${esc(row.type)}</span></div>` : ''}
+      ${row.type ? `<div class="drawer-row"><span class="drawer-label">Purpose</span><span class="drawer-value">${esc(row.type)}</span></div>` : ''}
     ` : '';
     const metaContent = row ? `
       ${row.requirement_level ? `<div class="drawer-row"><span class="drawer-label">Requirement</span><span class="drawer-value">${esc(row.requirement_level)}</span></div>` : ''}
@@ -994,7 +994,7 @@ let selectedRole        = null;
       <div class="drawer-row"><span class="drawer-label">Citation</span><span class="drawer-value">${esc(row.citation)}</span></div>
       <div class="drawer-row"><span class="drawer-label">Approval</span><span class="drawer-value">${approval}</span></div>
       ${row.approval_basis ? `<div class="drawer-row"><span class="drawer-label">Approval basis</span><span class="drawer-value">${esc(row.approval_basis)}</span></div>` : ''}
-      ${row.notes ? `<div class="drawer-row"><span class="drawer-label">Notes</span><span class="drawer-value"><div class="notes-box">${esc(row.notes)}</div></span></div>` : ''}
+      ${row.notes ? `<div class="drawer-row"><span class="drawer-label">Internal Notes</span><span class="drawer-value"><div class="notes-box">${esc(row.notes)}</div></span></div>` : ''}
       <div class="drawer-row"><span class="drawer-label">Source</span><span class="drawer-value">${src}</span></div>
     ` : '';
     return `
