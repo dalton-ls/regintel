@@ -610,10 +610,6 @@
     .req-main { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
     .req-purpose { font-size: 11.5px; color: #8a94a6; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
     .badge-setting { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
-    .badge-regtype { border: 1px solid transparent; }
-    .badge-regtype.regtype-ce { background: #eef3fb; color: #2463eb; }
-    .badge-regtype.regtype-facility { background: #f5f3ff; color: #7c3aed; }
-    .badge-regtype.regtype-policy { background: #fffbeb; color: #b45309; }
     .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip { display: inline-flex; align-items: center; background: #f1f5f9; color: #1a2332; font-size: 11.5px; font-weight: 500; padding: 3px 9px; border-radius: 20px; border: 1px solid #e8ecf0; }
   </style>
@@ -860,15 +856,13 @@ let selectedRole        = null;
   // so these are only pre-load defaults.
   let ALL_REQUIREMENT_LEVELS = ['Explicit Training','Other Training Reference'];
   let ALL_AUTHORITY_LEVELS   = ['Federal Floor','State Floor','Competency'];
-  let ALL_REGULATION_TYPES = [];
   const STATE_NAMES       = {CA:'California', FL:'Florida', US:'United States'};
   const STATE_ORDER       = ['CA','FL','US'];
 
   const filterState = {
     jurisdictions: new Set(),
     requirementLevels:   new Set(),
-    authorityLevels:     new Set(),
-    regulationTypes:     new Set()
+    authorityLevels:     new Set()
   };
 
   const openJurisdictions = new Set();
@@ -894,7 +888,6 @@ let selectedRole        = null;
       if (!filterState.jurisdictions.has(r.state))         return false;
       if (!filterState.requirementLevels.has(r.requirement_level)) return false;
       if (!filterState.authorityLevels.has(r.authority_level)) return false;
-      if (!filterState.regulationTypes.has(r.regulation_type)) return false;
       return true;
     });
   }
@@ -980,10 +973,6 @@ let selectedRole        = null;
     const settingBadge = settings.length > 1
       ? `<span class="badge badge-setting" title="${esc(settings.join(', '))}">${settings.length} settings</span>`
       : settings.length === 1 ? `<span class="badge badge-setting">${esc(settings[0])}</span>` : '';
-    const regTypeClass = row.regulation_type === 'Individual/Continuing Education' ? 'regtype-ce'
-      : row.regulation_type === 'Facility-Based/Organizational Training' ? 'regtype-facility'
-      : row.regulation_type === 'Organizational Policy' ? 'regtype-policy' : '';
-    const regTypeBadge = row.regulation_type ? `<span class="badge badge-regtype ${regTypeClass}">${esc(row.regulation_type)}</span>` : '';
     return `<div class="req-row${sub}${isSelected ? ' selected' : ''}" data-card-key="${esc(key)}">
   <div class="req-main">
     <span class="req-topic">${esc(row.training_topic)}</span>
@@ -991,7 +980,6 @@ let selectedRole        = null;
   </div>
   <div class="req-badges">
     ${settingBadge}
-    ${regTypeBadge}
     ${row.hours_required > 0 ? `<span class="badge badge-hours">${row.hours_required} hr${row.hours_required !== 1 ? 's' : ''}</span>` : ''}
     ${srcHref ? `<a href="${srcHref}" target="_blank" rel="noopener" class="badge badge-source" onclick="event.stopPropagation()">Source ↗</a>` : ''}
   </div>
@@ -1036,7 +1024,6 @@ let selectedRole        = null;
     const settingsChips = settings.length ? `<div class="drawer-row"><span class="drawer-label">Applies To</span><span class="drawer-value"><div class="chip-row">${settings.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div></span></div>` : '';
     const overviewContent = row ? `
       ${settingsChips}
-      ${row.regulation_type ? `<div class="drawer-row"><span class="drawer-label">Category</span><span class="drawer-value">${esc(row.regulation_type)}</span></div>` : ''}
       ${row.hours_required > 0 ? `<div class="drawer-row"><span class="drawer-label">Hours</span><span class="drawer-value">${row.hours_required} hr${row.hours_required !== 1 ? 's' : ''}</span></div>` : ''}
       ${row.frequency ? `<div class="drawer-row"><span class="drawer-label">Frequency</span><span class="drawer-value">${esc(row.frequency)}</span></div>` : ''}
       ${row.type ? `<div class="drawer-row"><span class="drawer-label">Purpose</span><span class="drawer-value">${esc(row.type)}</span></div>` : ''}
@@ -1153,7 +1140,6 @@ let selectedRole        = null;
     ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
     ${renderDropdown('requirementLevels', 'Requirement', ALL_REQUIREMENT_LEVELS, filterState.requirementLevels)}
     ${renderDropdown('authorityLevels', 'Authority', ALL_AUTHORITY_LEVELS, filterState.authorityLevels)}
-    ${renderDropdown('regulationTypes', 'Category', ALL_REGULATION_TYPES, filterState.regulationTypes)}
     ${exportBtn}
   </div>`;
   }
@@ -1171,7 +1157,6 @@ let selectedRole        = null;
     ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
     ${renderDropdown('requirementLevels', 'Requirement', ALL_REQUIREMENT_LEVELS, filterState.requirementLevels)}
     ${renderDropdown('authorityLevels', 'Authority', ALL_AUTHORITY_LEVELS, filterState.authorityLevels)}
-    ${renderDropdown('regulationTypes', 'Category', ALL_REGULATION_TYPES, filterState.regulationTypes)}
     ${exportBtn}
   </div>`;
   }
@@ -1397,7 +1382,7 @@ let selectedRole        = null;
     if (opt) {
       const dim = opt.dataset.dropdown;
       const val = opt.dataset.value;
-      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS, regulationTypes: ALL_REGULATION_TYPES };
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS };
       const s = filterState[dim];
       if (s.has(val)) s.delete(val);
       else s.add(val);
@@ -1408,7 +1393,7 @@ let selectedRole        = null;
     const allBtn = e.target.closest('[data-dropdown-all]');
     if (allBtn) {
       const dim = allBtn.dataset.dropdownAll;
-      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS, regulationTypes: ALL_REGULATION_TYPES };
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS };
       allMap[dim].forEach(v => filterState[dim].add(v));
       render();
       e.stopPropagation();
@@ -1418,7 +1403,7 @@ let selectedRole        = null;
     const clearBtn = e.target.closest('[data-dropdown-clear]');
     if (clearBtn) {
       const dim = clearBtn.dataset.dropdownClear;
-      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS, regulationTypes: ALL_REGULATION_TYPES };
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS };
       filterState[dim].clear();
       render();
       e.stopPropagation();
@@ -1549,11 +1534,9 @@ let selectedRole        = null;
     ALL_JURISDICTIONS = [...new Set([...DATA, ...CARE_DATA].map(r => r.state).filter(Boolean))].sort();
     ALL_REQUIREMENT_LEVELS  = [...new Set([...DATA, ...CARE_DATA].map(r => r.requirement_level).filter(Boolean))];
     ALL_AUTHORITY_LEVELS    = [...new Set([...DATA, ...CARE_DATA].map(r => r.authority_level).filter(Boolean))];
-    ALL_REGULATION_TYPES    = [...new Set([...DATA, ...CARE_DATA].map(r => r.regulation_type).filter(Boolean))];
     filterState.jurisdictions = new Set(ALL_JURISDICTIONS);
     filterState.requirementLevels   = new Set(ALL_REQUIREMENT_LEVELS);
     filterState.authorityLevels     = new Set(ALL_AUTHORITY_LEVELS);
-    filterState.regulationTypes     = new Set(ALL_REGULATION_TYPES);
   }
 
   // parseData() expects the legacy sheet-keyed shape ({ "R <role>": [...],
@@ -1871,11 +1854,9 @@ let selectedRole        = null;
     ALL_JURISDICTIONS = [...new Set([...DATA, ...CARE_DATA].map(r => r.state))].sort();
     ALL_REQUIREMENT_LEVELS = [...new Set([...DATA, ...CARE_DATA].map(r => r.requirement_level).filter(Boolean))];
     ALL_AUTHORITY_LEVELS   = [...new Set([...DATA, ...CARE_DATA].map(r => r.authority_level).filter(Boolean))];
-    ALL_REGULATION_TYPES   = [...new Set([...DATA, ...CARE_DATA].map(r => r.regulation_type).filter(Boolean))];
     filterState.jurisdictions = new Set(ALL_JURISDICTIONS);
     filterState.requirementLevels = new Set(ALL_REQUIREMENT_LEVELS);
     filterState.authorityLevels = new Set(ALL_AUTHORITY_LEVELS);
-    filterState.regulationTypes = new Set(ALL_REGULATION_TYPES);
     render();
     closeImportModal();
     showToast('Data merged successfully');
