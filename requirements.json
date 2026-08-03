@@ -7893,9 +7893,9 @@
   {
     "Source Dataset": "Care Setting",
     "Jurisdiction": "US",
-    "Jurisdiction Setting": "transplant program in a hospital that is a member of the OPTN",
+    "Jurisdiction Setting": "Transplant Program",
     "Jurisdiction Role": "transplant surgeon; transplant physician",
-    "HSTM Setting": null,
+    "HSTM Setting": "Acute",
     "HSTM Role": [
       "Physicians & Practitioners"
     ],
