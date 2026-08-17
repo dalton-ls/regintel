@@ -2,9 +2,9 @@
   {
     "Regulation Type": "Facility-Based/Organizational Training",
     "Oversight / Professional Agency": "HHS / PHS",
-    "Requirement Level": "Other Training Reference",
+    "Requirement Level": "Explicit Training",
     "Authority Level": "Federal Floor",
-    "Explicit Training": "No",
+    "Explicit Training": "Yes",
     "Citation": "42 CFR § 121.9",
     "Training Topic / Competency Item": "Designated transplant program requirements",
     "Relationship": "Parent",
@@ -15,7 +15,15 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_i/subchapter_k/part_121/section_121_9",
     "Notes / Research Flags": "[AUTO] Other Training Reference: qualification-by-policy hook — no enumerated topics, hours, or curriculum in the section, so Parent only with no Children. Operative language sits at (a)(2)(ii) and (a)(2)(iii); citation left at section level because the requirement spans two subdivisions. HSTM Setting left empty — Part 121 has no part-to-setting mapping, so anchored on role per the unmapped-setting rule; do not backfill Hospital. Jurisdiction Role carries two verbatim titles separated by '; '. Cross-reference to § 121.4 (OPTN policy development) noted but not emitted as its own row. Reviewer should confirm whether OPTN transplant-program membership rules belong in a provider-CoP dataset at all.",
-    "Record ID": "req_8b71e6050d94"
+    "Record ID": "req_8b71e6050d94",
+    "Jurisdiction": "US",
+    "Jurisdiction Setting": "Transplant Program",
+    "HSTM Setting": "Acute",
+    "HSTM Role": [
+      "Clinical",
+      "Medication Dispensing Clinical",
+      "Non-Medication Dispensing Physicians & Practitioners"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
