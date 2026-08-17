@@ -1,8 +1,12 @@
 """
 migrate_to_unified.py
 
-Converts the existing per-type datasets (role.json, caresetting.json) into
-a single unified Requirements dataset, per the schema locked in DESIGN.md.
+**One-time / full regeneration only.** Converts the legacy per-type datasets
+(role.json, caresetting.json) into a single unified Requirements projection,
+per the schema in DESIGN.md. Do not use this for ongoing batches — it
+fully regenerates requirements.json and bypasses Pending Review's conflict
+detection. For sporadic incoming sheets, use normalize_batch.py and Pending
+Review instead.
 
 Background
 ----------

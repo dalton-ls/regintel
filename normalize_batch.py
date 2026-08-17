@@ -1,10 +1,15 @@
 """
 normalize_batch.py
 
-Converts one raw incoming sheet (Excel workbook, one or more tabs) using the
-18-column unified template into a flat unified-JSON array, ready to upload
-into the Pending Review Queue (pending-review.html) -- NOT a drop-in
-replacement for requirements.json the way migrate_to_unified.py is.
+Converts one **already-extracted** incoming sheet (Excel workbook, one or more
+tabs) using the 20-column extraction template into a flat JSON array, ready
+to upload into the Pending Review Queue (pending-review.html) -- NOT a
+drop-in replacement for requirements.json the way migrate_to_unified.py is.
+
+This script does **not** parse OpenLaws or run AI extraction. It only
+normalizes classified output that already matches the extraction column
+headers. Change / Applicability / Impact / Artifact fields are not produced
+here; those arrive as separate reviewed batches from the pre-site pipeline.
 
 Why this exists (and why it's not just "run migrate_to_unified.py again")
 ---------------------------------------------------------------------------
@@ -400,7 +405,7 @@ def load_json_array(input_path, cli_source_dataset):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("input", help="Excel workbook (.xlsx) or JSON array (.json) using the 18-column unified template")
+    parser.add_argument("input", help="Excel workbook (.xlsx) or JSON array (.json) using the 20-column extraction template")
     parser.add_argument("--source-dataset", choices=["Role", "Care Setting"], default=None,
                          help="Force the Source Dataset lane. If omitted for Excel input, inferred per-sheet from an 'R '/'CS ' tab-name prefix.")
     parser.add_argument("--reference", default="requirements.json",

@@ -681,7 +681,7 @@
   <div class="modal-overlay" id="importModal">
     <div class="modal-box">
       <div class="modal-title">Import regulatory data</div>
-      <div class="modal-subtitle">Drop a JSON file exported from the WR Ingest tool (<code>wr.json</code>). WR records will be merged into the current dataset — duplicates (same citation + topic + jurisdiction) are skipped.</div>
+      <div class="modal-subtitle">Drop a <code>wr.json</code> file exported by <code>export_wr.py</code> (Workforce Readiness only). WR records merge into the research view — duplicates are skipped by citation + topic + jurisdiction. Role and Care Setting data enter through Pending Review, not this modal.</div>
       <div class="modal-dropzone" id="importDropzone" onclick="document.getElementById('importFileInput').click()">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:8px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         <div>Drop JSON file here or click to browse</div>

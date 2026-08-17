@@ -2,8 +2,9 @@
 
 A small Cloudflare Worker that lets the RegIntel admin screens
 (`record-editor.html`, `bulk-apply.html`, `pending-review.html`) commit
-edits directly to `requirements.json` on GitHub, instead of stashing them
-in browser `localStorage`. `export.html` also reads through it (no auth
+edits directly to `requirements.json` on GitHub — the live **output-row
+projection** for Role + Care Setting data, not the OpenLaws source corpus
+or any pre-site parsed JSON. `export.html` also reads through it (no auth
 needed for reads) so its snapshot always reflects the live committed data.
 Because the committed file is the single source of truth, this lets one
 person work from multiple computers/browsers without losing edits or

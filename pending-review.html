@@ -78,6 +78,24 @@
     .advisory-note ul { margin: 6px 0 0; padding-left: 18px; }
     .advisory-note li { margin: 2px 0; }
 
+    .scope-panel { background: #fff; border: 1px solid #e8ecf0; border-radius: 10px; padding: 16px 20px; margin-bottom: 20px; }
+    .scope-panel-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7a99; margin-bottom: 4px; }
+    .scope-panel-desc { font-size: 12px; color: #9aaac4; margin-bottom: 14px; line-height: 1.5; }
+    .scope-filters { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 16px; }
+    .scope-filter { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #4a5568; }
+    .scope-filter select { height: 30px; border: 1px solid #dde1ea; border-radius: 6px; padding: 0 8px; font-size: 12px; font-family: inherit; background: #fff; min-width: 120px; }
+    .scope-filter select:focus { outline: none; border-color: #2463eb; }
+    .scope-clear { font-size: 11px; color: #6b7a99; background: none; border: none; cursor: pointer; padding: 0; }
+    .scope-clear:hover { color: #2463eb; }
+    .scope-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+    .scope-card { border: 1px solid #f0f2f5; border-radius: 8px; padding: 12px 14px; background: #fbfcfe; }
+    .scope-card h3 { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #6b7a99; margin-bottom: 8px; }
+    .scope-stat { font-size: 12px; color: #4a5568; margin-bottom: 6px; }
+    .scope-stat strong { color: #1a2332; font-size: 16px; margin-right: 4px; }
+    .scope-list { font-size: 11px; color: #6b7a99; line-height: 1.5; max-height: 120px; overflow-y: auto; }
+    .scope-list span { display: inline-block; margin: 0 6px 4px 0; padding: 2px 7px; background: #eef3fb; border-radius: 4px; color: #2b5aa1; }
+    .scope-empty { font-size: 12px; color: #9aaac4; font-style: italic; }
+
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a2332; color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 999; box-shadow: 0 4px 20px rgba(0,0,0,0.25); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
     .toast.show { opacity: 1; }
   </style>
@@ -94,14 +112,14 @@
 
   <div class="page-wrap">
     <h1 class="page-title">Pending Review Queue</h1>
-    <p class="page-desc">Upload an incoming requirements file (e.g. a RegWatch/OpenLaws batch). Each incoming record is matched by Record ID against the current dataset. New IDs can be added directly; records whose content differs from an existing record are queued as conflicts with a field-by-field diff. <strong>Nothing is applied automatically</strong> — for each conflict you choose to keep existing, use incoming, or manually reconcile, then apply your resolutions.</p>
+    <p class="page-desc">Upload a <strong>classified requirements JSON batch</strong> from the pre-site extraction pipeline (already-parsed output rows, change tags, or applicability/impact/artifact tags). Each record is matched by Record ID against the current projection. New IDs can be added directly; records whose content differs are queued as conflicts with a field-by-field diff. <strong>Nothing is applied automatically</strong> — for each conflict you choose to keep existing, use incoming, or manually reconcile, then apply your resolutions. The scope summary below shows type-level affected settings, roles, and jurisdictions — not customer headcounts.</p>
 
     <div class="upload-zone" id="uploadZone">
       <div class="upload-icon">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       </div>
       <p>Drop an incoming <strong>requirements JSON</strong> file here, or click to browse</p>
-      <p class="hint">A JSON array of unified requirement records (each with a Record ID)</p>
+      <p class="hint">A JSON array of output-row records (each with a Record ID when updating existing rows)</p>
       <input type="file" id="fileInput" accept=".json" style="display:none">
     </div>
 
@@ -115,6 +133,7 @@
       </div>
     </div>
 
+    <div id="scopePanel" style="display:none"></div>
     <div id="schemaBanner"></div>
     <div id="advisoryPanel"></div>
 
@@ -230,6 +249,188 @@
   let currentById = {};
   let conflicts = [];   // { id, incoming, existing, choice, topic }
   let newRecords = [];  // incoming records with unknown Record ID
+  let lastIncomingAll = []; // full uploaded batch for scope summary
+
+  const SCOPE_IMPACT_TYPES = ['Policy', 'Training', 'Other'];
+  const scopeFilters = {
+    jurisdiction: '',
+    hstmSetting: '',
+    hstmRole: '',
+    impactType: '',
+    regulationType: ''
+  };
+
+  function recordImpactTypes(rec) {
+    const types = rec['Impact Types'];
+    if (!Array.isArray(types) || !types.length) return ['(untagged)'];
+    const kept = types.filter(t => SCOPE_IMPACT_TYPES.includes(t));
+    return kept.length ? kept : ['(untagged)'];
+  }
+
+  function recordHstmRoles(rec) {
+    const roles = rec['HSTM Role'];
+    if (Array.isArray(roles) && roles.length) return roles.filter(Boolean);
+    if (roles) return [String(roles)];
+    return [];
+  }
+
+  function scopeActionableRecords() {
+    const conflictIncoming = conflicts.map(c => c.incoming);
+    return [...newRecords, ...conflictIncoming];
+  }
+
+  function recordMatchesScopeFilters(rec) {
+    if (scopeFilters.jurisdiction && rec['Jurisdiction'] !== scopeFilters.jurisdiction) return false;
+    if (scopeFilters.hstmSetting && rec['HSTM Setting'] !== scopeFilters.hstmSetting) return false;
+    if (scopeFilters.hstmRole) {
+      const roles = recordHstmRoles(rec);
+      if (!roles.includes(scopeFilters.hstmRole)) return false;
+    }
+    if (scopeFilters.regulationType && rec['Regulation Type'] !== scopeFilters.regulationType) return false;
+    if (scopeFilters.impactType) {
+      const types = recordImpactTypes(rec);
+      if (scopeFilters.impactType === '(untagged)') {
+        if (!types.includes('(untagged)')) return false;
+      } else if (!types.includes(scopeFilters.impactType)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function computeScopeStats(records) {
+    const jurisdictions = new Set();
+    const settings = new Set();
+    const roles = new Set();
+    const regulationTypes = new Set();
+    const byImpact = { Policy: 0, Training: 0, Other: 0, '(untagged)': 0 };
+    const byJurisdiction = {};
+    const bySetting = {};
+    const byRole = {};
+
+    records.forEach(rec => {
+      const j = rec['Jurisdiction'];
+      if (j) {
+        jurisdictions.add(j);
+        byJurisdiction[j] = (byJurisdiction[j] || 0) + 1;
+      }
+      const s = rec['HSTM Setting'];
+      if (s) {
+        settings.add(s);
+        bySetting[s] = (bySetting[s] || 0) + 1;
+      }
+      recordHstmRoles(rec).forEach(r => {
+        roles.add(r);
+        byRole[r] = (byRole[r] || 0) + 1;
+      });
+      const rt = rec['Regulation Type'];
+      if (rt) regulationTypes.add(rt);
+      recordImpactTypes(rec).forEach(t => { byImpact[t] = (byImpact[t] || 0) + 1; });
+    });
+
+    return {
+      total: records.length,
+      jurisdictions: [...jurisdictions].sort(),
+      settings: [...settings].sort(),
+      roles: [...roles].sort(),
+      regulationTypes: [...regulationTypes].sort(),
+      byImpact,
+      byJurisdiction,
+      bySetting,
+      byRole
+    };
+  }
+
+  function scopeFilterOptions(records) {
+    const jurisdictions = new Set();
+    const settings = new Set();
+    const roles = new Set();
+    const regulationTypes = new Set();
+    records.forEach(rec => {
+      if (rec['Jurisdiction']) jurisdictions.add(rec['Jurisdiction']);
+      if (rec['HSTM Setting']) settings.add(rec['HSTM Setting']);
+      recordHstmRoles(rec).forEach(r => roles.add(r));
+      if (rec['Regulation Type']) regulationTypes.add(rec['Regulation Type']);
+    });
+    return {
+      jurisdictions: [...jurisdictions].sort(),
+      settings: [...settings].sort(),
+      roles: [...roles].sort(),
+      regulationTypes: [...regulationTypes].sort()
+    };
+  }
+
+  function renderScopeChipList(items, counts) {
+    if (!items.length) return '<div class="scope-empty">None in filtered set</div>';
+    return '<div class="scope-list">' + items.map(item =>
+      '<span>' + esc(item) + (counts && counts[item] ? ' (' + counts[item] + ')' : '') + '</span>'
+    ).join('') + '</div>';
+  }
+
+  function renderScopePanel() {
+    const panel = document.getElementById('scopePanel');
+    const actionable = scopeActionableRecords();
+    const filtered = actionable.filter(recordMatchesScopeFilters);
+    const stats = computeScopeStats(filtered);
+    const opts = scopeFilterOptions(actionable);
+
+    if (!lastIncomingAll.length) {
+      panel.style.display = 'none';
+      panel.innerHTML = '';
+      return;
+    }
+
+    panel.style.display = 'block';
+    const sel = (name, val, options, label) =>
+      '<label class="scope-filter"><span>' + esc(label) + '</span><select data-scope-filter="' + name + '">' +
+      '<option value="">All</option>' +
+      options.map(o => '<option value="' + esc(o) + '"' + (val === o ? ' selected' : '') + '>' + esc(o) + '</option>').join('') +
+      '</select></label>';
+
+    panel.innerHTML =
+      '<div class="scope-panel">' +
+        '<div class="scope-panel-title">Type-level scope — new + conflict records</div>' +
+        '<div class="scope-panel-desc">Archetype counts for rows that would change the live projection (new Record IDs and conflicts). Filter by jurisdiction, HSTM Setting, HSTM Role, Regulation Type, or Impact Type. This is not a customer facility or learner headcount.</div>' +
+        '<div class="scope-filters">' +
+          sel('jurisdiction', scopeFilters.jurisdiction, opts.jurisdictions, 'Jurisdiction') +
+          sel('hstmSetting', scopeFilters.hstmSetting, opts.settings, 'HSTM Setting') +
+          sel('hstmRole', scopeFilters.hstmRole, opts.roles, 'HSTM Role') +
+          sel('regulationType', scopeFilters.regulationType, opts.regulationTypes, 'Regulation Type') +
+          sel('impactType', scopeFilters.impactType, [...SCOPE_IMPACT_TYPES, '(untagged)'], 'Impact Type') +
+          '<button type="button" class="scope-clear" id="scopeClearBtn">Clear filters</button>' +
+        '</div>' +
+        '<div class="scope-grid">' +
+          '<div class="scope-card"><h3>Filtered rows</h3>' +
+            '<div class="scope-stat"><strong>' + stats.total + '</strong> of ' + actionable.length + ' actionable</div>' +
+            '<div class="scope-stat"><strong>' + stats.jurisdictions.length + '</strong> jurisdiction(s)</div>' +
+            '<div class="scope-stat"><strong>' + stats.settings.length + '</strong> care setting(s)</div>' +
+            '<div class="scope-stat"><strong>' + stats.roles.length + '</strong> role(s)</div>' +
+          '</div>' +
+          '<div class="scope-card"><h3>By impact type</h3>' +
+            SCOPE_IMPACT_TYPES.concat(['(untagged)']).map(t =>
+              '<div class="scope-stat"><strong>' + (stats.byImpact[t] || 0) + '</strong> ' + esc(t) + '</div>'
+            ).join('') +
+          '</div>' +
+          '<div class="scope-card"><h3>Jurisdictions</h3>' + renderScopeChipList(stats.jurisdictions, stats.byJurisdiction) + '</div>' +
+          '<div class="scope-card"><h3>HSTM Settings</h3>' + renderScopeChipList(stats.settings, stats.bySetting) + '</div>' +
+          '<div class="scope-card"><h3>HSTM Roles</h3>' + renderScopeChipList(stats.roles, stats.byRole) + '</div>' +
+        '</div>' +
+      '</div>';
+
+    panel.querySelectorAll('[data-scope-filter]').forEach(el => {
+      el.addEventListener('change', () => {
+        scopeFilters[el.dataset.scopeFilter] = el.value;
+        renderScopePanel();
+      });
+    });
+    const clearBtn = document.getElementById('scopeClearBtn');
+    if (clearBtn) {
+      clearBtn.addEventListener('click', () => {
+        Object.keys(scopeFilters).forEach(k => { scopeFilters[k] = ''; });
+        renderScopePanel();
+      });
+    }
+  }
 
   function showToast(msg) {
     const el = document.getElementById('toast');
@@ -338,6 +539,7 @@
   }
 
   function classify(incoming) {
+    lastIncomingAll = incoming;
     conflicts = [];
     newRecords = [];
     let identical = 0;
@@ -372,7 +574,7 @@
           ' new record(s) are missing <strong>Authority Level</strong> and/or ' +
           '<strong>Approval Basis</strong> — this batch predates the 20-field schema. ' +
           'They will be added without those fields and will fail validation on the ' +
-          'next edit. Re-export the batch from the current parser, or fill the fields ' +
+          'next edit. Re-export the batch from the current extraction pipeline, or fill the fields ' +
           'in the record editor afterwards.</div>'
         : '';
     }
@@ -382,6 +584,8 @@
     document.getElementById('statConflict').textContent = conflicts.length;
     document.getElementById('statIdentical').textContent = identical;
     document.getElementById('summaryBar').style.display = 'flex';
+    Object.keys(scopeFilters).forEach(k => { scopeFilters[k] = ''; });
+    renderScopePanel();
     render();
     showToast('Classified ' + incoming.length + ' incoming record(s)');
   }
@@ -548,6 +752,9 @@
       if (result.commitUrl) msg += ' — ' + result.commitUrl;
       showToast(msg);
       conflicts = []; newRecords = [];
+      lastIncomingAll = [];
+      document.getElementById('scopePanel').style.display = 'none';
+      document.getElementById('scopePanel').innerHTML = '';
       document.getElementById('summaryBar').style.display = 'none';
       document.getElementById('results').innerHTML = '<div class="empty-state"><p>Resolutions applied. Upload another incoming file to continue reviewing.</p></div>';
 
