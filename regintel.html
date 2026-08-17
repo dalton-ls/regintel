@@ -524,6 +524,18 @@
     .export-btn:hover { background: #dcfce7; border-color: #15803d; color: #15803d; }
     .export-btn:active { background: #bbf7d0; }
 
+    /* ── Generic small button (Facility/Learner Profile query bar) ── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      height: 32px; padding: 0 14px;
+      border: 1px solid #dde1ea; border-radius: 8px;
+      background: #fff; color: #4a5568;
+      font-size: 12px; font-weight: 600; font-family: inherit;
+      cursor: pointer; white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: #f5f7fa; }
+
     /* ── Admin mode ── */
     .admin-toggle {
       display: flex; align-items: center; gap: 6px;
@@ -715,6 +727,14 @@
           </span>
           <span class="nav-label">Workforce Readiness</span>
         </a>
+        <a href="#" class="nav-item" data-section="profile">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </span>
+          <span class="nav-label">Facility/Learner Query</span>
+        </a>
         <div id="adminNav" style="display:none">
           <div style="border-top:1px solid #e8ecf0;margin:12px 0;"></div>
           <a href="ingest.html" class="nav-item" style="color:#6b7a99;">
@@ -814,6 +834,19 @@ let selectedRole        = null;
   let selectedCareSetting = null;
   let selectedWFRole      = null;
   let selectedWFSetting   = null;
+
+  // ─── Facility/Learner Applicability Profile (Phase 6) ───
+  // NOT a customer -- a reusable type-level archetype (Jurisdiction, HSTM
+  // Setting, HSTM Role). Queries across the FULL flat dataset (both the
+  // Role lane and Care Setting lane), unlike the Roles/Care Settings tabs
+  // above which are each confined to their own lane. Mirrors
+  // facility_learner_profile.py's Profile/match_profile() exactly.
+  let selectedProfileJurisdiction = null;
+  let selectedProfileSetting      = null;
+  let selectedProfileRole         = null;
+  let ALL_HSTM_SETTINGS = [];
+  let ALL_HSTM_ROLES    = [];
+
   let openDropdown  = null;
 
   let WF_ROLE_MATCH = {};
@@ -951,6 +984,34 @@ let selectedRole        = null;
       const label = a.artifact_type ? `${a.artifact_type}: ${a.name || a.artifact_id}` : (a.name || a.artifact_id || '');
       return label;
     }).filter(Boolean);
+  }
+
+  // ─── Facility/Learner Applicability Profile matching (Phase 6) ───
+  // Mirrors facility_learner_profile.py's Profile/match_profile()/
+  // has_valid_anchor() exactly -- same primary HSTM Setting/Role/
+  // Jurisdiction match, same Applicability Rule secondary check, same
+  // "all-unset matches nothing" rule.
+  function profileApplicabilityRuleMatches(row, jurisdiction, setting, role) {
+    const rules = row.applicability_rules;
+    if (!Array.isArray(rules) || !rules.length) return false;
+    return rules.some(rule => {
+      if (!rule || typeof rule !== 'object') return false;
+      if (jurisdiction && rule.jurisdiction && rule.jurisdiction !== jurisdiction) return false;
+      if (setting && rule.setting && rule.setting !== setting) return false;
+      if (role && rule.role && rule.role !== role) return false;
+      return true;
+    });
+  }
+
+  function matchProfile(jurisdiction, setting, role, records) {
+    if (!setting && !role) return [];
+    return records.filter(r => {
+      const settingOk = !setting || r.hstm_setting === setting;
+      const roleOk = !role || (Array.isArray(r.hstm_role) ? r.hstm_role.includes(role) : r.hstm_role === role);
+      const jurisdictionOk = !jurisdiction || r.state === jurisdiction;
+      if (settingOk && roleOk && jurisdictionOk) return true;
+      return profileApplicabilityRuleMatches(r, jurisdiction, setting, role);
+    });
   }
 
   // ─── Filter & group ───
@@ -1225,6 +1286,35 @@ let selectedRole        = null;
 </div>`;
   }
 
+  // ─── Facility/Learner Applicability Profile query bar (Phase 6) ───
+  // Single-select, optional dropdowns -- unlike the multi-select filters
+  // above, a Profile is one archetype (a Skilled Nursing Facility, not "all
+  // settings selected except two"). "Any" clears that dimension entirely.
+  function renderProfileSingleSelect(id, label, allValues, selectedValue) {
+    const isOpen = openDropdown === id;
+    const options = ['<div class="role-select-option' + (selectedValue === null ? ' selected' : '') + '" data-profile-select="' + id + '" data-profile-value="">Any ' + esc(label) + '</div>']
+      .concat(allValues.map(v => `<div class="role-select-option${selectedValue === v ? ' selected' : ''}" data-profile-select="${id}" data-profile-value="${esc(v)}">${esc(v === 'US' ? 'US / National' : v)}</div>`));
+    return `<div class="filter-group">
+  <button type="button" class="multi-select-trigger${isOpen ? ' open' : ''}" data-dropdown-trigger="${id}">
+    <span class="trigger-label">${esc(label)}</span>
+    <span class="trigger-value${selectedValue === null ? ' role-placeholder-value' : ''}">${selectedValue === null ? 'Any' : esc(selectedValue === 'US' ? 'US / National' : selectedValue)}</span>
+    <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
+  <div class="multi-select-panel${isOpen ? ' open' : ''}" data-dropdown-panel="${id}">
+    ${options.join('')}
+  </div>
+</div>`;
+  }
+
+  function renderProfileQueryBar() {
+    return `<div class="filter-bar">
+    ${renderProfileSingleSelect('profile-jurisdiction', 'Jurisdiction', ALL_JURISDICTIONS, selectedProfileJurisdiction)}
+    ${renderProfileSingleSelect('profile-setting', 'HSTM Setting', ALL_HSTM_SETTINGS, selectedProfileSetting)}
+    ${renderProfileSingleSelect('profile-role', 'HSTM Role', ALL_HSTM_ROLES, selectedProfileRole)}
+    <button type="button" class="btn" id="profileClearBtn">Clear</button>
+  </div>`;
+  }
+
   function renderCareFilterBar(settingOnly = false) {
     const settingDD = renderCareSettingDropdown();
     const exportBtn = `<button class="export-btn" onclick="exportToExcel()" title="Export filtered results to Excel">
@@ -1400,6 +1490,30 @@ let selectedRole        = null;
       return;
     }
 
+    if (activeSection === 'profile') {
+      if (!selectedProfileSetting && !selectedProfileRole) {
+        panel.innerHTML = renderProfileQueryBar() + `<div class="main-content"><div class="empty-state">
+          <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <p class="empty-state-title">Build a facility/learner profile</p>
+          <p class="empty-state-text">Pick an HSTM Setting and/or HSTM Role (Jurisdiction optional) to see every Obligation that applies to that archetype — not a customer, just the type. Searches across both the Roles and Care Settings datasets at once.</p>
+        </div></div>`;
+        updateDrawer();
+        return;
+      }
+      const profileMatches = matchProfile(selectedProfileJurisdiction, selectedProfileSetting, selectedProfileRole, [...DATA, ...CARE_DATA]);
+      const profileGroups = groupData(profileMatches);
+      const profileBody = profileGroups.length
+        ? profileGroups.map(renderJurisdiction).join('')
+        : `<div class="empty-state">
+             <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+             <p class="empty-state-title">No results</p>
+             <p class="empty-state-text">No Obligations match this profile today.</p>
+           </div>`;
+      panel.innerHTML = renderProfileQueryBar() + `<div class="main-content">${profileBody}</div>`;
+      updateDrawer();
+      return;
+    }
+
     if (selectedRole === null) {
       panel.innerHTML = renderFilterBar(true) + `<div class="main-content"><div class="empty-state">
         <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -1459,6 +1573,26 @@ let selectedRole        = null;
     if (careOpt) {
       selectedCareSetting = careOpt.dataset.careSelect;
       openDropdown = null;
+      render();
+      return;
+    }
+    // Facility/Learner Profile dimension select (Phase 6)
+    const profileOpt = e.target.closest('[data-profile-select]');
+    if (profileOpt) {
+      const dim = profileOpt.dataset.profileSelect;
+      const val = profileOpt.dataset.profileValue || null;
+      if (dim === 'profile-jurisdiction') selectedProfileJurisdiction = val;
+      else if (dim === 'profile-setting') selectedProfileSetting = val;
+      else if (dim === 'profile-role') selectedProfileRole = val;
+      openDropdown = null;
+      render();
+      return;
+    }
+    // Facility/Learner Profile clear (Phase 6)
+    if (e.target.closest('#profileClearBtn')) {
+      selectedProfileJurisdiction = null;
+      selectedProfileSetting = null;
+      selectedProfileRole = null;
       render();
       return;
     }
@@ -1644,6 +1778,12 @@ let selectedRole        = null;
     filterState.authorityLevels     = new Set(ALL_AUTHORITY_LEVELS);
     filterState.applicabilityValues = new Set(ALL_APPLICABILITY_VALUES);
     filterState.impactTypes         = new Set(ALL_IMPACT_TYPES); // fixed vocabulary, not re-derived
+
+    // Facility/Learner Applicability Profile facets (Phase 6) — derived from
+    // the FULL flat dataset (both lanes), since a profile query isn't
+    // confined to whichever lane a record happened to arrive in.
+    ALL_HSTM_SETTINGS = [...new Set([...DATA, ...CARE_DATA].map(r => r.hstm_setting).filter(Boolean))].sort();
+    ALL_HSTM_ROLES = [...new Set([...DATA, ...CARE_DATA].flatMap(r => Array.isArray(r.hstm_role) ? r.hstm_role : (r.hstm_role ? [r.hstm_role] : [])))].sort();
   }
 
   // parseData() expects the legacy sheet-keyed shape ({ "R <role>": [...],
@@ -1967,6 +2107,8 @@ let selectedRole        = null;
     filterState.authorityLevels = new Set(ALL_AUTHORITY_LEVELS);
     filterState.applicabilityValues = new Set(ALL_APPLICABILITY_VALUES);
     filterState.impactTypes = new Set(ALL_IMPACT_TYPES); // fixed vocabulary, not re-derived
+    ALL_HSTM_SETTINGS = [...new Set([...DATA, ...CARE_DATA].map(r => r.hstm_setting).filter(Boolean))].sort();
+    ALL_HSTM_ROLES = [...new Set([...DATA, ...CARE_DATA].flatMap(r => Array.isArray(r.hstm_role) ? r.hstm_role : (r.hstm_role ? [r.hstm_role] : [])))].sort();
     render();
     closeImportModal();
     showToast('Data merged successfully');
