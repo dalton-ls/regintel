@@ -702,6 +702,9 @@
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
       <nav class="sidebar-nav">
+        <a href="index.html" class="nav-item">
+          <span class="nav-icon">⌂</span><span class="nav-label">Home</span>
+        </a>
         <a href="#" class="nav-item active" data-section="roles">
           <span class="nav-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1186,6 +1189,8 @@ let selectedRole        = null;
       ${row.type ? `<div class="drawer-row"><span class="drawer-label">Purpose</span><span class="drawer-value">${esc(row.type)}</span></div>` : ''}
     ` : '';
     const metaContent = row ? `
+      ${row.obligation_id ? `<div class="drawer-row"><span class="drawer-label">Obligation ID</span><span class="drawer-value">${esc(row.obligation_id)}</span></div>` : ''}
+      ${row.change_type ? `<div class="drawer-row"><span class="drawer-label">Change</span><span class="drawer-value">${esc(row.change_type)}${row.change_detected_date ? ' — detected ' + esc(row.change_detected_date) : ''}${row.change_source_path ? ' — ' + esc(row.change_source_path) : ''}</span></div>` : ''}
       ${row.requirement_level ? `<div class="drawer-row"><span class="drawer-label">Requirement</span><span class="drawer-value">${esc(row.requirement_level)}</span></div>` : ''}
       ${row.authority_level ? `<div class="drawer-row"><span class="drawer-label">Authority</span><span class="drawer-value">${esc(row.authority_level)}</span></div>` : ''}
       <div class="drawer-row"><span class="drawer-label">Agency</span><span class="drawer-value">${esc(row.oversight_agency)}</span></div>
@@ -1739,6 +1744,10 @@ let selectedRole        = null;
       source_url:          r['Source URL'],
       row_type:            r['Relationship'] || '',
       record_id:           r['Record ID'] || '',
+      obligation_id:       r['Obligation ID'] || '',
+      change_type:         r['Change Type'] || '',
+      change_detected_date:r['Change Detected Date'] || '',
+      change_source_path:  r['Change Source Path'] || '',
       regulation_type:     r['Regulation Type'] || '',
       applicability_rules: Array.isArray(r['Applicability Rules']) ? r['Applicability Rules'] : [],
       impact_types:        Array.isArray(r['Impact Types']) ? r['Impact Types'] : [],

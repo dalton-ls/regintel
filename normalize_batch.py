@@ -125,7 +125,17 @@ UNIFIED_FIELDS = [
     "Notes / Research Flags",
 ]
 
-ARRAY_FIELDS = {"HSTM Role"}
+# Schema v3 extension. These values are optional enrichment: an absent or
+# blank cell means "no opinion" and is deliberately omitted from the JSON so
+# Pending Review cannot accidentally clear an existing tag.
+OPTIONAL_ENRICHMENT_FIELDS = [
+    "Obligation ID",
+    "Change Type", "Change Detected Date", "Change Source Path",
+    "Applicability Rules", "Impact Types", "Organizational Artifacts",
+]
+
+ARRAY_FIELDS = {"HSTM Role", "Impact Types"}
+JSON_FIELDS = {"Applicability Rules", "Organizational Artifacts"}
 INTEGER_FIELDS = {"Hours Required"}
 PIPE_NULL = {"nan", "NaN", "None", "none", ""}
 
@@ -216,6 +226,22 @@ def clean_scalar(val, field):
     return strip_stray_asterisk(s)
 
 
+def clean_json_array(val, field):
+    """Parse a JSON array from an optional enrichment cell.
+
+    Empty cells intentionally return None and are not emitted; this preserves
+    Pending Review's absent-vs-empty safety contract.
+    """
+    text = clean_scalar(val, field)
+    if text is None:
+        return None
+    try:
+        parsed = json.loads(text)
+    except json.JSONDecodeError:
+        return text
+    return parsed if isinstance(parsed, list) else text
+
+
 def normalize_row(raw_row, source_dataset):
     record = {"Source Dataset": source_dataset}
     for field in UNIFIED_FIELDS:
@@ -224,6 +250,16 @@ def normalize_row(raw_row, source_dataset):
             record[field] = to_array(raw_val)
         else:
             record[field] = clean_scalar(raw_val, field)
+    for field in OPTIONAL_ENRICHMENT_FIELDS:
+        raw_val = raw_row.get(field)
+        if field in JSON_FIELDS:
+            value = clean_json_array(raw_val, field)
+        elif field in ARRAY_FIELDS:
+            value = to_array(raw_val)
+        else:
+            value = clean_scalar(raw_val, field)
+        if value is not None:
+            record[field] = value
     record["Record ID"] = make_record_id(source_dataset, record)
     return record
 

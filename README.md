@@ -36,7 +36,7 @@ projection — internally authored Domain/KSA framework, not
 jurisdiction-driven regulatory content. None of the unified admin tools
 write to it.
 
-### Extraction columns (20), in emission order
+### Batch columns (27), in emission order
 
 Batch sheets are read by **exact header name**:
 
@@ -47,6 +47,11 @@ Explicit Training, Citation, Training Topic / Competency Item, Relationship, Pur
 Approval Required, Approval Basis, Hours Required, Frequency, Source URL,
 Notes / Research Flags
 ```
+
+The batch also carries `Obligation ID` plus optional reviewed enrichment fields:
+`Change Type`, `Change Detected Date`, `Change Source Path`, `Applicability Rules`,
+`Impact Types`, and `Organizational Artifacts`. Empty enrichment cells mean no opinion;
+the normalizer omits them rather than clearing existing reviewed tags.
 
 `Authority Level` and `Approval Basis` were added in the 18 → 20 split.
 Two axes that used to be conflated in `Requirement Level` are now separate:
