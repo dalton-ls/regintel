@@ -170,7 +170,7 @@
   const FIELDS_ADDED_FOR_ARTIFACTS = new Set(["Organizational Artifacts"]);
 
   // Impact Type (Phase 4): additive, array-of-STRINGS from a fixed
-  // vocabulary (impact_type.py's IMPACT_TYPES) -- unlike Applicability
+  // vocabulary (Policy, Training, Other) -- unlike Applicability
   // Rules, there's no per-entry structure to carry, so this reuses the
   // plain ARRAY_FIELDS comma-split/join treatment already built for HSTM
   // Role instead of needing JSON_FIELDS' parse/stringify path.
@@ -184,8 +184,7 @@
   // Warn, never block -- distinct from the hard-blocking anchor-rule check
   // in applyResolutions() below, which guards the original required schema
   // fields. Mirrors the same logic in record-editor.html.
-  const IMPACT_TYPES = ["Policy", "Procedure", "Training", "Competency", "Credential",
-    "Documentation", "Workflow", "Staffing", "Reporting", "Audit", "Physical Environment"];
+  const IMPACT_TYPES = ["Policy", "Training", "Other"];
   const APPLICABILITY_ANCHOR_FIELDS = ["setting", "role", "organization_type", "profession", "activity"];
 
   function advisoryWarnings(resolved) {
@@ -193,7 +192,7 @@
     const impactTypes = resolved['Impact Types'];
     if (Array.isArray(impactTypes)) {
       impactTypes.forEach(t => {
-        if (!IMPACT_TYPES.includes(t)) warnings.push('Impact Types: ' + JSON.stringify(t) + ' is not one of the 11 fixed types.');
+        if (!IMPACT_TYPES.includes(t)) warnings.push('Impact Types: ' + JSON.stringify(t) + ' is not one of the allowed types (Policy, Training, Other).');
       });
     }
     const rules = resolved['Applicability Rules'];
@@ -210,7 +209,7 @@
       artifacts.forEach((a, i) => {
         if (!a || typeof a !== 'object') return;
         if (!IMPACT_TYPES.includes(a.artifact_type)) {
-          warnings.push('Organizational Artifacts[' + i + ']: artifact_type ' + JSON.stringify(a.artifact_type) + ' is not one of the 11 fixed Impact Types.');
+          warnings.push('Organizational Artifacts[' + i + ']: artifact_type ' + JSON.stringify(a.artifact_type) + ' is not one of the allowed Impact Types (Policy, Training, Other).');
         }
       });
     }

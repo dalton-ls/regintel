@@ -159,15 +159,12 @@ committing to GitHub:
 | Tab | Upload file | Source script |
 |---|---|---|
 | WR Ingest (`ingest.html`) | `wr.json` | `export_wr.py` |
-| Role Ingest (`ingest-role.html`) | `role.json` | `export_role.py` |
-| CS Ingest (`ingest-cs.html`) | `caresetting.json` | `export_caresetting.py` |
 
 **WR Ingest is still the primary way to get Workforce Readiness content in**,
-since WR is out of scope for the unified tools by design. **Role Ingest and
-CS Ingest are superseded** by Pending Review Queue + Bulk-Apply + Record
-Editor for anything touching `requirements.json` — prefer those. The legacy
-admin-bar **Import JSON** / **Export JSON** / **Clear imports** controls use
-the same `localStorage` mechanism as these three tabs.
+since WR is out of scope for the unified tools by design. Role and Care Setting
+data should be loaded via Pending Review Queue + Bulk-Apply + Record Editor.
+The legacy admin-bar **Import JSON** / **Export JSON** / **Clear imports**
+controls use the same `localStorage` mechanism as WR Ingest.
 
 ## Files
 
@@ -182,7 +179,7 @@ the same `localStorage` mechanism as these three tabs.
 | `normalize_batch.py` | Normalizes one incoming sheet into a Pending-Review-Queue-ready JSON batch, for ongoing sporadic bulk ingestion |
 | `DESIGN.md` | Schema and admin-workflow design document |
 | `worker/regintel-admin-proxy/` | Cloudflare Worker that lets the unified admin tools commit to GitHub |
-| `ingest.html` / `ingest-role.html` / `ingest-cs.html` | Legacy per-type ingest tools (see above) |
+| `ingest.html` | Legacy WR ingest tool (see above) |
 | `export_wr.py` / `export_role.py` / `export_caresetting.py` | Convert the respective Excel source into its JSON file |
 | `data.json` | Legacy full dataset — only used as a fallback if `requirements.json`/`wr.json` can't be fetched |
 | `export_data.py` | Legacy: converts `RegIntel_PoC.xlsx` → `data.json` |

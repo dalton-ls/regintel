@@ -302,7 +302,10 @@
       font-size: 11px; font-weight: 600; white-space: nowrap; line-height: 1.6;
     }
     .badge-hours     { background: #e0e7ff; color: #3730a3; }
-    .badge-type      { background: #f1f5f9; color: #4a5568; border: 1px solid #e8ecf0; white-space: normal; max-width: 320px; text-align: left; border-radius: 10px; }
+    .badge-type      { background: #f1f5f9; color: #4a5568; border: 1px solid #e8ecf0; white-space: nowrap; text-align: left; border-radius: 20px; }
+    .badge-impact-policy   { background: #ede9fe; color: #5b21b6; border-color: #ddd6fe; }
+    .badge-impact-training { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+    .badge-impact-other    { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
     .badge-source    { background: #eef3fb; color: #2463eb; border: 1px solid #c7d7f8; text-decoration: none; }
     .badge-source:hover { background: #dce8fb; }
 
@@ -678,7 +681,7 @@
   <div class="modal-overlay" id="importModal">
     <div class="modal-box">
       <div class="modal-title">Import regulatory data</div>
-      <div class="modal-subtitle">Drop a JSON file exported from the WR, Role, or CS Ingest tools. Records will be merged into the current dataset — duplicates (same citation + topic + jurisdiction) are skipped.</div>
+      <div class="modal-subtitle">Drop a JSON file exported from the WR Ingest tool (<code>wr.json</code>). WR records will be merged into the current dataset — duplicates (same citation + topic + jurisdiction) are skipped.</div>
       <div class="modal-dropzone" id="importDropzone" onclick="document.getElementById('importFileInput').click()">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:8px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         <div>Drop JSON file here or click to browse</div>
@@ -744,22 +747,6 @@
               </svg>
             </span>
             <span class="nav-label">WR Ingest</span>
-          </a>
-          <a href="ingest-role.html" class="nav-item" style="color:#6b7a99;">
-            <span class="nav-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-              </svg>
-            </span>
-            <span class="nav-label">Role Ingest</span>
-          </a>
-          <a href="ingest-cs.html" class="nav-item" style="color:#6b7a99;">
-            <span class="nav-icon">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
-              </svg>
-            </span>
-            <span class="nav-label">CS Ingest</span>
           </a>
           <a href="record-editor.html" class="nav-item" style="color:#6b7a99;">
             <span class="nav-icon">
@@ -895,20 +882,11 @@ let selectedRole        = null;
   // and hidden until content is tagged. See applicabilityTokens() below.
   let ALL_APPLICABILITY_VALUES = [];
 
-  // Impact Type facet (Phase 4). Unlike Applicability Rule's free-text
-  // dimensions, Impact Type is already a fixed, closed vocabulary (source of
-  // truth: impact_type.py's IMPACT_TYPES). So this list is NOT derived from
-  // what's actually populated in the data — it's the full taxonomy, shown
-  // unconditionally, same as ALL_REQUIREMENT_LEVELS/ALL_AUTHORITY_LEVELS'
-  // pre-load defaults. As of 2026-08-17 no live records carry Impact Types
-  // yet, so filtering by any one of these will correctly hide all 844
-  // current rows until content is tagged — that's the intended behavior of
-  // narrowing to a closed taxonomy that hasn't been applied yet, not a bug.
-  const IMPACT_TYPES = [
-    "Policy", "Procedure", "Training", "Competency", "Credential",
-    "Documentation", "Workflow", "Staffing", "Reporting", "Audit",
-    "Physical Environment"
-  ];
+  // Impact Type facet (Phase 4). Fixed, closed vocabulary — not mutually
+  // exclusive; a record may carry any combination of Policy, Training, Other.
+  // Shown unconditionally in the filter dropdown (same pattern as Requirement
+  // Level / Authority Level pre-load defaults).
+  const IMPACT_TYPES = ["Policy", "Training", "Other"];
   const ALL_IMPACT_TYPES = IMPACT_TYPES;
   const STATE_NAMES       = {CA:'California', FL:'Florida', US:'United States'};
   const STATE_ORDER       = ['CA','FL','US'];
@@ -974,7 +952,7 @@ let selectedRole        = null;
   // ─── Organizational Artifact helpers (Phase 5) ───
   // Deliberately no filter dropdown for this one: artifact_type is drawn
   // from the same fixed vocabulary the Impact Type filter already covers
-  // (impact_type.py's IMPACT_TYPES), so a second filter on the same values
+  // (Policy, Training, Other), so a second filter on the same values
   // would just duplicate that dropdown. This is display-only — see the
   // artifact chips in the drawer's Metadata tab.
   function artifactSummaries(artifacts) {
@@ -1029,10 +1007,8 @@ let selectedRole        = null;
         const tokens = applicabilityTokens(r.applicability_rules);
         if (!tokens.some(t => filterState.applicabilityValues.has(t))) return false;
       }
-      // Impact Type filter: fixed vocabulary, so (unlike Applicability
-      // above) this clause is always live, not gated behind a data-derived
-      // length check. Narrowing to any tag correctly excludes the 844
-      // untagged rows until content is classified.
+      // Impact Type filter: fixed vocabulary — set-intersection against the
+      // row's impact_types array (not mutually exclusive).
       if (filterState.impactTypes.size < ALL_IMPACT_TYPES.length) {
         const tags = Array.isArray(r.impact_types) ? r.impact_types : [];
         if (!tags.some(t => filterState.impactTypes.has(t))) return false;
@@ -1062,6 +1038,29 @@ let selectedRole        = null;
     }));
   }
 
+  function unionImpactTypes(rows) {
+    return [...new Set(rows.flatMap(r => Array.isArray(r.impact_types) ? r.impact_types : []).filter(t => IMPACT_TYPES.includes(t)))];
+  }
+
+  function impactBadgeClass(type) {
+    if (type === 'Policy') return 'badge-impact-policy';
+    if (type === 'Training') return 'badge-impact-training';
+    return 'badge-impact-other';
+  }
+
+  function renderImpactBadges(row) {
+    if (isSubTopic(row)) return '';
+    const types = Array.isArray(row.impact_types) ? row.impact_types.filter(t => IMPACT_TYPES.includes(t)) : [];
+    if (!types.length) return '';
+    return types.map(t => `<span class="badge badge-type ${impactBadgeClass(t)}">${esc(t)}</span>`).join('');
+  }
+
+  function renderImpactChips(types) {
+    const list = Array.isArray(types) ? types.filter(t => IMPACT_TYPES.includes(t)) : [];
+    if (!list.length) return '';
+    return `<div class="chip-row">${list.map(t => `<span class="chip ${impactBadgeClass(t)}" style="border-width:1px;border-style:solid;">${esc(t)}</span>`).join('')}</div>`;
+  }
+
   function mergeSettingVariants(rows) {
     const groups = {};
     rows.forEach(r => { const k = groupKey(r); (groups[k] || (groups[k] = [])).push(r); });
@@ -1077,7 +1076,8 @@ let selectedRole        = null;
         );
         if (settings.length > 1 && sameDetails) {
           const base = group.find(g => g.row_type !== 'Child') || group[0];
-          merged.push(Object.assign({}, base, { hstm_setting: null, settings, variants: group, _mergedKey: 'grp:' + k }));
+          const impact_types = unionImpactTypes(group);
+          merged.push(Object.assign({}, base, { hstm_setting: null, settings, variants: group, impact_types, _mergedKey: 'grp:' + k }));
           return;
         }
       }
@@ -1128,6 +1128,7 @@ let selectedRole        = null;
     ${row.type ? `<span class="req-purpose">${esc(row.type)}</span>` : ''}
   </div>
   <div class="req-badges">
+    ${renderImpactBadges(row)}
     ${settingBadge}
     ${row.hours_required > 0 ? `<span class="badge badge-hours">${row.hours_required} hr${row.hours_required !== 1 ? 's' : ''}</span>` : ''}
     ${srcHref ? `<a href="${srcHref}" target="_blank" rel="noopener" class="badge badge-source" onclick="event.stopPropagation()">Source ↗</a>` : ''}
@@ -1174,11 +1175,12 @@ let selectedRole        = null;
     const applicabilitySummariesList = row ? applicabilitySummaries(row.applicability_rules) : [];
     const applicabilityChips = applicabilitySummariesList.length ? `<div class="drawer-row"><span class="drawer-label">Applicability</span><span class="drawer-value"><div class="chip-row">${applicabilitySummariesList.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div></span></div>` : '';
     const impactTypesList = row && Array.isArray(row.impact_types) ? row.impact_types : [];
-    const impactChips = impactTypesList.length ? `<div class="drawer-row"><span class="drawer-label">Impact Type</span><span class="drawer-value"><div class="chip-row">${impactTypesList.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div></span></div>` : '';
+    const impactChips = impactTypesList.length ? `<div class="drawer-row"><span class="drawer-label">Impact Type</span><span class="drawer-value">${renderImpactChips(impactTypesList)}</span></div>` : '';
     const artifactSummariesList = row ? artifactSummaries(row.organizational_artifacts) : [];
     const artifactChips = artifactSummariesList.length ? `<div class="drawer-row"><span class="drawer-label">Artifacts</span><span class="drawer-value"><div class="chip-row">${artifactSummariesList.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div></span></div>` : '';
     const overviewContent = row ? `
       ${settingsChips}
+      ${impactChips}
       ${row.hours_required > 0 ? `<div class="drawer-row"><span class="drawer-label">Hours</span><span class="drawer-value">${row.hours_required} hr${row.hours_required !== 1 ? 's' : ''}</span></div>` : ''}
       ${row.frequency ? `<div class="drawer-row"><span class="drawer-label">Frequency</span><span class="drawer-value">${esc(row.frequency)}</span></div>` : ''}
       ${row.type ? `<div class="drawer-row"><span class="drawer-label">Purpose</span><span class="drawer-value">${esc(row.type)}</span></div>` : ''}
@@ -1191,7 +1193,6 @@ let selectedRole        = null;
       <div class="drawer-row"><span class="drawer-label">Approval</span><span class="drawer-value">${approval}</span></div>
       ${row.approval_basis ? `<div class="drawer-row"><span class="drawer-label">Approval basis</span><span class="drawer-value">${esc(row.approval_basis)}</span></div>` : ''}
       ${applicabilityChips}
-      ${impactChips}
       ${artifactChips}
       ${(row.notes && adminMode) ? `<div class="drawer-row"><span class="drawer-label">Research Notes</span><span class="drawer-value"><div class="notes-box">${esc(row.notes)}</div></span></div>` : ''}
       <div class="drawer-row"><span class="drawer-label">Source</span><span class="drawer-value">${src}</span></div>
@@ -1448,6 +1449,17 @@ let selectedRole        = null;
     }
 
     if (activeSection === 'care-settings') {
+      if (!CARE_DATA.length) {
+        panel.innerHTML = renderCareFilterBar(true) + `<div class="main-content"><div class="empty-state">
+          <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          <p class="empty-state-title">No care setting data loaded</p>
+          <p class="empty-state-text">Import requirements via Pending Review or Record Editor to populate this view.</p>
+        </div></div>`;
+        updateDrawer();
+        return;
+      }
       if (selectedCareSetting === null) {
         panel.innerHTML = renderCareFilterBar(true) + `<div class="main-content"><div class="empty-state">
           <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -1515,6 +1527,18 @@ let selectedRole        = null;
     }
 
     if (selectedRole === null) {
+      if (!DATA.length) {
+        panel.innerHTML = renderFilterBar(true) + `<div class="main-content"><div class="empty-state">
+          <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <p class="empty-state-title">No role data loaded</p>
+          <p class="empty-state-text">Import requirements via Pending Review or Record Editor to populate this view.</p>
+        </div></div>`;
+        updateDrawer();
+        return;
+      }
       panel.innerHTML = renderFilterBar(true) + `<div class="main-content"><div class="empty-state">
         <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>

@@ -22,9 +22,15 @@
 
     .editor-layout { display: grid; grid-template-columns: 380px 1fr; gap: 20px; align-items: start; }
 
-    .search-box { position: relative; margin-bottom: 14px; }
+    .search-box { position: relative; margin-bottom: 10px; }
     .search-box input { width: 100%; height: 38px; border: 1px solid #dde1ea; border-radius: 8px; padding: 0 14px; font-size: 13px; font-family: inherit; background: #fff; }
     .search-box input:focus { outline: none; border-color: #2463eb; }
+
+    .filter-bar { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+    .filter-bar select { width: 100%; height: 34px; border: 1px solid #dde1ea; border-radius: 6px; padding: 0 10px; font-size: 12px; font-family: inherit; color: #4a5568; background: #fff; }
+    .filter-bar select:focus { outline: none; border-color: #2463eb; }
+    .filter-clear { grid-column: span 2; font-size: 11px; color: #6b7a99; background: none; border: none; cursor: pointer; text-align: left; padding: 0; }
+    .filter-clear:hover { color: #2463eb; }
 
     .result-count { font-size: 12px; color: #6b7a99; margin-bottom: 10px; }
 
@@ -38,6 +44,9 @@
     .result-badge { display: inline-block; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; background: #e2e8f0; color: #4a5568; margin-right: 6px; }
     .result-badge.role { background: #1a2332; color: #fff; }
     .result-badge.saved { background: #15803d; color: #fff; }
+    .result-badge.impact-policy { background: #ede9fe; color: #5b21b6; }
+    .result-badge.impact-training { background: #dcfce7; color: #166534; }
+    .result-badge.impact-other { background: #f1f5f9; color: #475569; }
 
     .empty-state { text-align: center; padding: 60px 24px; color: #9aaac4; }
     .empty-state svg { margin-bottom: 12px; }
@@ -78,6 +87,9 @@
     .tags-panel-empty { font-size: 12px; color: #9aaac4; }
     .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip { display: inline-block; background: #fff; border: 1px solid #dde1ea; border-radius: 12px; padding: 3px 10px; font-size: 11px; color: #4a5568; }
+    .chip.chip-impact-policy { background: #ede9fe; color: #5b21b6; border-color: #ddd6fe; }
+    .chip.chip-impact-training { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
+    .chip.chip-impact-other { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
     .change-event-box { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fff8ec; border: 1px solid #f5cd87; border-radius: 6px; padding: 8px 12px; }
     .change-event-text { font-size: 12px; color: #92620a; }
     .change-event-text b { font-weight: 700; }
@@ -112,14 +124,25 @@
 
   <div class="page-wrap">
     <h1 class="page-title">Individual Record Editor</h1>
-    <p class="page-desc">Search the unified requirements dataset by Record ID, jurisdiction, citation, training topic, or role/setting. Select a record to edit any field and save — saving commits directly to <code>requirements.json</code> on GitHub, so changes show up immediately from any computer.</p>
+    <p class="page-desc">Search and filter the unified requirements dataset by Record ID, jurisdiction, citation, training topic, role/setting, regulation type, agency, impact type, and more. Select a record to edit any field and save — saving commits directly to <code>requirements.json</code> on GitHub, so changes show up immediately from any computer.</p>
 
     <div id="globalError"></div>
 
     <div class="editor-layout">
       <div>
         <div class="search-box">
-          <input type="text" id="searchInput" placeholder="Search Record ID, jurisdiction, citation, topic, role, setting…">
+          <input type="text" id="searchInput" placeholder="Search Record ID, jurisdiction, citation, topic, agency, purpose…">
+        </div>
+        <div class="filter-bar" id="filterBar">
+          <select id="filterSourceDataset" aria-label="Filter by source dataset"><option value="">All datasets</option></select>
+          <select id="filterJurisdiction" aria-label="Filter by jurisdiction"><option value="">All jurisdictions</option></select>
+          <select id="filterHstmSetting" aria-label="Filter by HSTM setting"><option value="">All HSTM settings</option></select>
+          <select id="filterRegulationType" aria-label="Filter by regulation type"><option value="">All regulation types</option></select>
+          <select id="filterRequirementLevel" aria-label="Filter by requirement level"><option value="">All requirement levels</option></select>
+          <select id="filterAuthorityLevel" aria-label="Filter by authority level"><option value="">All authority levels</option></select>
+          <select id="filterImpactType" aria-label="Filter by impact type"><option value="">All impact types</option></select>
+          <select id="filterRelationship" aria-label="Filter by relationship"><option value="">All relationships</option></select>
+          <button type="button" class="filter-clear" id="clearFiltersBtn">Clear filters</button>
         </div>
         <div class="result-count" id="resultCount"></div>
         <div class="result-list" id="resultList"></div>
@@ -177,8 +200,7 @@
   // batches today. This checks whatever a record already carries and warns,
   // but never blocks Save, distinct from validationErrors() above which
   // guards the original required schema fields.
-  const IMPACT_TYPES = ["Policy", "Procedure", "Training", "Competency", "Credential",
-    "Documentation", "Workflow", "Staffing", "Reporting", "Audit", "Physical Environment"];
+  const IMPACT_TYPES = ["Policy", "Training", "Other"];
   const APPLICABILITY_ANCHOR_FIELDS = ["setting", "role", "organization_type", "profession", "activity"];
 
   function advisoryWarnings(merged) {
@@ -186,7 +208,7 @@
     const impactTypes = merged['Impact Types'];
     if (Array.isArray(impactTypes)) {
       impactTypes.forEach(t => {
-        if (!IMPACT_TYPES.includes(t)) warnings.push('Impact Types: ' + JSON.stringify(t) + ' is not one of the 11 fixed types.');
+        if (!IMPACT_TYPES.includes(t)) warnings.push('Impact Types: ' + JSON.stringify(t) + ' is not one of the allowed types (Policy, Training, Other).');
       });
     }
     const rules = merged['Applicability Rules'];
@@ -203,16 +225,89 @@
       artifacts.forEach((a, i) => {
         if (!a || typeof a !== 'object') return;
         if (!IMPACT_TYPES.includes(a.artifact_type)) {
-          warnings.push('Organizational Artifacts[' + i + ']: artifact_type ' + JSON.stringify(a.artifact_type) + ' is not one of the 11 fixed Impact Types.');
+          warnings.push('Organizational Artifacts[' + i + ']: artifact_type ' + JSON.stringify(a.artifact_type) + ' is not one of the allowed Impact Types (Policy, Training, Other).');
         }
       });
     }
     return warnings;
   }
 
+  const FILTER_SELECTS = [
+    { id: 'filterSourceDataset', field: 'Source Dataset' },
+    { id: 'filterJurisdiction', field: 'Jurisdiction' },
+    { id: 'filterHstmSetting', field: 'HSTM Setting' },
+    { id: 'filterRegulationType', field: 'Regulation Type' },
+    { id: 'filterRequirementLevel', field: 'Requirement Level' },
+    { id: 'filterAuthorityLevel', field: 'Authority Level' },
+    { id: 'filterRelationship', field: 'Relationship' }
+  ];
+
   let records = [];
   let selectedId = null;
   let savedThisSession = new Set();
+
+  function impactBadgeClass(type) {
+    if (type === 'Policy') return 'impact-policy';
+    if (type === 'Training') return 'impact-training';
+    return 'impact-other';
+  }
+
+  function distinctFieldValues(field) {
+    const vals = new Set();
+    records.forEach(r => {
+      const v = r[field];
+      if (v == null || v === '') return;
+      if (Array.isArray(v)) v.forEach(x => { if (x) vals.add(x); });
+      else vals.add(String(v));
+    });
+    return Array.from(vals).sort((a, b) => a.localeCompare(b));
+  }
+
+  function populateFilterDropdowns() {
+    FILTER_SELECTS.forEach(({ id, field }) => {
+      const sel = document.getElementById(id);
+      if (!sel) return;
+      const current = sel.value;
+      const placeholder = sel.options[0].textContent;
+      sel.innerHTML = '<option value="">' + placeholder + '</option>';
+      distinctFieldValues(field).forEach(v => {
+        sel.innerHTML += '<option value="' + esc(v) + '">' + esc(v) + '</option>';
+      });
+      if (current && [...sel.options].some(o => o.value === current)) sel.value = current;
+    });
+
+    const impactSel = document.getElementById('filterImpactType');
+    if (impactSel) {
+      const current = impactSel.value;
+      impactSel.innerHTML = '<option value="">All impact types</option>';
+      IMPACT_TYPES.forEach(t => {
+        impactSel.innerHTML += '<option value="' + esc(t) + '">' + esc(t) + '</option>';
+      });
+      if (current) impactSel.value = current;
+    }
+  }
+
+  function getFilterValues() {
+    const filters = {};
+    FILTER_SELECTS.forEach(({ id, field }) => {
+      const v = document.getElementById(id)?.value;
+      if (v) filters[field] = v;
+    });
+    const impact = document.getElementById('filterImpactType')?.value;
+    if (impact) filters['Impact Types'] = impact;
+    return filters;
+  }
+
+  function clearFilters() {
+    document.getElementById('searchInput').value = '';
+    FILTER_SELECTS.forEach(({ id }) => {
+      const sel = document.getElementById(id);
+      if (sel) sel.selectedIndex = 0;
+    });
+    const impactSel = document.getElementById('filterImpactType');
+    if (impactSel) impactSel.selectedIndex = 0;
+    renderList();
+  }
 
   // ─── Phase 7: type-level impact propagation (Dalton, 2026-08-17) ───
   // Mirrors PHASE 2 DIFF/impact_propagation.py exactly. Blast-radius COUNTS
@@ -371,31 +466,57 @@
         '<div class="empty-state"><p>Could not load requirements.json: ' + esc(err.message) + '</p></div>';
       return;
     }
+    populateFilterDropdowns();
     renderList();
     document.getElementById('searchInput').addEventListener('input', renderList);
+    FILTER_SELECTS.forEach(({ id }) => {
+      document.getElementById(id)?.addEventListener('change', renderList);
+    });
+    document.getElementById('filterImpactType')?.addEventListener('change', renderList);
+    document.getElementById('clearFiltersBtn')?.addEventListener('click', clearFilters);
   }
 
-  function matches(record, q) {
+  function matchesText(record, q) {
     if (!q) return true;
     q = q.toLowerCase();
     const hstmRole = Array.isArray(record['HSTM Role']) ? record['HSTM Role'].join(' ') : (record['HSTM Role'] || '');
+    const impactTypes = Array.isArray(record['Impact Types']) ? record['Impact Types'].join(' ') : '';
     const haystack = [
       record['Record ID'], record['Jurisdiction'], record['Jurisdiction Setting'],
       record['Jurisdiction Role'], record['HSTM Setting'], hstmRole,
-      record['Citation'], record['Training Topic / Competency Item']
+      record['Citation'], record['Training Topic / Competency Item'],
+      record['Regulation Type'], record['Oversight / Professional Agency'],
+      record['Purpose'], record['Relationship'], record['Notes / Research Flags'],
+      record['Source URL'], record['Approval Basis'], impactTypes
     ].filter(Boolean).join(' ').toLowerCase();
     return haystack.includes(q);
   }
 
+  function matchesFilters(record, filters) {
+    return Object.entries(filters).every(([field, value]) => {
+      if (field === 'Impact Types') {
+        const types = Array.isArray(record['Impact Types']) ? record['Impact Types'] : [];
+        return types.includes(value);
+      }
+      const v = record[field];
+      if (Array.isArray(v)) return v.includes(value);
+      return String(v || '') === value;
+    });
+  }
+
   function renderList() {
     const q = document.getElementById('searchInput').value.trim();
-    const filtered = records.filter(r => matches(r, q));
+    const filters = getFilterValues();
+    const filtered = records.filter(r => matchesText(r, q) && matchesFilters(r, filters));
     const listEl = document.getElementById('resultList');
     document.getElementById('resultCount').textContent =
       filtered.length + ' of ' + records.length + ' records';
 
     if (!filtered.length) {
-      listEl.innerHTML = '<div class="empty-state"><p>No records match your search.</p></div>';
+      const msg = records.length === 0
+        ? 'No records in requirements.json yet. Use Pending Review to import a batch, or add records directly here once data exists.'
+        : 'No records match your search or filters.';
+      listEl.innerHTML = '<div class="empty-state"><p>' + msg + '</p></div>';
       return;
     }
 
@@ -405,9 +526,14 @@
       const isSaved = savedThisSession.has(id);
       const juris = [r['Jurisdiction Setting'], r['Jurisdiction Role']].filter(Boolean).join(' / ');
       const meta = [r['Jurisdiction'], juris, r['Citation']].filter(Boolean).join(' · ');
+      const impactBadges = (Array.isArray(r['Impact Types']) ? r['Impact Types'] : [])
+        .filter(t => IMPACT_TYPES.includes(t))
+        .map(t => '<span class="result-badge ' + impactBadgeClass(t) + '">' + esc(t) + '</span>')
+        .join('');
       return '<div class="result-item' + (id === selectedId ? ' selected' : '') + '" data-id="' + esc(id) + '">' +
         '<div class="result-topic">' +
           '<span class="result-badge' + (isRole ? ' role' : '') + '">' + esc(r['Source Dataset'] || '') + '</span>' +
+          impactBadges +
           (isSaved ? '<span class="result-badge saved">Saved</span>' : '') +
           esc(r['Training Topic / Competency Item'] || '(no topic)') +
         '</div>' +
@@ -475,7 +601,7 @@
 
     if (impactTypes.length) {
       rows += '<div class="tags-panel-row"><span class="tags-panel-label">Impact Types</span>' +
-        '<div class="chip-row">' + impactTypes.map(t => '<span class="chip">' + esc(t) + '</span>').join('') + '</div></div>';
+        '<div class="chip-row">' + impactTypes.map(t => '<span class="chip chip-' + impactBadgeClass(t) + '">' + esc(t) + '</span>').join('') + '</div></div>';
     }
 
     if (artifacts.length) {
@@ -692,6 +818,7 @@
 
       records = updated;
       savedThisSession.add(id);
+      populateFilterDropdowns();
       renderList();
       renderEditor(records.find(r => r['Record ID'] === id));
       showToast('Saved ' + id + (result.commitUrl ? ' — ' + result.commitUrl : ''));

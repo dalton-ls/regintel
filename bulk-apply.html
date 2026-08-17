@@ -143,8 +143,7 @@
   // arrays of structured objects, and this screen's newValue box is a plain
   // comma-split text input with no JSON parsing -- bulk-editing those safely
   // would need real UI work this round didn't scope.
-  const IMPACT_TYPES = ["Policy", "Procedure", "Training", "Competency", "Credential",
-    "Documentation", "Workflow", "Staffing", "Reporting", "Audit", "Physical Environment"];
+  const IMPACT_TYPES = ["Policy", "Training", "Other"];
 
   // Fields offered as filters (single-value dropdowns).
   const FILTER_FIELDS = [
@@ -361,7 +360,7 @@
       const badValues = newVal.filter(v => !IMPACT_TYPES.includes(v));
       if (badValues.length) {
         body += '<div class="advisory-note">Heads up: ' + badValues.map(v => JSON.stringify(v)).join(', ') +
-          ' not one of the 11 fixed Impact Types. Will still apply if you continue.</div>';
+          ' not one of the allowed Impact Types (Policy, Training, Other). Will still apply if you continue.</div>';
       }
     }
 
