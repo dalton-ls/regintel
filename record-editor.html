@@ -81,6 +81,11 @@
     .change-event-box { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fff8ec; border: 1px solid #f5cd87; border-radius: 6px; padding: 8px 12px; }
     .change-event-text { font-size: 12px; color: #92620a; }
     .change-event-text b { font-weight: 700; }
+    /* Phase 7 (Dalton, 2026-08-17): type-level blast-radius summary, shown
+       only alongside an active Change Event. Blue like .validation-advisory
+       -- informational, never blocking, never a headcount. */
+    .propagation-summary { font-size: 12px; color: #2b5aa1; background: #eef4fc; border: 1px solid #b8d0f5; border-radius: 6px; padding: 8px 12px; line-height: 1.5; }
+    .propagation-summary b { font-weight: 700; }
 
     .editor-actions { display: flex; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #e8ecf0; align-items: center; }
     .save-status { font-size: 11px; color: #9aaac4; margin-left: auto; }
@@ -208,6 +213,99 @@
   let records = [];
   let selectedId = null;
   let savedThisSession = new Set();
+
+  // ─── Phase 7: type-level impact propagation (Dalton, 2026-08-17) ───
+  // Mirrors PHASE 2 DIFF/impact_propagation.py exactly. Blast-radius COUNTS
+  // only -- no headcounts, no customer data, per the Phase 6 constraint.
+  // Only ever shown for a record with an active Change Type, since that's
+  // the review workflow this was built for -- see renderTagsPanel below.
+  function _recordHstmRoles(record) {
+    const v = record['HSTM Role'];
+    if (Array.isArray(v)) return v;
+    if (v) return [v];
+    return [];
+  }
+  function _recordImpactTypes(record) {
+    return Array.isArray(record['Impact Types']) ? record['Impact Types'] : [];
+  }
+  function _recordArtifactIds(record) {
+    const artifacts = Array.isArray(record['Organizational Artifacts']) ? record['Organizational Artifacts'] : [];
+    return artifacts.filter(a => a && a.artifact_id).map(a => a.artifact_id);
+  }
+
+  function computePropagation(record, allRecords) {
+    const selfId = record['Record ID'];
+    const setting = record['HSTM Setting'];
+    const roles = _recordHstmRoles(record);
+    const impactTypes = _recordImpactTypes(record);
+    const artifactIds = _recordArtifactIds(record);
+    const related = new Set();
+
+    let settingOverlapCount = 0;
+    if (setting) {
+      allRecords.forEach(r => {
+        if (r['Record ID'] === selfId) return;
+        if (r['HSTM Setting'] === setting) { settingOverlapCount++; related.add(r['Record ID']); }
+      });
+    }
+
+    const roleOverlapCounts = {};
+    roles.forEach(role => {
+      let count = 0;
+      allRecords.forEach(r => {
+        if (r['Record ID'] === selfId) return;
+        if (_recordHstmRoles(r).includes(role)) { count++; related.add(r['Record ID']); }
+      });
+      roleOverlapCounts[role] = count;
+    });
+
+    const impactTypeOverlapCounts = {};
+    impactTypes.forEach(itype => {
+      let count = 0;
+      allRecords.forEach(r => {
+        if (r['Record ID'] === selfId) return;
+        if (_recordImpactTypes(r).includes(itype)) { count++; related.add(r['Record ID']); }
+      });
+      impactTypeOverlapCounts[itype] = count;
+    });
+
+    const artifactOverlapCounts = {};
+    artifactIds.forEach(aid => {
+      let count = 0;
+      allRecords.forEach(r => {
+        if (r['Record ID'] === selfId) return;
+        if (_recordArtifactIds(r).includes(aid)) { count++; related.add(r['Record ID']); }
+      });
+      artifactOverlapCounts[aid] = count;
+    });
+
+    related.delete(selfId);
+
+    return {
+      recordId: selfId, changeType: record['Change Type'] || null,
+      hstmSetting: setting || null, hstmRoles: roles,
+      impactTypes: impactTypes, artifactIds: artifactIds,
+      settingOverlapCount: settingOverlapCount,
+      roleOverlapCounts: roleOverlapCounts,
+      impactTypeOverlapCounts: impactTypeOverlapCounts,
+      artifactOverlapCounts: artifactOverlapCounts,
+      relatedRecordIds: Array.from(related).sort(),
+      blastRadius: related.size
+    };
+  }
+
+  function renderPropagationSummary(record, allRecords) {
+    const rep = computePropagation(record, allRecords);
+    const parts = [];
+    if (rep.hstmSetting) parts.push(rep.settingOverlapCount + ' via HSTM Setting (' + esc(rep.hstmSetting) + ')');
+    Object.keys(rep.roleOverlapCounts).forEach(role => parts.push(rep.roleOverlapCounts[role] + ' via HSTM Role (' + esc(role) + ')'));
+    Object.keys(rep.impactTypeOverlapCounts).forEach(t => parts.push(rep.impactTypeOverlapCounts[t] + ' via Impact Type (' + esc(t) + ')'));
+    Object.keys(rep.artifactOverlapCounts).forEach(a => parts.push(rep.artifactOverlapCounts[a] + ' via Organizational Artifact (' + esc(a) + ')'));
+
+    return '<div class="tags-panel-row"><span class="tags-panel-label">Propagation impact (type-level, not headcount)</span>' +
+      '<div class="propagation-summary">Blast radius: <b>' + rep.blastRadius + '</b> other Obligation(s) share a type-level dimension with this one' +
+      (parts.length ? ' — ' + parts.join(' · ') : '') + '.</div></div>';
+  }
 
   function showToast(msg) {
     const el = document.getElementById('toast');
@@ -361,6 +459,9 @@
           '<button type="button" class="btn" id="markResolvedBtn">Mark resolved</button>' +
         '</div>' +
       '</div>';
+      // Phase 7: shown only alongside an active Change Event -- this is the
+      // "X changed, so Y/Z change too" review moment the module was built for.
+      rows += renderPropagationSummary(record, records);
     }
 
     if (rules.length) {
