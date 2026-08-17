@@ -71,6 +71,12 @@
     .empty-state p { font-size: 14px; }
     .muted { color: #9aaac4; font-size: 13px; }
     .warn-note { background: #fef3e2; border: 1px solid #f5cd87; color: #92620a; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin: 12px 0; }
+    /* Non-blocking, distinct from .warn-note above. Phase 3/4/5's additive-
+       field vocabulary checks -- advisory only, per Dalton's 2026-08-17
+       "warn, never block" choice. */
+    .advisory-note { background: #eef4fc; border: 1px solid #b8d0f5; color: #2b5aa1; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin: 12px 0; }
+    .advisory-note ul { margin: 6px 0 0; padding-left: 18px; }
+    .advisory-note li { margin: 2px 0; }
 
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a2332; color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 999; box-shadow: 0 4px 20px rgba(0,0,0,0.25); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
     .toast.show { opacity: 1; }
@@ -110,6 +116,7 @@
     </div>
 
     <div id="schemaBanner"></div>
+    <div id="advisoryPanel"></div>
 
     <div id="results">
       <div class="empty-state"><p>Upload an incoming file to see new records and conflicts.</p></div>
@@ -130,17 +137,84 @@
     "Explicit Training",
     "Citation", "Training Topic / Competency Item", "Relationship", "Purpose",
     "Approval Required", "Approval Basis", "Hours Required", "Frequency",
-    "Source URL", "Notes / Research Flags"
+    "Source URL", "Notes / Research Flags",
+    "Change Type", "Change Detected Date", "Change Source Path",
+    "Applicability Rules",
+    "Impact Types",
+    "Organizational Artifacts"
   ];
-  const ARRAY_FIELDS = new Set(["HSTM Role"]);
+  const ARRAY_FIELDS = new Set(["HSTM Role", "Impact Types"]);
 
   // Fields added in the 18 -> 20 schema split. A batch produced by an older
   // sheet simply won't have these keys, which is NOT the same as arriving with
   // an empty value — see hasIncomingValue() below.
   const FIELDS_ADDED_IN_20 = new Set(["Authority Level", "Approval Basis"]);
 
+  // Change Event fields (Phase 2): written by apply_change_events.py, not by
+  // any human-authored batch. Almost no existing record has these yet -- that
+  // absence is expected, not a schema-completeness problem the way missing
+  // Authority Level/Approval Basis is, so it gets its own set and its own
+  // label rather than folding into FIELDS_ADDED_IN_20.
+  const FIELDS_ADDED_FOR_CHANGE_EVENTS = new Set(["Change Type", "Change Detected Date", "Change Source Path"]);
+
+  // Applicability Rule (Phase 3): additive, array-of-objects, not array-of-
+  // strings like HSTM Role -- comma-splitting a rule object makes no sense,
+  // so it gets JSON parse/stringify instead of the ARRAY_FIELDS treatment.
+  // Organizational Artifact (Phase 5): additive, array-of-objects like
+  // Applicability Rules -- each entry is a real (or, for now, illustrative
+  // placeholder) ID'd artifact {artifact_id, artifact_type, name,
+  // description}, not a bare string, so it shares Applicability Rule's
+  // JSON_FIELDS treatment rather than Impact Type's ARRAY_FIELDS one.
+  const JSON_FIELDS = new Set(["Applicability Rules", "Organizational Artifacts"]);
+  const FIELDS_ADDED_FOR_APPLICABILITY = new Set(["Applicability Rules"]);
+  const FIELDS_ADDED_FOR_ARTIFACTS = new Set(["Organizational Artifacts"]);
+
+  // Impact Type (Phase 4): additive, array-of-STRINGS from a fixed
+  // vocabulary (impact_type.py's IMPACT_TYPES) -- unlike Applicability
+  // Rules, there's no per-entry structure to carry, so this reuses the
+  // plain ARRAY_FIELDS comma-split/join treatment already built for HSTM
+  // Role instead of needing JSON_FIELDS' parse/stringify path.
+  const FIELDS_ADDED_FOR_IMPACT = new Set(["Impact Types"]);
+
   function deriveExplicitTraining(requirementLevel) {
     return requirementLevel === 'Explicit Training' ? 'Yes' : 'No';
+  }
+
+  // ─── Phase 3/4/5 advisory checks (Dalton, 2026-08-17) ───
+  // Warn, never block -- distinct from the hard-blocking anchor-rule check
+  // in applyResolutions() below, which guards the original required schema
+  // fields. Mirrors the same logic in record-editor.html.
+  const IMPACT_TYPES = ["Policy", "Procedure", "Training", "Competency", "Credential",
+    "Documentation", "Workflow", "Staffing", "Reporting", "Audit", "Physical Environment"];
+  const APPLICABILITY_ANCHOR_FIELDS = ["setting", "role", "organization_type", "profession", "activity"];
+
+  function advisoryWarnings(resolved) {
+    const warnings = [];
+    const impactTypes = resolved['Impact Types'];
+    if (Array.isArray(impactTypes)) {
+      impactTypes.forEach(t => {
+        if (!IMPACT_TYPES.includes(t)) warnings.push('Impact Types: ' + JSON.stringify(t) + ' is not one of the 11 fixed types.');
+      });
+    }
+    const rules = resolved['Applicability Rules'];
+    if (Array.isArray(rules)) {
+      rules.forEach((r, i) => {
+        if (!r || typeof r !== 'object') return;
+        if (!APPLICABILITY_ANCHOR_FIELDS.some(f => r[f])) {
+          warnings.push('Applicability Rules[' + i + ']: no anchor field populated.');
+        }
+      });
+    }
+    const artifacts = resolved['Organizational Artifacts'];
+    if (Array.isArray(artifacts)) {
+      artifacts.forEach((a, i) => {
+        if (!a || typeof a !== 'object') return;
+        if (!IMPACT_TYPES.includes(a.artifact_type)) {
+          warnings.push('Organizational Artifacts[' + i + ']: artifact_type ' + JSON.stringify(a.artifact_type) + ' is not one of the 11 fixed Impact Types.');
+        }
+      });
+    }
+    return warnings;
   }
 
   // The critical distinction for backward compatibility: a field ABSENT from an
@@ -210,8 +284,9 @@
     if (Array.isArray(v)) return JSON.stringify(v);
     return JSON.stringify(v == null ? null : v);
   }
-  function displayVal(v) {
+  function displayVal(v, field) {
     if (v == null || v === '') return '(empty)';
+    if (JSON_FIELDS.has(field)) return Array.isArray(v) && v.length ? JSON.stringify(v) : '(empty)';
     if (Array.isArray(v)) return v.length ? v.join(', ') : '(empty)';
     return String(v);
   }
@@ -257,6 +332,7 @@
       try { incoming = JSON.parse(e.target.result); }
       catch (err) { showToast('JSON parse error: ' + err.message); return; }
       if (!Array.isArray(incoming)) { showToast('Expected a JSON array of records'); return; }
+      document.getElementById('advisoryPanel').innerHTML = ''; // clear any stale advisory from a prior review round
       classify(incoming);
     };
     reader.readAsText(file);
@@ -326,16 +402,22 @@
           // that hitting Reconcile on an older sheet preserves what we have
           // instead of clearing it.
           const incomingCell = present
-            ? esc(displayVal(c.incoming[f]))
+            ? esc(displayVal(c.incoming[f], f))
             : '<span class="muted">(not in sheet)</span>';
           const seed = present ? c.incoming[f] : c.existing[f];
-          const seedText = (seed == null) ? '' : (Array.isArray(seed) ? seed.join(', ') : String(seed));
+          const seedText = (seed == null) ? ''
+            : JSON_FIELDS.has(f) ? (Array.isArray(seed) && seed.length ? JSON.stringify(seed) : '')
+            : (Array.isArray(seed) ? seed.join(', ') : String(seed));
 
           return '<tr class="diff-row' + (changed ? ' changed' : '') + '">' +
             '<td class="field-name">' + esc(f) +
               (FIELDS_ADDED_IN_20.has(f) && !present ? ' <span class="muted">(new in 20-field schema)</span>' : '') +
+              (FIELDS_ADDED_FOR_CHANGE_EVENTS.has(f) && !present ? ' <span class="muted">(Change Event field)</span>' : '') +
+              (FIELDS_ADDED_FOR_APPLICABILITY.has(f) && !present ? ' <span class="muted">(Applicability Rule field)</span>' : '') +
+              (FIELDS_ADDED_FOR_IMPACT.has(f) && !present ? ' <span class="muted">(Impact Type field)</span>' : '') +
+              (FIELDS_ADDED_FOR_ARTIFACTS.has(f) && !present ? ' <span class="muted">(Organizational Artifact field)</span>' : '') +
             '</td>' +
-            '<td class="val-existing">' + esc(displayVal(c.existing[f])) + '</td>' +
+            '<td class="val-existing">' + esc(displayVal(c.existing[f], f)) + '</td>' +
             '<td class="val-incoming">' + incomingCell +
               '<input class="manual-input" data-conflict="' + idx + '" data-field="' + esc(f) + '" value="' + esc(seedText) + '"></td>' +
             '</tr>';
@@ -385,6 +467,11 @@
 
   function parseField(field, raw) {
     const val = (raw ?? '').trim();
+    if (JSON_FIELDS.has(field)) {
+      if (!val) return [];
+      try { return JSON.parse(val); }
+      catch { showToast('Invalid JSON in ' + field + ' -- kept as empty array'); return []; }
+    }
     if (ARRAY_FIELDS.has(field)) return val ? val.split(',').map(s => s.trim()).filter(Boolean) : [];
     return val === '' ? null : val;
   }
@@ -392,6 +479,7 @@
   async function applyResolutions() {
     const resolutions = {}; // id -> resolved field object
     let kept = 0, blocked = 0;
+    const advisoryLog = []; // { id, warnings } -- does not block, see advisoryWarnings()
 
     conflicts.forEach((c, idx) => {
       if (c.choice === 'existing') { kept++; return; }
@@ -425,6 +513,9 @@
       const hasRole = resolved['Jurisdiction Role'] != null && resolved['Jurisdiction Role'] !== '';
       if (!hasSetting && !hasRole) { blocked++; return; }
 
+      const warnings = advisoryWarnings(resolved);
+      if (warnings.length) advisoryLog.push({ id: c.id, warnings });
+
       resolutions[c.id] = resolved;
     });
 
@@ -454,11 +545,20 @@
       let msg = 'Applied ' + applied + ' conflict resolution(s), added ' + added + ' new record(s)';
       if (kept) msg += ', kept ' + kept + ' existing';
       if (blocked) msg += ' — ' + blocked + ' blocked (missing jurisdiction anchor)';
+      if (advisoryLog.length) msg += ' — ' + advisoryLog.length + ' advisory warning(s), see below';
       if (result.commitUrl) msg += ' — ' + result.commitUrl;
       showToast(msg);
       conflicts = []; newRecords = [];
       document.getElementById('summaryBar').style.display = 'none';
       document.getElementById('results').innerHTML = '<div class="empty-state"><p>Resolutions applied. Upload another incoming file to continue reviewing.</p></div>';
+
+      // Advisory only -- applied anyway. Left on-page (not just a toast)
+      // since there can be several, across several records.
+      document.getElementById('advisoryPanel').innerHTML = advisoryLog.length
+        ? '<div class="advisory-note">Applied, but heads up:<ul>' +
+          advisoryLog.map(a => '<li><strong>' + esc(a.id) + '</strong>: ' + a.warnings.map(esc).join('; ') + '</li>').join('') +
+          '</ul></div>'
+        : '';
     } catch (err) {
       showToast(err.message);
     } finally {

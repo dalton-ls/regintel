@@ -64,6 +64,23 @@
     .field input[readonly], .field input[disabled] { background: #f1f5f9; color: #64748b; cursor: not-allowed; }
     .validation-warning { background: #fef3e2; border: 1px solid #f5cd87; color: #92620a; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-bottom: 16px; }
     .error-banner { background: #fdecec; border: 1px solid #f5b8b8; color: #a12b2b; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-bottom: 16px; }
+    /* Non-blocking, distinct from .validation-warning above (which blocks
+       Save). Used for Phase 3/4/5's additive-field vocabulary checks --
+       advisory only, per Dalton's 2026-08-17 "warn, never block" choice. */
+    .validation-advisory { background: #eef4fc; border: 1px solid #b8d0f5; color: #2b5aa1; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-bottom: 16px; }
+    .validation-advisory ul { margin: 6px 0 0; padding-left: 18px; }
+    .validation-advisory li { margin: 2px 0; }
+
+    .tags-panel { background: #f7f9fc; border: 1px solid #e8ecf0; border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; }
+    .tags-panel-row { margin-bottom: 10px; }
+    .tags-panel-row:last-child { margin-bottom: 0; }
+    .tags-panel-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #6b7a99; margin-bottom: 6px; display: block; }
+    .tags-panel-empty { font-size: 12px; color: #9aaac4; }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip { display: inline-block; background: #fff; border: 1px solid #dde1ea; border-radius: 12px; padding: 3px 10px; font-size: 11px; color: #4a5568; }
+    .change-event-box { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fff8ec; border: 1px solid #f5cd87; border-radius: 6px; padding: 8px 12px; }
+    .change-event-text { font-size: 12px; color: #92620a; }
+    .change-event-text b { font-weight: 700; }
 
     .editor-actions { display: flex; gap: 8px; margin-top: 20px; padding-top: 16px; border-top: 1px solid #e8ecf0; align-items: center; }
     .save-status { font-size: 11px; color: #9aaac4; margin-left: auto; }
@@ -147,6 +164,45 @@
 
   function deriveExplicitTraining(requirementLevel) {
     return requirementLevel === 'Explicit Training' ? 'Yes' : 'No';
+  }
+
+  // ─── Phase 3/4/5 advisory checks (Dalton, 2026-08-17) ───
+  // These fields are additive and not yet part of UNIFIED_FIELDS' editable
+  // form grid above -- they're only ever written via Pending Review Queue
+  // batches today. This checks whatever a record already carries and warns,
+  // but never blocks Save, distinct from validationErrors() above which
+  // guards the original required schema fields.
+  const IMPACT_TYPES = ["Policy", "Procedure", "Training", "Competency", "Credential",
+    "Documentation", "Workflow", "Staffing", "Reporting", "Audit", "Physical Environment"];
+  const APPLICABILITY_ANCHOR_FIELDS = ["setting", "role", "organization_type", "profession", "activity"];
+
+  function advisoryWarnings(merged) {
+    const warnings = [];
+    const impactTypes = merged['Impact Types'];
+    if (Array.isArray(impactTypes)) {
+      impactTypes.forEach(t => {
+        if (!IMPACT_TYPES.includes(t)) warnings.push('Impact Types: ' + JSON.stringify(t) + ' is not one of the 11 fixed types.');
+      });
+    }
+    const rules = merged['Applicability Rules'];
+    if (Array.isArray(rules)) {
+      rules.forEach((r, i) => {
+        if (!r || typeof r !== 'object') return;
+        if (!APPLICABILITY_ANCHOR_FIELDS.some(f => r[f])) {
+          warnings.push('Applicability Rules[' + i + ']: no anchor field populated (needs at least one of ' + APPLICABILITY_ANCHOR_FIELDS.join('/') + ').');
+        }
+      });
+    }
+    const artifacts = merged['Organizational Artifacts'];
+    if (Array.isArray(artifacts)) {
+      artifacts.forEach((a, i) => {
+        if (!a || typeof a !== 'object') return;
+        if (!IMPACT_TYPES.includes(a.artifact_type)) {
+          warnings.push('Organizational Artifacts[' + i + ']: artifact_type ' + JSON.stringify(a.artifact_type) + ' is not one of the 11 fixed Impact Types.');
+        }
+      });
+    }
+    return warnings;
   }
 
   let records = [];
@@ -278,6 +334,85 @@
     return v == null ? '' : v;
   }
 
+  // ─── Phase 2-5 read-only tags panel ───
+  // These fields aren't in UNIFIED_FIELDS' editable form grid (they're only
+  // ever written via Pending Review Queue batches), so without this an
+  // operator doing a spot correction here would have no visibility into a
+  // record's Change Event / Applicability / Impact / Artifact tags at all.
+  // Display only -- editing these still happens through Pending Review Queue.
+  function renderTagsPanel(record) {
+    const hasChangeEvent = !!record['Change Type'];
+    const impactTypes = Array.isArray(record['Impact Types']) ? record['Impact Types'] : [];
+    const rules = Array.isArray(record['Applicability Rules']) ? record['Applicability Rules'] : [];
+    const artifacts = Array.isArray(record['Organizational Artifacts']) ? record['Organizational Artifacts'] : [];
+
+    if (!hasChangeEvent && !impactTypes.length && !rules.length && !artifacts.length) return '';
+
+    let rows = '';
+
+    if (hasChangeEvent) {
+      rows += '<div class="tags-panel-row">' +
+        '<span class="tags-panel-label">Change Event</span>' +
+        '<div class="change-event-box">' +
+          '<span class="change-event-text"><b>' + esc(record['Change Type']) + '</b>' +
+            (record['Change Detected Date'] ? ' — detected ' + esc(record['Change Detected Date']) : '') +
+            (record['Change Source Path'] ? ' — ' + esc(record['Change Source Path']) : '') +
+          '</span>' +
+          '<button type="button" class="btn" id="markResolvedBtn">Mark resolved</button>' +
+        '</div>' +
+      '</div>';
+    }
+
+    if (rules.length) {
+      const summaries = rules.map(r => {
+        if (!r || typeof r !== 'object') return '';
+        return Object.keys(r).filter(k => r[k] && k !== 'conditions').map(k => k + ': ' + r[k]).join(' · ');
+      }).filter(Boolean);
+      rows += '<div class="tags-panel-row"><span class="tags-panel-label">Applicability Rules</span>' +
+        '<div class="chip-row">' + summaries.map(s => '<span class="chip">' + esc(s) + '</span>').join('') + '</div></div>';
+    }
+
+    if (impactTypes.length) {
+      rows += '<div class="tags-panel-row"><span class="tags-panel-label">Impact Types</span>' +
+        '<div class="chip-row">' + impactTypes.map(t => '<span class="chip">' + esc(t) + '</span>').join('') + '</div></div>';
+    }
+
+    if (artifacts.length) {
+      const summaries = artifacts.map(a => (a && a.artifact_type ? a.artifact_type + ': ' + (a.name || a.artifact_id) : (a && a.name) || '')).filter(Boolean);
+      rows += '<div class="tags-panel-row"><span class="tags-panel-label">Organizational Artifacts</span>' +
+        '<div class="chip-row">' + summaries.map(s => '<span class="chip">' + esc(s) + '</span>').join('') + '</div></div>';
+    }
+
+    return '<div class="tags-panel">' + rows + '</div>';
+  }
+
+  // Phase 2's deferred lifecycle question (Dalton, 2026-08-17): a human
+  // clears a resolved Change Type during review, via this dedicated action
+  // rather than the generic Save button, so clearing a flag doesn't require
+  // also touching an unrelated field. Clears all three Change Event fields
+  // in one commit -- partial clearing (e.g. Change Type but not Change
+  // Detected Date) would leave the record in a state nothing else produces.
+  async function markChangeResolved(id) {
+    const btn = document.getElementById('markResolvedBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Resolving…'; }
+    try {
+      const latest = await fetchLatestRecords();
+      const updated = latest.map(r => {
+        if (r['Record ID'] !== id) return r;
+        const { ['Change Type']: _ct, ['Change Detected Date']: _cd, ['Change Source Path']: _cp, ...rest } = r;
+        return rest;
+      });
+      const result = await commitRecords(updated, 'Mark Change Event resolved for ' + id);
+      records = updated;
+      renderList();
+      renderEditor(records.find(r => r['Record ID'] === id));
+      showToast('Change Event marked resolved for ' + id + (result.commitUrl ? ' — ' + result.commitUrl : ''));
+    } catch (err) {
+      showToast('Could not mark resolved: ' + err.message);
+      if (btn) { btn.disabled = false; btn.textContent = 'Mark resolved'; }
+    }
+  }
+
   function renderEditor(record) {
     const panel = document.getElementById('editorPanel');
     if (!record) {
@@ -331,6 +466,7 @@
         '<span class="editor-record-id">' + esc(record['Record ID']) + '</span>' +
         '<span class="editor-source">' + esc(record['Source Dataset'] || '') + '</span>' +
       '</div>' +
+      renderTagsPanel(record) +
       '<div id="validationWarning"></div>' +
       '<div class="field-grid">' + fieldsHtml + '</div>' +
       '<div class="editor-actions">' +
@@ -352,6 +488,8 @@
 
     document.getElementById('saveBtn').addEventListener('click', () => saveRecord(record['Record ID']));
     document.getElementById('discardBtn').addEventListener('click', () => renderEditor(records.find(r => r['Record ID'] === record['Record ID'])));
+    const resolveBtn = document.getElementById('markResolvedBtn');
+    if (resolveBtn) resolveBtn.addEventListener('click', () => markChangeResolved(record['Record ID']));
   }
 
   // Only returns fields whose displayed text actually changed, so untouched
@@ -428,7 +566,14 @@
         errors.map(esc).join('</li><li>') + '</li></ul></div>';
       return;
     }
-    document.getElementById('validationWarning').innerHTML = '';
+
+    // Advisory only -- does not block save. Surfaces whatever Applicability/
+    // Impact/Artifact vocabulary issues already exist on the record even
+    // though this form doesn't let you edit those fields directly.
+    const advisories = advisoryWarnings(merged);
+    document.getElementById('validationWarning').innerHTML = advisories.length
+      ? '<div class="validation-advisory">Heads up (does not block save):<ul><li>' + advisories.map(esc).join('</li><li>') + '</li></ul></div>'
+      : '';
 
     if (!Object.keys(values).length) { showToast('No changes to save'); return; }
 

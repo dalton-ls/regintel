@@ -55,6 +55,10 @@
     .hint { font-size: 10px; color: #b0b8cc; margin-top: 3px; }
     .muted { color: #9aaac4; font-size: 13px; }
     .warn-note { background: #fef3e2; border: 1px solid #f5cd87; color: #92620a; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-top: 12px; }
+    /* Non-blocking, distinct from .warn-note above (which disables Apply).
+       Used for Phase 4's Impact Types vocabulary check -- advisory only,
+       per Dalton's 2026-08-17 "warn, never block" choice. */
+    .advisory-note { background: #eef4fc; border: 1px solid #b8d0f5; color: #2b5aa1; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-top: 12px; }
     .error-banner { background: #fdecec; border: 1px solid #f5b8b8; color: #a12b2b; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-bottom: 20px; }
 
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a2332; color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 999; box-shadow: 0 4px 20px rgba(0,0,0,0.25); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
@@ -127,9 +131,20 @@
     "Explicit Training",
     "Citation", "Training Topic / Competency Item", "Relationship", "Purpose",
     "Approval Required", "Approval Basis", "Hours Required", "Frequency",
-    "Source URL", "Notes / Research Flags"
+    "Source URL", "Notes / Research Flags",
+    "Impact Types"
   ];
-  const ARRAY_FIELDS = new Set(["HSTM Role"]);
+  const ARRAY_FIELDS = new Set(["HSTM Role", "Impact Types"]);
+
+  // Phase 4 (Dalton, 2026-08-17): Impact Types is bulk-editable since it's a
+  // flat array of strings from a small fixed vocabulary -- same ARRAY_FIELDS
+  // comma-split/join treatment as HSTM Role. Applicability Rules and
+  // Organizational Artifacts are deliberately NOT added here: they're
+  // arrays of structured objects, and this screen's newValue box is a plain
+  // comma-split text input with no JSON parsing -- bulk-editing those safely
+  // would need real UI work this round didn't scope.
+  const IMPACT_TYPES = ["Policy", "Procedure", "Training", "Competency", "Credential",
+    "Documentation", "Workflow", "Staffing", "Reporting", "Audit", "Physical Environment"];
 
   // Fields offered as filters (single-value dropdowns).
   const FILTER_FIELDS = [
@@ -247,6 +262,7 @@
   function updateValueHint() {
     const field = document.getElementById('targetField').value;
     document.getElementById('valueHint').textContent =
+      field === 'Impact Types' ? 'Comma-separated list, from: ' + IMPACT_TYPES.join(', ') :
       ARRAY_FIELDS.has(field) ? 'Comma-separated list (HSTM Role is multi-value)' :
       'Leave blank to clear the field';
   }
@@ -336,6 +352,17 @@
 
     if (violations > 0) {
       body += '<div class="warn-note">Blocked: ' + violations + ' record(s) would be left with neither Jurisdiction Setting nor Jurisdiction Role. Clearing this field on those records violates the schema rule. Narrow the filter or choose a non-empty value.</div>';
+    }
+
+    // Advisory only -- does not disable Apply, unlike vocabError/violations
+    // above. Impact Types is a closed vocabulary but an additive field, so a
+    // typo gets flagged rather than blocking the whole bulk operation.
+    if (field === 'Impact Types' && Array.isArray(newVal)) {
+      const badValues = newVal.filter(v => !IMPACT_TYPES.includes(v));
+      if (badValues.length) {
+        body += '<div class="advisory-note">Heads up: ' + badValues.map(v => JSON.stringify(v)).join(', ') +
+          ' not one of the 11 fixed Impact Types. Will still apply if you continue.</div>';
+      }
     }
 
     if (explicitAlsoChanging.length) {

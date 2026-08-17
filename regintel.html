@@ -856,13 +856,36 @@ let selectedRole        = null;
   // so these are only pre-load defaults.
   let ALL_REQUIREMENT_LEVELS = ['Explicit Training','Other Training Reference'];
   let ALL_AUTHORITY_LEVELS   = ['Federal Floor','State Floor','Competency'];
+  // Applicability Rule facet — derived from each row's `applicability_rules`
+  // array (Phase 3). Empty by default: as of 2026-08-17 no live records carry
+  // populated rules yet, so this list (and its filter dropdown) stays empty
+  // and hidden until content is tagged. See applicabilityTokens() below.
+  let ALL_APPLICABILITY_VALUES = [];
+
+  // Impact Type facet (Phase 4). Unlike Applicability Rule's free-text
+  // dimensions, Impact Type is already a fixed, closed vocabulary (source of
+  // truth: impact_type.py's IMPACT_TYPES). So this list is NOT derived from
+  // what's actually populated in the data — it's the full taxonomy, shown
+  // unconditionally, same as ALL_REQUIREMENT_LEVELS/ALL_AUTHORITY_LEVELS'
+  // pre-load defaults. As of 2026-08-17 no live records carry Impact Types
+  // yet, so filtering by any one of these will correctly hide all 844
+  // current rows until content is tagged — that's the intended behavior of
+  // narrowing to a closed taxonomy that hasn't been applied yet, not a bug.
+  const IMPACT_TYPES = [
+    "Policy", "Procedure", "Training", "Competency", "Credential",
+    "Documentation", "Workflow", "Staffing", "Reporting", "Audit",
+    "Physical Environment"
+  ];
+  const ALL_IMPACT_TYPES = IMPACT_TYPES;
   const STATE_NAMES       = {CA:'California', FL:'Florida', US:'United States'};
   const STATE_ORDER       = ['CA','FL','US'];
 
   const filterState = {
     jurisdictions: new Set(),
     requirementLevels:   new Set(),
-    authorityLevels:     new Set()
+    authorityLevels:     new Set(),
+    applicabilityValues: new Set(),
+    impactTypes:         new Set(IMPACT_TYPES)
   };
 
   const openJurisdictions = new Set();
@@ -881,6 +904,55 @@ let selectedRole        = null;
   function cardKey(row) { return row.record_id ? ('id:' + row.record_id) : (row.state+'||'+row.citation+'||'+row.training_topic.slice(0,80)); }
   function groupKey(row) { return row.citation + '␟' + row.training_topic + '␟' + (row.type || ''); }
 
+  // ─── Applicability Rule helpers (Phase 3) ───
+  // Anchor + descriptive fields per applicability.py's ApplicabilityRule
+  // dataclass; "conditions" is a free-form dict and is shown in the drawer
+  // rather than flattened into filterable tokens.
+  const APPLICABILITY_FIELD_LABELS = {
+    jurisdiction: 'Jurisdiction', authority: 'Authority', setting: 'Setting',
+    organization_type: 'Org Type', role: 'Role', profession: 'Profession',
+    activity: 'Activity', circumstance: 'Circumstance'
+  };
+  function applicabilityTokens(rules) {
+    if (!Array.isArray(rules) || !rules.length) return [];
+    const out = [];
+    rules.forEach(rule => {
+      if (!rule || typeof rule !== 'object') return;
+      Object.keys(APPLICABILITY_FIELD_LABELS).forEach(f => {
+        if (rule[f]) out.push(`${APPLICABILITY_FIELD_LABELS[f]}: ${rule[f]}`);
+      });
+    });
+    return out;
+  }
+  function applicabilitySummaries(rules) {
+    if (!Array.isArray(rules) || !rules.length) return [];
+    return rules.map(rule => {
+      if (!rule || typeof rule !== 'object') return '';
+      const parts = Object.keys(APPLICABILITY_FIELD_LABELS)
+        .filter(f => rule[f])
+        .map(f => `${APPLICABILITY_FIELD_LABELS[f]}: ${rule[f]}`);
+      if (rule.conditions && typeof rule.conditions === 'object' && Object.keys(rule.conditions).length) {
+        parts.push('Conditions: ' + JSON.stringify(rule.conditions));
+      }
+      return parts.join(' · ');
+    }).filter(Boolean);
+  }
+
+  // ─── Organizational Artifact helpers (Phase 5) ───
+  // Deliberately no filter dropdown for this one: artifact_type is drawn
+  // from the same fixed vocabulary the Impact Type filter already covers
+  // (impact_type.py's IMPACT_TYPES), so a second filter on the same values
+  // would just duplicate that dropdown. This is display-only — see the
+  // artifact chips in the drawer's Metadata tab.
+  function artifactSummaries(artifacts) {
+    if (!Array.isArray(artifacts) || !artifacts.length) return [];
+    return artifacts.map(a => {
+      if (!a || typeof a !== 'object') return '';
+      const label = a.artifact_type ? `${a.artifact_type}: ${a.name || a.artifact_id}` : (a.name || a.artifact_id || '');
+      return label;
+    }).filter(Boolean);
+  }
+
   // ─── Filter & group ───
   function filterData() {
     const src = selectedRole ? (ROLE_DATA[selectedRole] || []) : DATA;
@@ -888,6 +960,22 @@ let selectedRole        = null;
       if (!filterState.jurisdictions.has(r.state))         return false;
       if (!filterState.requirementLevels.has(r.requirement_level)) return false;
       if (!filterState.authorityLevels.has(r.authority_level)) return false;
+      // Applicability filter only engages once real rule data exists and the
+      // user has actively narrowed it; with the default "all selected" state
+      // (or while ALL_APPLICABILITY_VALUES is empty, as it is on every live
+      // record today) this is a no-op so nothing gets hidden.
+      if (ALL_APPLICABILITY_VALUES.length && filterState.applicabilityValues.size < ALL_APPLICABILITY_VALUES.length) {
+        const tokens = applicabilityTokens(r.applicability_rules);
+        if (!tokens.some(t => filterState.applicabilityValues.has(t))) return false;
+      }
+      // Impact Type filter: fixed vocabulary, so (unlike Applicability
+      // above) this clause is always live, not gated behind a data-derived
+      // length check. Narrowing to any tag correctly excludes the 844
+      // untagged rows until content is classified.
+      if (filterState.impactTypes.size < ALL_IMPACT_TYPES.length) {
+        const tags = Array.isArray(r.impact_types) ? r.impact_types : [];
+        if (!tags.some(t => filterState.impactTypes.has(t))) return false;
+      }
       return true;
     });
   }
@@ -1022,6 +1110,12 @@ let selectedRole        = null;
     const src = row && row.source_url ? `<a href="${esc(row.source_url)}" target="_blank" rel="noopener" class="source-link">${esc(truncUrl(row.source_url))}</a>` : '—';
     const settings = row ? (row.settings || (row.hstm_setting ? [row.hstm_setting] : [])) : [];
     const settingsChips = settings.length ? `<div class="drawer-row"><span class="drawer-label">Applies To</span><span class="drawer-value"><div class="chip-row">${settings.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div></span></div>` : '';
+    const applicabilitySummariesList = row ? applicabilitySummaries(row.applicability_rules) : [];
+    const applicabilityChips = applicabilitySummariesList.length ? `<div class="drawer-row"><span class="drawer-label">Applicability</span><span class="drawer-value"><div class="chip-row">${applicabilitySummariesList.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div></span></div>` : '';
+    const impactTypesList = row && Array.isArray(row.impact_types) ? row.impact_types : [];
+    const impactChips = impactTypesList.length ? `<div class="drawer-row"><span class="drawer-label">Impact Type</span><span class="drawer-value"><div class="chip-row">${impactTypesList.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div></span></div>` : '';
+    const artifactSummariesList = row ? artifactSummaries(row.organizational_artifacts) : [];
+    const artifactChips = artifactSummariesList.length ? `<div class="drawer-row"><span class="drawer-label">Artifacts</span><span class="drawer-value"><div class="chip-row">${artifactSummariesList.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div></span></div>` : '';
     const overviewContent = row ? `
       ${settingsChips}
       ${row.hours_required > 0 ? `<div class="drawer-row"><span class="drawer-label">Hours</span><span class="drawer-value">${row.hours_required} hr${row.hours_required !== 1 ? 's' : ''}</span></div>` : ''}
@@ -1035,6 +1129,9 @@ let selectedRole        = null;
       <div class="drawer-row"><span class="drawer-label">Citation</span><span class="drawer-value">${esc(row.citation)}</span></div>
       <div class="drawer-row"><span class="drawer-label">Approval</span><span class="drawer-value">${approval}</span></div>
       ${row.approval_basis ? `<div class="drawer-row"><span class="drawer-label">Approval basis</span><span class="drawer-value">${esc(row.approval_basis)}</span></div>` : ''}
+      ${applicabilityChips}
+      ${impactChips}
+      ${artifactChips}
       ${(row.notes && adminMode) ? `<div class="drawer-row"><span class="drawer-label">Research Notes</span><span class="drawer-value"><div class="notes-box">${esc(row.notes)}</div></span></div>` : ''}
       <div class="drawer-row"><span class="drawer-label">Source</span><span class="drawer-value">${src}</span></div>
     ` : '';
@@ -1140,6 +1237,8 @@ let selectedRole        = null;
     ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
     ${renderDropdown('requirementLevels', 'Requirement', ALL_REQUIREMENT_LEVELS, filterState.requirementLevels)}
     ${renderDropdown('authorityLevels', 'Authority', ALL_AUTHORITY_LEVELS, filterState.authorityLevels)}
+    ${ALL_APPLICABILITY_VALUES.length ? renderDropdown('applicabilityValues', 'Applicability', ALL_APPLICABILITY_VALUES, filterState.applicabilityValues) : ''}
+    ${renderDropdown('impactTypes', 'Impact Type', ALL_IMPACT_TYPES, filterState.impactTypes)}
     ${exportBtn}
   </div>`;
   }
@@ -1157,6 +1256,8 @@ let selectedRole        = null;
     ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
     ${renderDropdown('requirementLevels', 'Requirement', ALL_REQUIREMENT_LEVELS, filterState.requirementLevels)}
     ${renderDropdown('authorityLevels', 'Authority', ALL_AUTHORITY_LEVELS, filterState.authorityLevels)}
+    ${ALL_APPLICABILITY_VALUES.length ? renderDropdown('applicabilityValues', 'Applicability', ALL_APPLICABILITY_VALUES, filterState.applicabilityValues) : ''}
+    ${renderDropdown('impactTypes', 'Impact Type', ALL_IMPACT_TYPES, filterState.impactTypes)}
     ${exportBtn}
   </div>`;
   }
@@ -1382,7 +1483,7 @@ let selectedRole        = null;
     if (opt) {
       const dim = opt.dataset.dropdown;
       const val = opt.dataset.value;
-      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS };
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS, applicabilityValues: ALL_APPLICABILITY_VALUES, impactTypes: ALL_IMPACT_TYPES };
       const s = filterState[dim];
       if (s.has(val)) s.delete(val);
       else s.add(val);
@@ -1393,7 +1494,7 @@ let selectedRole        = null;
     const allBtn = e.target.closest('[data-dropdown-all]');
     if (allBtn) {
       const dim = allBtn.dataset.dropdownAll;
-      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS };
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS, applicabilityValues: ALL_APPLICABILITY_VALUES, impactTypes: ALL_IMPACT_TYPES };
       allMap[dim].forEach(v => filterState[dim].add(v));
       render();
       e.stopPropagation();
@@ -1403,7 +1504,7 @@ let selectedRole        = null;
     const clearBtn = e.target.closest('[data-dropdown-clear]');
     if (clearBtn) {
       const dim = clearBtn.dataset.dropdownClear;
-      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS };
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS, applicabilityValues: ALL_APPLICABILITY_VALUES, impactTypes: ALL_IMPACT_TYPES };
       filterState[dim].clear();
       render();
       e.stopPropagation();
@@ -1480,7 +1581,10 @@ let selectedRole        = null;
       source_url:          r['Source URL'],
       row_type:            r['Relationship'] || '',
       record_id:           r['Record ID'] || '',
-      regulation_type:     r['Regulation Type'] || ''
+      regulation_type:     r['Regulation Type'] || '',
+      applicability_rules: Array.isArray(r['Applicability Rules']) ? r['Applicability Rules'] : [],
+      impact_types:        Array.isArray(r['Impact Types']) ? r['Impact Types'] : [],
+      organizational_artifacts: Array.isArray(r['Organizational Artifacts']) ? r['Organizational Artifacts'] : []
     });
     ROLE_DATA = {};
     CS_DATA   = {};
@@ -1534,9 +1638,12 @@ let selectedRole        = null;
     ALL_JURISDICTIONS = [...new Set([...DATA, ...CARE_DATA].map(r => r.state).filter(Boolean))].sort();
     ALL_REQUIREMENT_LEVELS  = [...new Set([...DATA, ...CARE_DATA].map(r => r.requirement_level).filter(Boolean))];
     ALL_AUTHORITY_LEVELS    = [...new Set([...DATA, ...CARE_DATA].map(r => r.authority_level).filter(Boolean))];
+    ALL_APPLICABILITY_VALUES = [...new Set([...DATA, ...CARE_DATA].flatMap(r => applicabilityTokens(r.applicability_rules)))].sort();
     filterState.jurisdictions = new Set(ALL_JURISDICTIONS);
     filterState.requirementLevels   = new Set(ALL_REQUIREMENT_LEVELS);
     filterState.authorityLevels     = new Set(ALL_AUTHORITY_LEVELS);
+    filterState.applicabilityValues = new Set(ALL_APPLICABILITY_VALUES);
+    filterState.impactTypes         = new Set(ALL_IMPACT_TYPES); // fixed vocabulary, not re-derived
   }
 
   // parseData() expects the legacy sheet-keyed shape ({ "R <role>": [...],
@@ -1854,9 +1961,12 @@ let selectedRole        = null;
     ALL_JURISDICTIONS = [...new Set([...DATA, ...CARE_DATA].map(r => r.state))].sort();
     ALL_REQUIREMENT_LEVELS = [...new Set([...DATA, ...CARE_DATA].map(r => r.requirement_level).filter(Boolean))];
     ALL_AUTHORITY_LEVELS   = [...new Set([...DATA, ...CARE_DATA].map(r => r.authority_level).filter(Boolean))];
+    ALL_APPLICABILITY_VALUES = [...new Set([...DATA, ...CARE_DATA].flatMap(r => applicabilityTokens(r.applicability_rules)))].sort();
     filterState.jurisdictions = new Set(ALL_JURISDICTIONS);
     filterState.requirementLevels = new Set(ALL_REQUIREMENT_LEVELS);
     filterState.authorityLevels = new Set(ALL_AUTHORITY_LEVELS);
+    filterState.applicabilityValues = new Set(ALL_APPLICABILITY_VALUES);
+    filterState.impactTypes = new Set(ALL_IMPACT_TYPES); // fixed vocabulary, not re-derived
     render();
     closeImportModal();
     showToast('Data merged successfully');
