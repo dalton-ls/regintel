@@ -7938,7 +7938,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_40",
     "Notes / Research Flags": "[AUTO] Upstream jurisdiction_setting labeled ICF/IID; section sits in Part 483 Subpart B (LTC facility) and setting was resolved from the regulation's own text.",
-    "Record ID": "req_e96a7e536667"
+    "Record ID": "req_e96a7e536667",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -7967,7 +7970,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_40",
     "Notes / Research Flags": "[AUTO] Upstream jurisdiction_setting labeled ICF/IID; section sits in Part 483 Subpart B (LTC facility) and setting was resolved from the regulation's own text.",
-    "Record ID": "req_472bc9af9c00"
+    "Record ID": "req_472bc9af9c00",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -8526,7 +8532,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_70",
     "Notes / Research Flags": "[AUTO] Orientation is delivered by LTC facility staff to hospice staff furnishing care to LTC residents; row is cited to the LTC facility section that imposes the obligation.",
-    "Record ID": "req_ed555c080d94"
+    "Record ID": "req_ed555c080d94",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -8555,7 +8564,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_70",
     "Notes / Research Flags": "[AUTO] Orientation is delivered by LTC facility staff to hospice staff furnishing care to LTC residents; row is cited to the LTC facility section that imposes the obligation.",
-    "Record ID": "req_3d4f70f0144a"
+    "Record ID": "req_3d4f70f0144a",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -8584,7 +8596,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_70",
     "Notes / Research Flags": "[AUTO] Orientation is delivered by LTC facility staff to hospice staff furnishing care to LTC residents; row is cited to the LTC facility section that imposes the obligation.",
-    "Record ID": "req_284b4a92f543"
+    "Record ID": "req_284b4a92f543",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -8673,7 +8688,10 @@
     "Frequency": "Initial",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_73",
     "Notes / Research Flags": "[AUTO] All-staff scope (new and existing staff, individuals providing services under arrangement, and volunteers). Setting-specific emergency preparedness section cited; not cross-enumerated.",
-    "Record ID": "req_c9349a511baa"
+    "Record ID": "req_c9349a511baa",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -8702,7 +8720,10 @@
     "Frequency": "At least annually",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_73",
     "Notes / Research Flags": "[AUTO] All-staff scope (new and existing staff, individuals providing services under arrangement, and volunteers). Setting-specific emergency preparedness section cited; not cross-enumerated.",
-    "Record ID": "req_e7cb7e3e17a5"
+    "Record ID": "req_e7cb7e3e17a5",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -8731,7 +8752,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_73",
     "Notes / Research Flags": "[AUTO] All-staff scope (new and existing staff, individuals providing services under arrangement, and volunteers). Setting-specific emergency preparedness section cited; not cross-enumerated.",
-    "Record ID": "req_8db2c4570c41"
+    "Record ID": "req_8db2c4570c41",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -8760,7 +8784,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_73",
     "Notes / Research Flags": "[AUTO] All-staff scope (new and existing staff, individuals providing services under arrangement, and volunteers). Setting-specific emergency preparedness section cited; not cross-enumerated. Required competency demonstration.",
-    "Record ID": "req_cdaf8e57c481"
+    "Record ID": "req_cdaf8e57c481",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -8848,7 +8875,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_80",
     "Notes / Research Flags": "[AUTO] Policy hook: (a)(2) requires written standards, policies, and procedures; § 483.95(e) makes those same elements mandatory staff training content, so the training obligation is emitted as Facility-Based. All-staff scope.",
-    "Record ID": "req_a02654dd69a7"
+    "Record ID": "req_a02654dd69a7",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -8877,7 +8907,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_80",
     "Notes / Research Flags": "[AUTO] Policy hook: (a)(2) requires written standards, policies, and procedures; § 483.95(e) makes those same elements mandatory staff training content, so the training obligation is emitted as Facility-Based. All-staff scope.",
-    "Record ID": "req_994a0cee365e"
+    "Record ID": "req_994a0cee365e",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -8906,7 +8939,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_80",
     "Notes / Research Flags": "[AUTO] Policy hook: (a)(2) requires written standards, policies, and procedures; § 483.95(e) makes those same elements mandatory staff training content, so the training obligation is emitted as Facility-Based. All-staff scope.",
-    "Record ID": "req_b55d61226f22"
+    "Record ID": "req_b55d61226f22",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -8935,7 +8971,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_80",
     "Notes / Research Flags": "[AUTO] Policy hook: (a)(2) requires written standards, policies, and procedures; § 483.95(e) makes those same elements mandatory staff training content, so the training obligation is emitted as Facility-Based. All-staff scope.",
-    "Record ID": "req_f97abd6a8c00"
+    "Record ID": "req_f97abd6a8c00",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -8964,7 +9003,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_80",
     "Notes / Research Flags": "[AUTO] Policy hook: (a)(2) requires written standards, policies, and procedures; § 483.95(e) makes those same elements mandatory staff training content, so the training obligation is emitted as Facility-Based. All-staff scope.",
-    "Record ID": "req_95993e926f30"
+    "Record ID": "req_95993e926f30",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -8993,7 +9035,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_80",
     "Notes / Research Flags": "[AUTO] Policy hook: (a)(2) requires written standards, policies, and procedures; § 483.95(e) makes those same elements mandatory staff training content, so the training obligation is emitted as Facility-Based. All-staff scope.",
-    "Record ID": "req_4856286b68bd"
+    "Record ID": "req_4856286b68bd",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -9184,7 +9229,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_95",
     "Notes / Research Flags": "[AUTO] Mandatory training for direct care staff; topic text taken verbatim from the operative clause (heading reads 'Communication').",
-    "Record ID": "req_715635d84502"
+    "Record ID": "req_715635d84502",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -9214,7 +9262,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_95",
     "Notes / Research Flags": "[AUTO] All-staff scope (all new and existing staff; individuals providing services under a contractual arrangement; and volunteers). Topic list is 'must include but are not limited to' — non-exhaustive. Content defined by cross-reference to § 483.10.",
-    "Record ID": "req_d94e21a301f0"
+    "Record ID": "req_d94e21a301f0",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -9244,7 +9295,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_95",
     "Notes / Research Flags": "[AUTO] All-staff scope (all new and existing staff; individuals providing services under a contractual arrangement; and volunteers). Topic list is 'must include but are not limited to' — non-exhaustive. Minimum content enumerated at (c)(1)-(3), emitted as separate Child rows.",
-    "Record ID": "req_7315f20a4dcb"
+    "Record ID": "req_7315f20a4dcb",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -9274,7 +9328,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_95",
     "Notes / Research Flags": "[AUTO] All-staff scope (all new and existing staff; individuals providing services under a contractual arrangement; and volunteers). Topic list is 'must include but are not limited to' — non-exhaustive.",
-    "Record ID": "req_eead15464b8e"
+    "Record ID": "req_eead15464b8e",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -9304,7 +9361,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_95",
     "Notes / Research Flags": "[AUTO] All-staff scope (all new and existing staff; individuals providing services under a contractual arrangement; and volunteers). Topic list is 'must include but are not limited to' — non-exhaustive.",
-    "Record ID": "req_acfdea327e61"
+    "Record ID": "req_acfdea327e61",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -9334,7 +9394,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_95",
     "Notes / Research Flags": "[AUTO] All-staff scope (all new and existing staff; individuals providing services under a contractual arrangement; and volunteers). Topic list is 'must include but are not limited to' — non-exhaustive.",
-    "Record ID": "req_259675716e46"
+    "Record ID": "req_259675716e46",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -9364,7 +9427,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_95",
     "Notes / Research Flags": "[AUTO] All-staff scope (all new and existing staff; individuals providing services under a contractual arrangement; and volunteers). Topic list is 'must include but are not limited to' — non-exhaustive. Mandatory training on the elements and goals of the facility's QAPI program as set forth at § 483.75.",
-    "Record ID": "req_cb84605c546a"
+    "Record ID": "req_cb84605c546a",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -9394,7 +9460,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_95",
     "Notes / Research Flags": "[AUTO] All-staff scope (all new and existing staff; individuals providing services under a contractual arrangement; and volunteers). Topic list is 'must include but are not limited to' — non-exhaustive. Mandatory training on the written standards, policies, and procedures described at § 483.80(a)(2).",
-    "Record ID": "req_155c54ddb5a6"
+    "Record ID": "req_155c54ddb5a6",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -9425,7 +9494,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_95",
     "Notes / Research Flags": "[AUTO] All-staff scope (all new and existing staff; individuals providing services under a contractual arrangement; and volunteers). Topic list is 'must include but are not limited to' — non-exhaustive. Tied to the compliance and ethics program at § 483.85.",
-    "Record ID": "req_e77f25b50866"
+    "Record ID": "req_e77f25b50866",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -9456,7 +9528,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_95",
     "Notes / Research Flags": "[AUTO] All-staff scope (all new and existing staff; individuals providing services under a contractual arrangement; and volunteers). Topic list is 'must include but are not limited to' — non-exhaustive.",
-    "Record ID": "req_237337265efc"
+    "Record ID": "req_237337265efc",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -9487,7 +9562,10 @@
     "Frequency": "Annual",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_95",
     "Notes / Research Flags": "[AUTO] All-staff scope (all new and existing staff; individuals providing services under a contractual arrangement; and volunteers). Topic list is 'must include but are not limited to' — non-exhaustive. Applies only to operating organizations with five or more facilities.",
-    "Record ID": "req_b32e6c3d02d3"
+    "Record ID": "req_b32e6c3d02d3",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -9514,7 +9592,10 @@
     "Frequency": "Per year",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_95",
     "Notes / Research Flags": "[AUTO] In-service training program for nurse aides; minimum 12 hours per year stated at (g)(1). | [AUTO] Hours Required was \"12 hrs per year\" — an academic-credit or experience-duration requirement, not a training-hours minimum; moved here and set to NR",
-    "Record ID": "req_a3038048e474"
+    "Record ID": "req_a3038048e474",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -9540,7 +9621,10 @@
     "Frequency": "Per year",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_95",
     "Notes / Research Flags": "[AUTO] Stated minimum hour count. | [AUTO] Hours Required was \"12 hrs per year\" — an academic-credit or experience-duration requirement, not a training-hours minimum; moved here and set to NR",
-    "Record ID": "req_81f032553c56"
+    "Record ID": "req_81f032553c56",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -9566,7 +9650,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_95",
     "Notes / Research Flags": "[AUTO] (g)(2) enumerates two required in-service topics; split per verbatim topic rule.",
-    "Record ID": "req_35b65f8387f7"
+    "Record ID": "req_35b65f8387f7",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -9592,7 +9679,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_95",
     "Notes / Research Flags": "[AUTO] (g)(2) enumerates two required in-service topics; split per verbatim topic rule.",
-    "Record ID": "req_eb3b62bce0d9"
+    "Record ID": "req_eb3b62bce0d9",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -9619,7 +9709,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_95",
     "Notes / Research Flags": "[AUTO] Internal cross-reference to '§ 483.70(e)' is stale — the facility assessment now sits at § 483.71. Supervisory obligation (performance reviews) tagged to Managerial Staff.",
-    "Record ID": "req_bda8e9ef5ec6"
+    "Record ID": "req_bda8e9ef5ec6",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -9645,7 +9738,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_95",
     "Notes / Research Flags": "[AUTO] All-staff scope (all new and existing staff; individuals providing services under a contractual arrangement; and volunteers). Topic list is 'must include but are not limited to' — non-exhaustive.",
-    "Record ID": "req_b274095dc43d"
+    "Record ID": "req_b274095dc43d",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -9700,7 +9796,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_483/subpart_b/section_483_95",
     "Notes / Research Flags": "[AUTO] All-staff scope (all new and existing staff; individuals providing services under a contractual arrangement; and volunteers). Topic list is 'must include but are not limited to' — non-exhaustive. Content defined by cross-reference to § 483.40; amount determined by the facility assessment (cited as § 483.70(e), now § 483.71).",
-    "Record ID": "req_f93bc2832d98"
+    "Record ID": "req_f93bc2832d98",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -14183,7 +14282,10 @@
     "Frequency": "at least semiannually during the first year the individual tests patient specimens. Thereafter, evaluations and documentation must be performed at least annually",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr9fd4b51b2991285/section_493_1359",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_0b0c137c548e"
+    "Record ID": "req_0b0c137c548e",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -14323,7 +14425,10 @@
     "Frequency": "at least semiannually during the first year the individual tests patient specimens. Thereafter, evaluations and documentation must be performed at least annually",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr9fd4b51b2991285/section_493_1359",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_d895bbcfa334"
+    "Record ID": "req_d895bbcfa334",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -14463,7 +14568,10 @@
     "Frequency": "at least semiannually during the first year the individual tests patient specimens. Thereafter, evaluations and documentation must be performed at least annually",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr9fd4b51b2991285/section_493_1359",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_4103e458fea5"
+    "Record ID": "req_4103e458fea5",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -14603,7 +14711,10 @@
     "Frequency": "at least semiannually during the first year the individual tests patient specimens. Thereafter, evaluations and documentation must be performed at least annually",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr9fd4b51b2991285/section_493_1359",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_e3f41a3ce93d"
+    "Record ID": "req_e3f41a3ce93d",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -14743,7 +14854,10 @@
     "Frequency": "at least semiannually during the first year the individual tests patient specimens. Thereafter, evaluations and documentation must be performed at least annually",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr9fd4b51b2991285/section_493_1359",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_17e363889bef"
+    "Record ID": "req_17e363889bef",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -15026,7 +15140,10 @@
     "Frequency": "prior to testing patients' specimens",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr10813e8157e2976/section_493_1407",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings; [AUTO] 'All personnel' scope | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_0ab93be82b83"
+    "Record ID": "req_0ab93be82b83",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -15166,7 +15283,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr10813e8157e2976/section_493_1407",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings; [AUTO] Policy hook: obligation is to establish monitoring policies; the training obligation (remedial training / continuing education) is emitted as Facility-Based | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_47b043219d91"
+    "Record ID": "req_47b043219d91",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -15589,7 +15709,10 @@
     "Frequency": "regular in-service training",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr10813e8157e2976/section_493_1413",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_9a5a857c1526"
+    "Record ID": "req_9a5a857c1526",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -15729,7 +15852,10 @@
     "Frequency": "at least semiannually during the first year the individual tests patient specimens; thereafter at least annually",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr10813e8157e2976/section_493_1413",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_376ddec53b5b"
+    "Record ID": "req_376ddec53b5b",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -15869,7 +15995,10 @@
     "Frequency": "at least semiannually during the first year the individual tests patient specimens; thereafter at least annually",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr10813e8157e2976/section_493_1413",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_5a4153ec7167"
+    "Record ID": "req_5a4153ec7167",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -16009,7 +16138,10 @@
     "Frequency": "at least semiannually during the first year the individual tests patient specimens; thereafter at least annually",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr10813e8157e2976/section_493_1413",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_b95d72b51ac2"
+    "Record ID": "req_b95d72b51ac2",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -16149,7 +16281,10 @@
     "Frequency": "at least semiannually during the first year the individual tests patient specimens; thereafter at least annually",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr10813e8157e2976/section_493_1413",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_cffd84a0bc51"
+    "Record ID": "req_cffd84a0bc51",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -16289,7 +16424,10 @@
     "Frequency": "at least semiannually during the first year the individual tests patient specimens; thereafter at least annually",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr10813e8157e2976/section_493_1413",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_51e2fc162f20"
+    "Record ID": "req_51e2fc162f20",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -16429,7 +16567,10 @@
     "Frequency": "at least semiannually during the first year the individual tests patient specimens; thereafter at least annually",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr10813e8157e2976/section_493_1413",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_50e338764df3"
+    "Record ID": "req_50e338764df3",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -16692,7 +16833,10 @@
     "Frequency": "prior to analyzing patient specimens",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr10813e8157e2976/section_493_1423",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row) | [AUTO] Regulation Type reconciled to Facility-Based: the CoP obligates the provider to ensure qualified personnel; portability of the underlying credential does not move the duty",
-    "Record ID": "req_0f5bb764ed57"
+    "Record ID": "req_0f5bb764ed57",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -16822,7 +16966,10 @@
     "Frequency": "prior to analyzing patient specimens",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr10813e8157e2976/section_493_1423",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row) | [AUTO] Regulation Type reconciled to Facility-Based: the CoP obligates the provider to ensure qualified personnel; portability of the underlying credential does not move the duty",
-    "Record ID": "req_82976c0f482e"
+    "Record ID": "req_82976c0f482e",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -16952,7 +17099,10 @@
     "Frequency": "prior to analyzing patient specimens",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr10813e8157e2976/section_493_1423",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row) | [AUTO] Regulation Type reconciled to Facility-Based: the CoP obligates the provider to ensure qualified personnel; portability of the underlying credential does not move the duty",
-    "Record ID": "req_e2cf1653cea5"
+    "Record ID": "req_e2cf1653cea5",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -17082,7 +17232,10 @@
     "Frequency": "prior to analyzing patient specimens",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr10813e8157e2976/section_493_1423",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row) | [AUTO] Regulation Type reconciled to Facility-Based: the CoP obligates the provider to ensure qualified personnel; portability of the underlying credential does not move the duty",
-    "Record ID": "req_1158041de159"
+    "Record ID": "req_1158041de159",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -17212,7 +17365,10 @@
     "Frequency": "prior to analyzing patient specimens",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr10813e8157e2976/section_493_1423",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row) | [AUTO] Regulation Type reconciled to Facility-Based: the CoP obligates the provider to ensure qualified personnel; portability of the underlying credential does not move the duty",
-    "Record ID": "req_2ba260eadf96"
+    "Record ID": "req_2ba260eadf96",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -17342,7 +17498,10 @@
     "Frequency": "prior to analyzing patient specimens",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr10813e8157e2976/section_493_1423",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row) | [AUTO] Regulation Type reconciled to Facility-Based: the CoP obligates the provider to ensure qualified personnel; portability of the underlying credential does not move the duty",
-    "Record ID": "req_d8354c332b3a"
+    "Record ID": "req_d8354c332b3a",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -17472,7 +17631,10 @@
     "Frequency": "prior to analyzing patient specimens",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr10813e8157e2976/section_493_1423",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row) | [AUTO] Regulation Type reconciled to Facility-Based: the CoP obligates the provider to ensure qualified personnel; portability of the underlying credential does not move the duty",
-    "Record ID": "req_eea02fae4118"
+    "Record ID": "req_eea02fae4118",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -17602,7 +17764,10 @@
     "Frequency": "prior to analyzing patient specimens",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr10813e8157e2976/section_493_1423",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row) | [AUTO] Regulation Type reconciled to Facility-Based: the CoP obligates the provider to ensure qualified personnel; portability of the underlying credential does not move the duty",
-    "Record ID": "req_55f851588322"
+    "Record ID": "req_55f851588322",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -18015,7 +18180,10 @@
     "Frequency": "prior to testing patients' specimens",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr2640b368593bdb0/section_493_1445",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings; [AUTO] 'All personnel' scope | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_18734beef8b6"
+    "Record ID": "req_18734beef8b6",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -18155,7 +18323,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr2640b368593bdb0/section_493_1445",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings; [AUTO] Policy hook: obligation is to establish monitoring policies; the training obligation (remedial training / continuing education) is emitted as Facility-Based | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_9670e85042b2"
+    "Record ID": "req_9670e85042b2",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -18578,7 +18749,10 @@
     "Frequency": "regular in-service training",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr2640b368593bdb0/section_493_1451",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_da20a1ed81bd"
+    "Record ID": "req_da20a1ed81bd",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -18718,7 +18892,10 @@
     "Frequency": "at least semiannually during the first year the individual tests patient specimens; thereafter at least annually",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr2640b368593bdb0/section_493_1451",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_04174126d336"
+    "Record ID": "req_04174126d336",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -18858,7 +19035,10 @@
     "Frequency": "at least semiannually during the first year the individual tests patient specimens; thereafter at least annually",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr2640b368593bdb0/section_493_1451",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_2705e3def249"
+    "Record ID": "req_2705e3def249",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -18998,7 +19178,10 @@
     "Frequency": "at least semiannually during the first year the individual tests patient specimens; thereafter at least annually",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr2640b368593bdb0/section_493_1451",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_39126ac966c7"
+    "Record ID": "req_39126ac966c7",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -19138,7 +19321,10 @@
     "Frequency": "at least semiannually during the first year the individual tests patient specimens; thereafter at least annually",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr2640b368593bdb0/section_493_1451",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_b2a1eafb13ca"
+    "Record ID": "req_b2a1eafb13ca",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -19278,7 +19464,10 @@
     "Frequency": "at least semiannually during the first year the individual tests patient specimens; thereafter at least annually",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr2640b368593bdb0/section_493_1451",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_f4cef3987224"
+    "Record ID": "req_f4cef3987224",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -19418,7 +19607,10 @@
     "Frequency": "at least semiannually during the first year the individual tests patient specimens; thereafter at least annually",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr2640b368593bdb0/section_493_1451",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_f2a4cd5d041b"
+    "Record ID": "req_f2a4cd5d041b",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -19553,7 +19745,10 @@
     "Frequency": "annually, as specified in § 493.855",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr2640b368593bdb0/section_493_1451",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings; [AUTO] Cytology-specific duty under § 493.1451(c); overlaps § 493.855 — reviewer should confirm intended de-duplication | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_ff27885c6425"
+    "Record ID": "req_ff27885c6425",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -19961,7 +20156,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr2640b368593bdb0/section_493_1463",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_7ae165811cea"
+    "Record ID": "req_7ae165811cea",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -20096,7 +20294,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr2640b368593bdb0/section_493_1463",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_113d4290d624"
+    "Record ID": "req_113d4290d624",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -20359,7 +20560,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr2640b368593bdb0/section_493_1489",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row) | [AUTO] Approval Required flipped Yes→No in QA reconciliation (approval-test.md: facility/individual certification is not training-program approval) | [AUTO] Regulation Type reconciled to Facility-Based: the CoP obligates the provider to ensure qualified personnel; portability of the underlying credential does not move the duty | [AUTO] Hours Required was \"24 semester hours\" — an academic-credit or experience-duration requirement, not a training-hours minimum; moved here and set to NR",
-    "Record ID": "req_7c171d858d65"
+    "Record ID": "req_7c171d858d65",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -20489,7 +20693,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr2640b368593bdb0/section_493_1489",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row) | [AUTO] Approval Required flipped Yes→No in QA reconciliation (approval-test.md: facility/individual certification is not training-program approval) | [AUTO] Regulation Type reconciled to Facility-Based: the CoP obligates the provider to ensure qualified personnel; portability of the underlying credential does not move the duty | [AUTO] Hours Required was \"6 semester hours\" — an academic-credit or experience-duration requirement, not a training-hours minimum; moved here and set to NR",
-    "Record ID": "req_0371f8e9f8c7"
+    "Record ID": "req_0371f8e9f8c7",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -20619,7 +20826,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr2640b368593bdb0/section_493_1489",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row) | [AUTO] Approval Required flipped Yes→No in QA reconciliation (approval-test.md: facility/individual certification is not training-program approval) | [AUTO] Regulation Type reconciled to Facility-Based: the CoP obligates the provider to ensure qualified personnel; portability of the underlying credential does not move the duty | [AUTO] Hours Required was \"6 semester hours\" — an academic-credit or experience-duration requirement, not a training-hours minimum; moved here and set to NR",
-    "Record ID": "req_c6d439f6d878"
+    "Record ID": "req_c6d439f6d878",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -20749,7 +20959,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr2640b368593bdb0/section_493_1489",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row) | [AUTO] Approval Required flipped Yes→No in QA reconciliation (approval-test.md: facility/individual certification is not training-program approval) | [AUTO] Regulation Type reconciled to Facility-Based: the CoP obligates the provider to ensure qualified personnel; portability of the underlying credential does not move the duty | [AUTO] Hours Required was \"12 semester hours\" — an academic-credit or experience-duration requirement, not a training-hours minimum; moved here and set to NR",
-    "Record ID": "req_84b4b23a1a6a"
+    "Record ID": "req_84b4b23a1a6a",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -20879,7 +21092,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr2640b368593bdb0/section_493_1489",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row) | [AUTO] Approval Required flipped Yes→No in QA reconciliation (approval-test.md: facility/individual certification is not training-program approval) | [AUTO] Regulation Type reconciled to Facility-Based: the CoP obligates the provider to ensure qualified personnel; portability of the underlying credential does not move the duty",
-    "Record ID": "req_e2b3df21bfc9"
+    "Record ID": "req_e2b3df21bfc9",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -21009,7 +21225,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr2640b368593bdb0/section_493_1489",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row) | [AUTO] Approval Required flipped Yes→No in QA reconciliation (approval-test.md: facility/individual certification is not training-program approval) | [AUTO] Regulation Type reconciled to Facility-Based: the CoP obligates the provider to ensure qualified personnel; portability of the underlying credential does not move the duty | [AUTO] Hours Required was \"At least 3 months\" — an academic-credit or experience-duration requirement, not a training-hours minimum; moved here and set to NR",
-    "Record ID": "req_694b2030dd90"
+    "Record ID": "req_694b2030dd90",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -21139,7 +21358,10 @@
     "Frequency": "NR",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_m/subjectgroup_ecfr2640b368593bdb0/section_493_1489",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row) | [AUTO] Approval Required flipped Yes→No in QA reconciliation (approval-test.md: facility/individual certification is not training-program approval) | [AUTO] Regulation Type reconciled to Facility-Based: the CoP obligates the provider to ensure qualified personnel; portability of the underlying credential does not move the duty | [AUTO] Hours Required was \"At least 50 weeks\" — an academic-credit or experience-duration requirement, not a training-hours minimum; moved here and set to NR",
-    "Record ID": "req_c773a1c20f96"
+    "Record ID": "req_c773a1c20f96",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -21812,7 +22034,10 @@
     "Frequency": "following failure of a second testing event",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_h/subjectgroup_ecfrd2d2bd8eaa3acaf/section_493_855",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_3763c07943bc"
+    "Record ID": "req_3763c07943bc",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
@@ -21947,7 +22172,10 @@
     "Frequency": "following failure of a third testing event, before resuming examination of gynecologic slides",
     "Source URL": "https://static.openlaws.us/laws/fed/cfr/title_42/chapter_iv/subchapter_g/part_493/subpart_h/subjectgroup_ecfrd2d2bd8eaa3acaf/section_493_855",
     "Notes / Research Flags": "[AUTO] Cross-setting enumeration: CLIA laboratory personnel (Part 493), 5 settings | [AUTO] Jurisdiction Setting qualified per enumerated setting (cross-setting.md: freeform setting is per-row)",
-    "Record ID": "req_0b68e71c6adc"
+    "Record ID": "req_0b68e71c6adc",
+    "Impact Types": [
+      "Training"
+    ]
   },
   {
     "Source Dataset": "Care Setting",
