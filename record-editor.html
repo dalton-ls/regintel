@@ -46,7 +46,11 @@
     .result-badge.saved { background: #15803d; color: #fff; }
     .result-badge.impact-policy { background: #ede9fe; color: #5b21b6; }
     .result-badge.impact-training { background: #dcfce7; color: #166534; }
-    .result-badge.impact-other { background: #f1f5f9; color: #475569; }
+    .result-badge.impact-procedure { background: #fef3c7; color: #92400e; }
+    .result-badge.impact-competency { background: #e0f2fe; color: #075985; }
+    .result-badge.impact-credential { background: #fce7f3; color: #9d174d; }
+    .result-badge.impact-default,
+    .result-badge.impact-legacy { background: #f1f5f9; color: #475569; }
 
     .empty-state { text-align: center; padding: 60px 24px; color: #9aaac4; }
     .empty-state svg { margin-bottom: 12px; }
@@ -89,7 +93,10 @@
     .chip { display: inline-block; background: #fff; border: 1px solid #dde1ea; border-radius: 12px; padding: 3px 10px; font-size: 11px; color: #4a5568; }
     .chip.chip-impact-policy { background: #ede9fe; color: #5b21b6; border-color: #ddd6fe; }
     .chip.chip-impact-training { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
-    .chip.chip-impact-other { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+    .chip.chip-impact-procedure { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+    .chip.chip-impact-competency { background: #e0f2fe; color: #075985; border-color: #bae6fd; }
+    .chip.chip-impact-default,
+    .chip.chip-impact-legacy { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
     .change-event-box { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: #fff8ec; border: 1px solid #f5cd87; border-radius: 6px; padding: 8px 12px; }
     .change-event-text { font-size: 12px; color: #92620a; }
     .change-event-text b { font-weight: 700; }
@@ -156,6 +163,7 @@
 
   <div class="toast" id="toast"></div>
 
+  <script src="impact-types.js"></script>
   <script>
   // Set this to the deployed Worker URL from worker/regintel-admin-proxy (see its README).
   const WORKER_URL = 'https://regintel-admin-proxy.regintel.workers.dev';
@@ -201,7 +209,6 @@
   // batches today. This checks whatever a record already carries and warns,
   // but never blocks Save, distinct from validationErrors() above which
   // guards the original required schema fields.
-  const IMPACT_TYPES = ["Policy", "Training", "Other"];
   const APPLICABILITY_ANCHOR_FIELDS = ["setting", "role", "organization_type", "profession", "activity"];
 
   function advisoryWarnings(merged) {
@@ -209,7 +216,11 @@
     const impactTypes = merged['Impact Types'];
     if (Array.isArray(impactTypes)) {
       impactTypes.forEach(t => {
-        if (!IMPACT_TYPES.includes(t)) warnings.push('Impact Types: ' + JSON.stringify(t) + ' is not one of the allowed types (Policy, Training, Other).');
+        if (!IMPACT_TYPES.includes(t) && !LEGACY_IMPACT_TYPES.includes(t)) {
+          warnings.push('Impact Types: ' + JSON.stringify(t) + ' is not one of the allowed types (' + IMPACT_TYPES.join(', ') + ').');
+        } else if (LEGACY_IMPACT_TYPES.includes(t)) {
+          warnings.push('Impact Types: ' + JSON.stringify(t) + ' is a legacy bucket — prefer a specific Impact Type.');
+        }
       });
     }
     const rules = merged['Applicability Rules'];
@@ -225,8 +236,8 @@
     if (Array.isArray(artifacts)) {
       artifacts.forEach((a, i) => {
         if (!a || typeof a !== 'object') return;
-        if (!IMPACT_TYPES.includes(a.artifact_type)) {
-          warnings.push('Organizational Artifacts[' + i + ']: artifact_type ' + JSON.stringify(a.artifact_type) + ' is not one of the allowed Impact Types (Policy, Training, Other).');
+        if (!isKnownImpactType(a.artifact_type)) {
+          warnings.push('Organizational Artifacts[' + i + ']: artifact_type ' + JSON.stringify(a.artifact_type) + ' is not one of the allowed Impact Types (' + IMPACT_TYPES.join(', ') + ').');
         }
       });
     }
@@ -246,12 +257,6 @@
   let records = [];
   let selectedId = null;
   let savedThisSession = new Set();
-
-  function impactBadgeClass(type) {
-    if (type === 'Policy') return 'impact-policy';
-    if (type === 'Training') return 'impact-training';
-    return 'impact-other';
-  }
 
   function distinctFieldValues(field) {
     const vals = new Set();
@@ -528,8 +533,8 @@
       const juris = [r['Jurisdiction Setting'], r['Jurisdiction Role']].filter(Boolean).join(' / ');
       const meta = [r['Jurisdiction'], juris, r['Citation']].filter(Boolean).join(' · ');
       const impactBadges = (Array.isArray(r['Impact Types']) ? r['Impact Types'] : [])
-        .filter(t => IMPACT_TYPES.includes(t))
-        .map(t => '<span class="result-badge ' + impactBadgeClass(t) + '">' + esc(t) + '</span>')
+        .filter(isKnownImpactType)
+        .map(t => '<span class="result-badge ' + impactEditorBadgeClass(t) + '" title="' + esc(impactTypeTitle(t)) + '">' + esc(t) + '</span>')
         .join('');
       return '<div class="result-item' + (id === selectedId ? ' selected' : '') + '" data-id="' + esc(id) + '">' +
         '<div class="result-topic">' +
@@ -602,7 +607,7 @@
 
     if (impactTypes.length) {
       rows += '<div class="tags-panel-row"><span class="tags-panel-label">Impact Types</span>' +
-        '<div class="chip-row">' + impactTypes.map(t => '<span class="chip chip-' + impactBadgeClass(t) + '">' + esc(t) + '</span>').join('') + '</div></div>';
+        '<div class="chip-row">' + impactTypes.map(t => '<span class="chip ' + impactEditorChipClass(t) + '" title="' + esc(impactTypeTitle(t)) + '">' + esc(t) + '</span>').join('') + '</div></div>';
     }
 
     if (artifacts.length) {

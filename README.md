@@ -73,11 +73,14 @@ Review. Absence = “this batch has no opinion,” not “clear the field.”
 - `Change Type`, `Change Detected Date`, `Change Source Path` — source-level
   temporal tags from the pre-site OpenLaws diff
 - `Applicability Rules` — array of rule objects
-- `Impact Types` — array of **Policy**, **Training**, and/or **Other**
+- `Impact Types` — array of tags from the Phase 4 closed taxonomy (Policy,
+  Procedure, Training, Competency, Credential, Documentation, Workflow,
+  Staffing, Reporting, Audit, Physical Environment). One row may carry
+  several. See [`impact-types.js`](impact-types.js).
 - `Organizational Artifacts` — array of ID’d artifact objects
 
-The site uses three Impact Types on purpose (not the longer implementation
-taxonomy). One row may carry more than one.
+Legacy `Other` values may appear on older rows; prefer specific types when
+reviewing new batches.
 
 ### Operator notes
 
@@ -183,6 +186,8 @@ is).
 | `role.json` / `caresetting.json` | Legacy per-type files consumed by `migrate_to_unified.py` |
 | `migrate_to_unified.py` | One-time / full regeneration of `requirements.json` |
 | `normalize_batch.py` | Normalize one already-extracted sheet for Pending Review |
+| `impact-types.js` | Phase 4 Impact Type closed taxonomy (shared by admin + research UI) |
+| `index.html` | Taxonomy home — regulatory reality vs product vs implementation |
 | `DESIGN.md` | Site boundary, projection schema, admin workflow |
 | `worker/regintel-admin-proxy/` | Cloudflare Worker that commits `requirements.json` |
 | `ingest.html` | WR ingest only |

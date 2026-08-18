@@ -119,6 +119,7 @@
 
   <div class="toast" id="toast"></div>
 
+  <script src="impact-types.js"></script>
   <script>
   // Set this to the deployed Worker URL from worker/regintel-admin-proxy (see its README).
   const WORKER_URL = 'https://regintel-admin-proxy.regintel.workers.dev';
@@ -143,7 +144,6 @@
   // arrays of structured objects, and this screen's newValue box is a plain
   // comma-split text input with no JSON parsing -- bulk-editing those safely
   // would need real UI work this round didn't scope.
-  const IMPACT_TYPES = ["Policy", "Training", "Other"];
 
   // Fields offered as filters (single-value dropdowns).
   const FILTER_FIELDS = [
@@ -261,7 +261,7 @@
   function updateValueHint() {
     const field = document.getElementById('targetField').value;
     document.getElementById('valueHint').textContent =
-      field === 'Impact Types' ? 'Comma-separated list, from: ' + IMPACT_TYPES.join(', ') :
+      field === 'Impact Types' ? 'Comma-separated list, from: ' + IMPACT_TYPES.join(', ') + (LEGACY_IMPACT_TYPES.length ? ' (legacy: ' + LEGACY_IMPACT_TYPES.join(', ') + ')' : '') :
       ARRAY_FIELDS.has(field) ? 'Comma-separated list (HSTM Role is multi-value)' :
       'Leave blank to clear the field';
   }
@@ -357,10 +357,10 @@
     // above. Impact Types is a closed vocabulary but an additive field, so a
     // typo gets flagged rather than blocking the whole bulk operation.
     if (field === 'Impact Types' && Array.isArray(newVal)) {
-      const badValues = newVal.filter(v => !IMPACT_TYPES.includes(v));
+      const badValues = newVal.filter(v => !IMPACT_TYPES.includes(v) && !LEGACY_IMPACT_TYPES.includes(v));
       if (badValues.length) {
         body += '<div class="advisory-note">Heads up: ' + badValues.map(v => JSON.stringify(v)).join(', ') +
-          ' not one of the allowed Impact Types (Policy, Training, Other). Will still apply if you continue.</div>';
+          ' not one of the allowed Impact Types (' + IMPACT_TYPES.join(', ') + '). Will still apply if you continue.</div>';
       }
     }
 

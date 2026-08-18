@@ -144,6 +144,7 @@
 
   <div class="toast" id="toast"></div>
 
+  <script src="impact-types.js"></script>
   <script>
   // Set this to the deployed Worker URL from worker/regintel-admin-proxy (see its README).
   const WORKER_URL = 'https://regintel-admin-proxy.regintel.workers.dev';
@@ -189,11 +190,8 @@
   const FIELDS_ADDED_FOR_APPLICABILITY = new Set(["Applicability Rules"]);
   const FIELDS_ADDED_FOR_ARTIFACTS = new Set(["Organizational Artifacts"]);
 
-  // Impact Type (Phase 4): additive, array-of-STRINGS from a fixed
-  // vocabulary (Policy, Training, Other) -- unlike Applicability
-  // Rules, there's no per-entry structure to carry, so this reuses the
-  // plain ARRAY_FIELDS comma-split/join treatment already built for HSTM
-  // Role instead of needing JSON_FIELDS' parse/stringify path.
+  // Impact Type (Phase 4): additive, array-of-STRINGS from the closed
+  // taxonomy in impact-types.js — reuses ARRAY_FIELDS like HSTM Role.
   const FIELDS_ADDED_FOR_IMPACT = new Set(["Impact Types"]);
 
   function deriveExplicitTraining(requirementLevel) {
@@ -204,7 +202,6 @@
   // Warn, never block -- distinct from the hard-blocking anchor-rule check
   // in applyResolutions() below, which guards the original required schema
   // fields. Mirrors the same logic in record-editor.html.
-  const IMPACT_TYPES = ["Policy", "Training", "Other"];
   const APPLICABILITY_ANCHOR_FIELDS = ["setting", "role", "organization_type", "profession", "activity"];
 
   function advisoryWarnings(resolved) {
@@ -212,7 +209,11 @@
     const impactTypes = resolved['Impact Types'];
     if (Array.isArray(impactTypes)) {
       impactTypes.forEach(t => {
-        if (!IMPACT_TYPES.includes(t)) warnings.push('Impact Types: ' + JSON.stringify(t) + ' is not one of the allowed types (Policy, Training, Other).');
+        if (!IMPACT_TYPES.includes(t) && !LEGACY_IMPACT_TYPES.includes(t)) {
+          warnings.push('Impact Types: ' + JSON.stringify(t) + ' is not one of the allowed types (' + IMPACT_TYPES.join(', ') + ').');
+        } else if (LEGACY_IMPACT_TYPES.includes(t)) {
+          warnings.push('Impact Types: ' + JSON.stringify(t) + ' is a legacy bucket — prefer a specific Impact Type.');
+        }
       });
     }
     const rules = resolved['Applicability Rules'];
@@ -228,8 +229,8 @@
     if (Array.isArray(artifacts)) {
       artifacts.forEach((a, i) => {
         if (!a || typeof a !== 'object') return;
-        if (!IMPACT_TYPES.includes(a.artifact_type)) {
-          warnings.push('Organizational Artifacts[' + i + ']: artifact_type ' + JSON.stringify(a.artifact_type) + ' is not one of the allowed Impact Types (Policy, Training, Other).');
+        if (!isKnownImpactType(a.artifact_type)) {
+          warnings.push('Organizational Artifacts[' + i + ']: artifact_type ' + JSON.stringify(a.artifact_type) + ' is not one of the allowed Impact Types (' + IMPACT_TYPES.join(', ') + ').');
         }
       });
     }
@@ -252,7 +253,6 @@
   let newRecords = [];  // incoming records with unknown Record ID
   let lastIncomingAll = []; // full uploaded batch for scope summary
 
-  const SCOPE_IMPACT_TYPES = ['Policy', 'Training', 'Other'];
   const scopeFilters = {
     jurisdiction: '',
     hstmSetting: '',
@@ -264,7 +264,7 @@
   function recordImpactTypes(rec) {
     const types = rec['Impact Types'];
     if (!Array.isArray(types) || !types.length) return ['(untagged)'];
-    const kept = types.filter(t => SCOPE_IMPACT_TYPES.includes(t));
+    const kept = types.filter(isKnownImpactType);
     return kept.length ? kept : ['(untagged)'];
   }
 
@@ -304,7 +304,7 @@
     const settings = new Set();
     const roles = new Set();
     const regulationTypes = new Set();
-    const byImpact = { Policy: 0, Training: 0, Other: 0, '(untagged)': 0 };
+    const byImpact = initImpactTypeCounts();
     const byJurisdiction = {};
     const bySetting = {};
     const byRole = {};
@@ -397,7 +397,7 @@
           sel('hstmSetting', scopeFilters.hstmSetting, opts.settings, 'HSTM Setting') +
           sel('hstmRole', scopeFilters.hstmRole, opts.roles, 'HSTM Role') +
           sel('regulationType', scopeFilters.regulationType, opts.regulationTypes, 'Regulation Type') +
-          sel('impactType', scopeFilters.impactType, [...SCOPE_IMPACT_TYPES, '(untagged)'], 'Impact Type') +
+          sel('impactType', scopeFilters.impactType, [...IMPACT_TYPES, ...LEGACY_IMPACT_TYPES, '(untagged)'], 'Impact Type') +
           '<button type="button" class="scope-clear" id="scopeClearBtn">Clear filters</button>' +
         '</div>' +
         '<div class="scope-grid">' +
@@ -408,7 +408,7 @@
             '<div class="scope-stat"><strong>' + stats.roles.length + '</strong> role(s)</div>' +
           '</div>' +
           '<div class="scope-card"><h3>By impact type</h3>' +
-            SCOPE_IMPACT_TYPES.concat(['(untagged)']).map(t =>
+            IMPACT_TYPES.concat(LEGACY_IMPACT_TYPES).concat(['(untagged)']).map(t =>
               '<div class="scope-stat"><strong>' + (stats.byImpact[t] || 0) + '</strong> ' + esc(t) + '</div>'
             ).join('') +
           '</div>' +

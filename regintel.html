@@ -305,7 +305,17 @@
     .badge-type      { background: #f1f5f9; color: #4a5568; border: 1px solid #e8ecf0; white-space: nowrap; text-align: left; border-radius: 20px; }
     .badge-impact-policy   { background: #ede9fe; color: #5b21b6; border-color: #ddd6fe; }
     .badge-impact-training { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
-    .badge-impact-other    { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
+    .badge-impact-procedure { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+    .badge-impact-competency { background: #e0f2fe; color: #075985; border-color: #bae6fd; }
+    .badge-impact-credential { background: #fce7f3; color: #9d174d; border-color: #fbcfe8; }
+    .badge-impact-documentation { background: #f3f4f6; color: #374151; border-color: #e5e7eb; }
+    .badge-impact-workflow { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
+    .badge-impact-staffing { background: #fff7ed; color: #9a3412; border-color: #fed7aa; }
+    .badge-impact-reporting { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .badge-impact-audit { background: #faf5ff; color: #6b21a8; border-color: #e9d5ff; }
+    .badge-impact-environment { background: #f0fdf4; color: #166534; border-color: #bbf7d0; }
+    .badge-impact-default,
+    .badge-impact-legacy { background: #f1f5f9; color: #475569; border-color: #e2e8f0; }
     .badge-source    { background: #eef3fb; color: #2463eb; border: 1px solid #c7d7f8; text-decoration: none; }
     .badge-source:hover { background: #dce8fb; }
 
@@ -794,6 +804,7 @@
     <div id="drawer"></div>
   </div><!-- /body-row -->
 
+  <script src="impact-types.js"></script>
   <script>
   // ─── Shared note for all NALPN rows ───
   const NALPN_NOTE = 'NALPN is a membership association; these standards are not mandated by any state or federal body and carry no enforcement mechanism. Content built against these rows is competency-positioned, not compliance-driven. Standards applicable across all states.';
@@ -885,12 +896,8 @@ let selectedRole        = null;
   // and hidden until content is tagged. See applicabilityTokens() below.
   let ALL_APPLICABILITY_VALUES = [];
 
-  // Impact Type facet (Phase 4). Fixed, closed vocabulary — not mutually
-  // exclusive; a record may carry any combination of Policy, Training, Other.
-  // Shown unconditionally in the filter dropdown (same pattern as Requirement
-  // Level / Authority Level pre-load defaults).
-  const IMPACT_TYPES = ["Policy", "Training", "Other"];
-  const ALL_IMPACT_TYPES = IMPACT_TYPES;
+  // Impact Type facet (Phase 4). Closed taxonomy — not mutually exclusive.
+  let ALL_IMPACT_TYPES = IMPACT_TYPES.slice();
   const STATE_NAMES       = {CA:'California', FL:'Florida', US:'United States'};
   const STATE_ORDER       = ['CA','FL','US'];
 
@@ -955,7 +962,7 @@ let selectedRole        = null;
   // ─── Organizational Artifact helpers (Phase 5) ───
   // Deliberately no filter dropdown for this one: artifact_type is drawn
   // from the same fixed vocabulary the Impact Type filter already covers
-  // (Policy, Training, Other), so a second filter on the same values
+  // from the same closed Impact Type vocabulary, so a second filter on the same values
   // would just duplicate that dropdown. This is display-only — see the
   // artifact chips in the drawer's Metadata tab.
   function artifactSummaries(artifacts) {
@@ -1042,26 +1049,20 @@ let selectedRole        = null;
   }
 
   function unionImpactTypes(rows) {
-    return [...new Set(rows.flatMap(r => Array.isArray(r.impact_types) ? r.impact_types : []).filter(t => IMPACT_TYPES.includes(t)))];
-  }
-
-  function impactBadgeClass(type) {
-    if (type === 'Policy') return 'badge-impact-policy';
-    if (type === 'Training') return 'badge-impact-training';
-    return 'badge-impact-other';
+    return [...new Set(rows.flatMap(r => Array.isArray(r.impact_types) ? r.impact_types : []).filter(isKnownImpactType))];
   }
 
   function renderImpactBadges(row) {
     if (isSubTopic(row)) return '';
-    const types = Array.isArray(row.impact_types) ? row.impact_types.filter(t => IMPACT_TYPES.includes(t)) : [];
+    const types = Array.isArray(row.impact_types) ? row.impact_types.filter(isKnownImpactType) : [];
     if (!types.length) return '';
-    return types.map(t => `<span class="badge badge-type ${impactBadgeClass(t)}">${esc(t)}</span>`).join('');
+    return types.map(t => `<span class="badge badge-type ${impactBadgeClass(t)}" title="${esc(impactTypeTitle(t))}">${esc(t)}</span>`).join('');
   }
 
   function renderImpactChips(types) {
-    const list = Array.isArray(types) ? types.filter(t => IMPACT_TYPES.includes(t)) : [];
+    const list = Array.isArray(types) ? types.filter(isKnownImpactType) : [];
     if (!list.length) return '';
-    return `<div class="chip-row">${list.map(t => `<span class="chip ${impactBadgeClass(t)}" style="border-width:1px;border-style:solid;">${esc(t)}</span>`).join('')}</div>`;
+    return `<div class="chip-row">${list.map(t => `<span class="chip ${impactBadgeClass(t)}" style="border-width:1px;border-style:solid;" title="${esc(impactTypeTitle(t))}">${esc(t)}</span>`).join('')}</div>`;
   }
 
   function mergeSettingVariants(rows) {
@@ -1806,11 +1807,12 @@ let selectedRole        = null;
     ALL_REQUIREMENT_LEVELS  = [...new Set([...DATA, ...CARE_DATA].map(r => r.requirement_level).filter(Boolean))];
     ALL_AUTHORITY_LEVELS    = [...new Set([...DATA, ...CARE_DATA].map(r => r.authority_level).filter(Boolean))];
     ALL_APPLICABILITY_VALUES = [...new Set([...DATA, ...CARE_DATA].flatMap(r => applicabilityTokens(r.applicability_rules)))].sort();
+    ALL_IMPACT_TYPES = buildImpactTypeFacetValues([...DATA, ...CARE_DATA]);
     filterState.jurisdictions = new Set(ALL_JURISDICTIONS);
     filterState.requirementLevels   = new Set(ALL_REQUIREMENT_LEVELS);
     filterState.authorityLevels     = new Set(ALL_AUTHORITY_LEVELS);
     filterState.applicabilityValues = new Set(ALL_APPLICABILITY_VALUES);
-    filterState.impactTypes         = new Set(ALL_IMPACT_TYPES); // fixed vocabulary, not re-derived
+    filterState.impactTypes         = new Set(ALL_IMPACT_TYPES);
 
     // Facility/Learner Applicability Profile facets (Phase 6) — derived from
     // the FULL flat dataset (both lanes), since a profile query isn't
@@ -2135,11 +2137,12 @@ let selectedRole        = null;
     ALL_REQUIREMENT_LEVELS = [...new Set([...DATA, ...CARE_DATA].map(r => r.requirement_level).filter(Boolean))];
     ALL_AUTHORITY_LEVELS   = [...new Set([...DATA, ...CARE_DATA].map(r => r.authority_level).filter(Boolean))];
     ALL_APPLICABILITY_VALUES = [...new Set([...DATA, ...CARE_DATA].flatMap(r => applicabilityTokens(r.applicability_rules)))].sort();
+    ALL_IMPACT_TYPES = buildImpactTypeFacetValues([...DATA, ...CARE_DATA]);
     filterState.jurisdictions = new Set(ALL_JURISDICTIONS);
     filterState.requirementLevels = new Set(ALL_REQUIREMENT_LEVELS);
     filterState.authorityLevels = new Set(ALL_AUTHORITY_LEVELS);
     filterState.applicabilityValues = new Set(ALL_APPLICABILITY_VALUES);
-    filterState.impactTypes = new Set(ALL_IMPACT_TYPES); // fixed vocabulary, not re-derived
+    filterState.impactTypes = new Set(ALL_IMPACT_TYPES);
     ALL_HSTM_SETTINGS = [...new Set([...DATA, ...CARE_DATA].map(r => r.hstm_setting).filter(Boolean))].sort();
     ALL_HSTM_ROLES = [...new Set([...DATA, ...CARE_DATA].flatMap(r => Array.isArray(r.hstm_role) ? r.hstm_role : (r.hstm_role ? [r.hstm_role] : [])))].sort();
     render();

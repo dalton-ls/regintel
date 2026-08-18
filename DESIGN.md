@@ -26,7 +26,7 @@ not the parser, not the source corpus, and not the ontology.
 The underlying question is no longer “does this regulation create a
 training obligation?” It is: **what obligations does this source create,
 who/what do they apply to, and which HealthStream product types
-(Policy / Training / Other) are affected?**
+what HealthStream product types are affected?**
 
 ## 2. System boundary — parsing happens before the site
 
@@ -142,14 +142,17 @@ that way so an older extraction sheet cannot blank newer fields.
 | Change Detected Date | ISO date | — | Diff run timestamp |
 | Change Source Path | string | — | OpenLaws path that triggered the match |
 | Applicability Rules | array of objects | Anchor: setting / role / organization_type / profession / activity | Human-authored via Pending Review |
-| Impact Types | array of strings | **Policy, Training, Other** | Human-authored via Pending Review |
+| Impact Types | array of strings | **Policy, Procedure, Training, Competency, Credential, Documentation, Workflow, Staffing, Reporting, Audit, Physical Environment** | Human-authored via Pending Review |
 | Organizational Artifacts | array of objects | `artifact_type` ∈ Impact Types | Human-authored via Pending Review (placeholder catalog until a real HSTM catalog exists) |
 
-The site’s Impact Type vocabulary is **Policy / Training / Other**. That
-is intentional product routing: three filters, not eleven. A requirement
-may carry more than one. `"Other"` covers competency, documentation,
-staffing, reporting, and the rest of the implementation taxonomy without
-exploding the UI.
+Impact Type is a **closed taxonomy** (Phase 4). One obligation may carry
+**multiple** tags — e.g. Policy + Training + Documentation at once. Impact
+Type names **what kind** of organizational response is required; Phase 5's
+Organizational Artifacts name the specific **which** (which policy, which
+module). Definitions live in [`impact-types.js`](impact-types.js).
+
+Legacy rows may still carry `Other` from an earlier product-routing pass;
+the site displays it but advises replacing it with specific types.
 
 Applicability Rule is a parallel, additive check. It does **not** replace
 the output-row anchor (Setting OR Role). A rule with only
@@ -167,7 +170,7 @@ apply to this *type* of facility/learner?” across both extraction lanes.
 When a classified batch is uploaded into Pending Review, the queue shows
 **type-level scope** for the incoming rows: how many and which care
 settings, how many and which roles, for which jurisdictions, broken down
-by Impact Type (Policy / Training / Other). Those dimensions are
+by Impact Type (the Phase 4 closed taxonomy). Those dimensions are
 filterable. Nothing here is a headcount of learners or a count of a
 named customer’s policies.
 
