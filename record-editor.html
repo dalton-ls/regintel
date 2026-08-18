@@ -203,7 +203,7 @@
     return requirementLevel === 'Explicit Training' ? 'Yes' : 'No';
   }
 
-  // ─── Phase 3/4/5 advisory checks (Dalton, 2026-08-17) ───
+  // ─── Phase 3/4 advisory checks ───
   // These fields are additive and not yet part of UNIFIED_FIELDS' editable
   // form grid above -- they're only ever written via Pending Review Queue
   // batches today. This checks whatever a record already carries and warns,
@@ -231,6 +231,18 @@
           warnings.push('Applicability Rules[' + i + ']: no anchor field populated (needs at least one of ' + APPLICABILITY_ANCHOR_FIELDS.join('/') + ').');
         }
       });
+    }
+    const judgment = readImpactJudgment(merged);
+    if (judgment.confidence && !isKnownImpactConfidence(judgment.confidence)) {
+      warnings.push('Impact Confidence: ' + JSON.stringify(judgment.confidence) + ' is not one of High, Medium, Low.');
+    }
+    if (judgment.hasTypesField && !judgment.basis) {
+      warnings.push(judgment.types.length
+        ? 'Impact Basis is empty — parser judgments should carry a short evidence rationale.'
+        : 'Impact Types is an empty list with no Impact Basis.');
+    }
+    if (judgment.review === true) {
+      warnings.push('Impact Review is flagged — this first-pass judgment needs QA.');
     }
     return warnings;
   }
@@ -324,6 +336,7 @@
   function computePropagation(record, allRecords) {
     const selfId = record['Record ID'];
     const setting = record['HSTM Setting'];
+    const jurisdiction = record['Jurisdiction'];
     const roles = _recordHstmRoles(record);
     const impactTypes = _recordImpactTypes(record);
     const related = new Set();
@@ -333,6 +346,14 @@
       allRecords.forEach(r => {
         if (r['Record ID'] === selfId) return;
         if (r['HSTM Setting'] === setting) { settingOverlapCount++; related.add(r['Record ID']); }
+      });
+    }
+
+    let jurisdictionOverlapCount = 0;
+    if (jurisdiction) {
+      allRecords.forEach(r => {
+        if (r['Record ID'] === selfId) return;
+        if (r['Jurisdiction'] === jurisdiction) { jurisdictionOverlapCount++; related.add(r['Record ID']); }
       });
     }
 
@@ -361,8 +382,10 @@
     return {
       recordId: selfId, changeType: record['Change Type'] || null,
       hstmSetting: setting || null, hstmRoles: roles,
+      jurisdiction: jurisdiction || null,
       impactTypes: impactTypes,
       settingOverlapCount: settingOverlapCount,
+      jurisdictionOverlapCount: jurisdictionOverlapCount,
       roleOverlapCounts: roleOverlapCounts,
       impactTypeOverlapCounts: impactTypeOverlapCounts,
       relatedRecordIds: Array.from(related).sort(),
@@ -374,6 +397,7 @@
     const rep = computePropagation(record, allRecords);
     const parts = [];
     if (rep.hstmSetting) parts.push(rep.settingOverlapCount + ' via HSTM Setting (' + esc(rep.hstmSetting) + ')');
+    if (rep.jurisdiction) parts.push(rep.jurisdictionOverlapCount + ' via Jurisdiction (' + esc(rep.jurisdiction) + ')');
     Object.keys(rep.roleOverlapCounts).forEach(role => parts.push(rep.roleOverlapCounts[role] + ' via HSTM Role (' + esc(role) + ')'));
     Object.keys(rep.impactTypeOverlapCounts).forEach(t => parts.push(rep.impactTypeOverlapCounts[t] + ' via Impact Type (' + esc(t) + ')'));
 
@@ -546,10 +570,11 @@
   // Display only -- editing these still happens through Pending Review Queue.
   function renderTagsPanel(record) {
     const hasChangeEvent = !!record['Change Type'];
-    const impactTypes = Array.isArray(record['Impact Types']) ? record['Impact Types'] : [];
     const rules = Array.isArray(record['Applicability Rules']) ? record['Applicability Rules'] : [];
+    const judgment = readImpactJudgment(record);
+    const hasImpactJudgment = judgment.hasTypesField || judgment.basis || judgment.confidence || judgment.review !== null;
 
-    if (!hasChangeEvent && !impactTypes.length && !rules.length) return '';
+    if (!hasChangeEvent && !hasImpactJudgment && !rules.length) return '';
 
     let rows = '';
 
@@ -578,10 +603,24 @@
         '<div class="chip-row">' + summaries.map(s => '<span class="chip">' + esc(s) + '</span>').join('') + '</div></div>';
     }
 
-    if (impactTypes.length) {
+    if (hasImpactJudgment) {
+      const typeChips = judgment.types.length
+        ? judgment.types.map(t => '<span class="chip ' + impactEditorChipClass(t) + '" title="' + esc(impactTypeTitle(t)) + '">' + esc(t) + '</span>').join('')
+        : (judgment.hasTypesField ? '<span class="chip">None (reasoned)</span>' : '');
+      const meta = [];
+      if (judgment.confidence) meta.push('<b>' + esc(judgment.confidence) + '</b> confidence');
+      if (judgment.review === true) meta.push('<b>Needs QA</b>');
+      else if (judgment.review === false) meta.push('QA not flagged');
       rows += '<div class="tags-panel-row"><span class="tags-panel-label">Impact Types</span>' +
-        '<div class="chip-row">' + impactTypes.map(t => '<span class="chip ' + impactEditorChipClass(t) + '" title="' + esc(impactTypeTitle(t)) + '">' + esc(t) + '</span>').join('') + '</div>' +
-        '<div class="propagation-summary" style="margin-top:6px">Infer affected downstream products (policy, training, etc.) from these tags plus HSTM Setting/Role — RegIntel does not store catalog artifact IDs.</div></div>';
+        (typeChips ? '<div class="chip-row">' + typeChips + '</div>' : '') +
+        (meta.length || judgment.basis
+          ? '<div class="propagation-summary" style="margin-top:6px">' +
+              (meta.length ? meta.join(' · ') + '. ' : '') +
+              (judgment.basis ? esc(judgment.basis) + ' ' : '') +
+              'Infer affected downstream products from these tags plus HSTM Setting/Role and jurisdiction setting/role — RegIntel does not store catalog artifact IDs.' +
+            '</div>'
+          : '<div class="propagation-summary" style="margin-top:6px">Parser-assigned response category. Infer affected downstream products from these tags plus HSTM Setting/Role and jurisdiction setting/role — RegIntel does not store catalog artifact IDs.</div>') +
+        '</div>';
     }
 
     return '<div class="tags-panel">' + rows + '</div>';

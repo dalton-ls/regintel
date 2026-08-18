@@ -132,9 +132,11 @@ OPTIONAL_ENRICHMENT_FIELDS = [
     "Obligation ID",
     "Change Type", "Change Detected Date", "Change Source Path",
     "Applicability Rules", "Impact Types",
+    "Impact Basis", "Impact Confidence", "Impact Review",
 ]
 
 ARRAY_FIELDS = {"HSTM Role", "Impact Types"}
+BOOLEAN_FIELDS = {"Impact Review"}
 JSON_FIELDS = {"Applicability Rules"}
 INTEGER_FIELDS = {"Hours Required"}
 PIPE_NULL = {"nan", "NaN", "None", "none", ""}
@@ -145,6 +147,7 @@ PIPE_NULL = {"nan", "NaN", "None", "none", ""}
 REQUIREMENT_LEVEL_VALUES = {"Explicit Training", "Other Training Reference"}
 AUTHORITY_LEVEL_VALUES = {"Federal Floor", "State Floor", "Competency"}
 APPROVAL_REQUIRED_VALUES = {"Yes", "No"}
+IMPACT_CONFIDENCE_VALUES = {"High", "Medium", "Low"}
 
 # A Requirement Level of State Floor / Federal Floor / Competency means the
 # sheet predates the 18 -> 20 split. "Explicit Training" is deliberately NOT in
@@ -226,6 +229,24 @@ def clean_scalar(val, field):
     return strip_stray_asterisk(s)
 
 
+def to_bool(val):
+    """Parse an optional boolean enrichment cell. Absent/blank returns None."""
+    if val is None:
+        return None
+    if pd is not None and pd.isna(val):
+        return None
+    if isinstance(val, bool):
+        return val
+    s = str(val).strip().lower()
+    if s in PIPE_NULL:
+        return None
+    if s in {"true", "yes", "1"}:
+        return True
+    if s in {"false", "no", "0"}:
+        return False
+    return val
+
+
 def clean_json_array(val, field):
     """Parse a JSON array from an optional enrichment cell.
 
@@ -256,6 +277,8 @@ def normalize_row(raw_row, source_dataset):
             value = clean_json_array(raw_val, field)
         elif field in ARRAY_FIELDS:
             value = to_array(raw_val)
+        elif field in BOOLEAN_FIELDS:
+            value = to_bool(raw_val)
         else:
             value = clean_scalar(raw_val, field)
         if value is not None:
@@ -384,6 +407,25 @@ def validate(records, known_values):
                 + " disagrees with Requirement Level " + repr(requirement_level)
                 + " (expected " + repr(expected_explicit) + ") -- it is a derived "
                 "field and should not be supplied independently"
+            )
+
+        confidence = record.get("Impact Confidence")
+        if confidence is not None and confidence not in IMPACT_CONFIDENCE_VALUES:
+            warnings.append(
+                record_id + ": Impact Confidence " + repr(confidence)
+                + " is not one of " + ", ".join(sorted(IMPACT_CONFIDENCE_VALUES))
+            )
+        review = record.get("Impact Review")
+        if review is not None and not isinstance(review, bool):
+            warnings.append(
+                record_id + ": Impact Review " + repr(review)
+                + " should be true/false (or Yes/No on the sheet)"
+            )
+        impact_types = record.get("Impact Types")
+        if isinstance(impact_types, list) and impact_types and not record.get("Impact Basis"):
+            warnings.append(
+                record_id + ": Impact Types is tagged but Impact Basis is empty — "
+                "parser judgments should carry a short evidence rationale"
             )
 
         if known_values.get("Jurisdiction") and record.get("Jurisdiction") not in known_values["Jurisdiction"]:

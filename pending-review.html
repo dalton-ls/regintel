@@ -112,7 +112,7 @@
 
   <div class="page-wrap">
     <h1 class="page-title">Pending Review Queue</h1>
-    <p class="page-desc">Upload a <strong>classified requirements JSON batch</strong> from the pre-site extraction pipeline (already-parsed output rows, change tags, or applicability/impact tags). Each record is matched by Record ID against the current projection. New IDs can be added directly; records whose content differs are queued as conflicts with a field-by-field diff. <strong>Nothing is applied automatically</strong> — for each conflict you choose to keep existing, use incoming, or manually reconcile, then apply your resolutions. The scope summary below shows type-level affected settings, roles, and jurisdictions — not customer headcounts or downstream product catalog IDs.</p>
+    <p class="page-desc">Upload a <strong>classified requirements JSON batch</strong> from the pre-site extraction pipeline (already-parsed output rows, change tags, applicability rules, or parser-assigned Impact Types). Each record is matched by Record ID against the current projection. New IDs can be added directly; records whose content differs are queued as conflicts with a field-by-field diff. <strong>Nothing is applied automatically</strong> — for each conflict you choose to keep existing, use incoming, or manually reconcile. Impact Type review here is QA/override of parser judgment, not primary tagging. The scope summary below shows type-level affected settings, roles, and jurisdictions — not customer headcounts or downstream product catalog IDs.</p>
 
     <div class="upload-zone" id="uploadZone">
       <div class="upload-icon">
@@ -161,9 +161,10 @@
     "Source URL", "Notes / Research Flags",
     "Change Type", "Change Detected Date", "Change Source Path",
     "Applicability Rules",
-    "Impact Types"
+    "Impact Types", "Impact Basis", "Impact Confidence", "Impact Review"
   ];
   const ARRAY_FIELDS = new Set(["HSTM Role", "Impact Types"]);
+  const BOOLEAN_FIELDS = new Set(["Impact Review"]);
 
   // Fields added in the 18 -> 20 schema split. A batch produced by an older
   // sheet simply won't have these keys, which is NOT the same as arriving with
@@ -184,7 +185,7 @@
 
   // Impact Type (Phase 4): additive, array-of-STRINGS from the closed
   // taxonomy in impact-types.js — reuses ARRAY_FIELDS like HSTM Role.
-  const FIELDS_ADDED_FOR_IMPACT = new Set(["Impact Types"]);
+  const FIELDS_ADDED_FOR_IMPACT = new Set(["Impact Types", "Impact Basis", "Impact Confidence", "Impact Review"]);
 
   function deriveExplicitTraining(requirementLevel) {
     return requirementLevel === 'Explicit Training' ? 'Yes' : 'No';
@@ -207,6 +208,20 @@
           warnings.push('Impact Types: ' + JSON.stringify(t) + ' is a legacy bucket — prefer a specific Impact Type.');
         }
       });
+    }
+    const judgment = readImpactJudgment(resolved);
+    if (judgment.confidence && !isKnownImpactConfidence(judgment.confidence)) {
+      warnings.push('Impact Confidence: ' + JSON.stringify(judgment.confidence) + ' is not one of High, Medium, Low.');
+    }
+    if (judgment.hasTypesField && !judgment.basis) {
+      if (!judgment.types.length) {
+        warnings.push('Impact Types is an empty list with no Impact Basis — empty is only valid when the classifier reasoned that no supported response is present.');
+      } else {
+        warnings.push('Impact Basis is empty — parser judgments should carry a short evidence rationale.');
+      }
+    }
+    if (judgment.review === true) {
+      warnings.push('Impact Review is flagged — this first-pass judgment needs QA before it should be treated as settled.');
     }
     const rules = resolved['Applicability Rules'];
     if (Array.isArray(rules)) {
@@ -374,7 +389,7 @@
     panel.innerHTML =
       '<div class="scope-panel">' +
         '<div class="scope-panel-title">Type-level scope — new + conflict records</div>' +
-        '<div class="scope-panel-desc">Archetype counts for rows that would change the live projection (new Record IDs and conflicts). Filter by jurisdiction, HSTM Setting, HSTM Role, Regulation Type, or Impact Type. Use Impact Type + setting/role to infer downstream products — RegIntel does not store catalog artifact IDs. This is not a customer facility or learner headcount.</div>' +
+        '<div class="scope-panel-desc">Archetype counts for rows that would change the live projection (new Record IDs and conflicts). Filter by jurisdiction, HSTM Setting, HSTM Role, Regulation Type, or Impact Type. Impact Types are parser-assigned response categories; infer downstream products from those tags plus setting/role — RegIntel does not store catalog artifact IDs. This is not a customer facility or learner headcount.</div>' +
         '<div class="scope-filters">' +
           sel('jurisdiction', scopeFilters.jurisdiction, opts.jurisdictions, 'Jurisdiction') +
           sel('hstmSetting', scopeFilters.hstmSetting, opts.settings, 'HSTM Setting') +
@@ -469,6 +484,10 @@
     return JSON.stringify(v == null ? null : v);
   }
   function displayVal(v, field) {
+    if (BOOLEAN_FIELDS.has(field)) {
+      const label = formatImpactReview(v);
+      return label || '(empty)';
+    }
     if (v == null || v === '') return '(empty)';
     if (JSON_FIELDS.has(field)) return Array.isArray(v) && v.length ? JSON.stringify(v) : '(empty)';
     if (Array.isArray(v)) return v.length ? v.join(', ') : '(empty)';
@@ -601,7 +620,7 @@
               (FIELDS_ADDED_IN_20.has(f) && !present ? ' <span class="muted">(new in 20-field schema)</span>' : '') +
               (FIELDS_ADDED_FOR_CHANGE_EVENTS.has(f) && !present ? ' <span class="muted">(Change Event field)</span>' : '') +
               (FIELDS_ADDED_FOR_APPLICABILITY.has(f) && !present ? ' <span class="muted">(Applicability Rule field)</span>' : '') +
-              (FIELDS_ADDED_FOR_IMPACT.has(f) && !present ? ' <span class="muted">(Impact Type field)</span>' : '') +
+              (FIELDS_ADDED_FOR_IMPACT.has(f) && !present ? ' <span class="muted">(parser judgment field)</span>' : '') +
             '</td>' +
             '<td class="val-existing">' + esc(displayVal(c.existing[f], f)) + '</td>' +
             '<td class="val-incoming">' + incomingCell +
@@ -658,6 +677,7 @@
       try { return JSON.parse(val); }
       catch { showToast('Invalid JSON in ' + field + ' -- kept as empty array'); return []; }
     }
+    if (BOOLEAN_FIELDS.has(field)) return normalizeImpactReview(val);
     if (ARRAY_FIELDS.has(field)) return val ? val.split(',').map(s => s.trim()).filter(Boolean) : [];
     return val === '' ? null : val;
   }

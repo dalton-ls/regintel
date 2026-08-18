@@ -1,12 +1,14 @@
 # RegIntel — Site Design
 
-> **Status: live.** Phases 1–7 of the knowledge-architecture vision are in
-> the site. This document describes what the **site** is, what happens
-> before it is populated, and how the current flattened projection maps
-> to that architecture. Field-level extraction rules live in
-> `PHASE 1/Metadata Summary v3.xlsx`. The broader ontology lives in
-> `RegIntel Knowledge Architecture v3.docx`. How admin writes actually
-> commit: [worker/regintel-admin-proxy/README.md](worker/regintel-admin-proxy/README.md).
+> **Status: live.** Phases 1–4, 6, and 7 of the knowledge-architecture
+> vision are in the site. Phase 5 (Organizational Artifact crosswalk) is
+> **permanently out of scope**. This document describes what the **site**
+> is, what happens before it is populated, and how the current flattened
+> projection maps to that architecture. Field-level extraction rules live
+> in `PHASE 1/Metadata Summary v3.xlsx`. The broader ontology lives in
+> `RegIntel Knowledge Architecture v3.docx` (document title: Version 4.0).
+> How admin writes actually commit:
+> [worker/regintel-admin-proxy/README.md](worker/regintel-admin-proxy/README.md).
 
 ## 1. What this site is
 
@@ -25,7 +27,9 @@ not the parser, not the source corpus, and not the ontology.
 
 The underlying question is no longer “does this regulation create a
 training obligation?” It is: **what obligations does this source create,
-who/what do they apply to, and which HealthStream product types are affected?**
+who/what do they apply to, and what kind of organizational response is
+implicated?** Which concrete HealthStream products are affected is inferred
+by the consumer outside this site.
 
 ## 2. System boundary — parsing happens before the site
 
@@ -67,8 +71,10 @@ used by the current product. It is not the knowledge model.
   projection). Hash:
   `req_` + sha1(Source Dataset | Citation | Training Topic | Jurisdiction |
   Jurisdiction Role | Jurisdiction Setting)[:12]
-- **Obligation** identity (`obligation_id` / pipeline `parent_key`) is a
-  grouping concept in extraction. It is not persisted as a key on the row.
+- **Obligation ID** identifies the underlying regulatory requirement
+  before row explosion. It is distinct from Record ID and is stored on the
+  row as `Obligation ID` so related projections can share classification
+  and impact.
 - **Source Dataset** (`Role` | `Care Setting`) is a legacy extraction
   lane, not a property of the regulation.
 
@@ -134,11 +140,17 @@ Operator notes that are easy to get wrong:
 - Frequency stays verbatim regulatory language; do not canonicalize.
 - Citation is mechanical (CITATION FORMAT tab), never freely composed.
 
-### 5.2 Additive intelligence fields (Phases 2–5 — implemented)
+### 5.2 Additive intelligence fields (Phases 2–4 — implemented)
 
-These are **not** part of the Record ID hash. Absence means “no opinion
-yet,” not “clear this.” Pending Review treats absent vs present-empty
-that way so an older extraction sheet cannot blank newer fields.
+These are **not** part of the Record ID hash. For extraction sheets,
+absence means “no opinion yet,” not “clear this.” Pending Review treats
+absent vs present-empty that way so an older extraction sheet cannot
+blank newer fields.
+
+For a **classified Impact Type batch**, v4 is stricter: a missing
+`Impact Types` field is a classification error. An empty array is
+allowed only when the classifier has a reasoned conclusion that no
+supported organizational response is present.
 
 | Field | Shape | Closed values | Produced by |
 |---|---|---|---|
@@ -146,18 +158,21 @@ that way so an older extraction sheet cannot blank newer fields.
 | Change Detected Date | ISO date | — | Diff run timestamp |
 | Change Source Path | string | — | OpenLaws path that triggered the match |
 | Applicability Rules | array of objects | Anchor: setting / role / organization_type / profession / activity | Human-authored via Pending Review |
-| Impact Types | array of strings | **Policy, Procedure, Training, Competency, Credential, Documentation, Workflow, Staffing, Reporting, Audit, Physical Environment** | Human-reviewed via Pending Review (often AI-assisted upstream) |
+| Impact Types | array of strings | **Policy, Procedure, Training, Competency, Credential, Documentation, Workflow, Staffing, Reporting, Audit, Physical Environment** | Parser first-pass (stage 5b); human QA/override in Pending Review |
+| Impact Basis | string | — | Parser evidence rationale; required with a classified Impact Types value |
+| Impact Confidence | string | High, Medium, Low | Parser confidence |
+| Impact Review | boolean | true = needs QA | Parser review flag |
 
 Impact Type is a **closed taxonomy** (Phase 4). One obligation may carry
 **multiple** tags. Impact Type names **what kind** of organizational
 response is required — not a specific policy ID or training module.
 Definitions live in [`impact-types.js`](impact-types.js).
 
-**Organizational Artifacts are out of scope for RegIntel.** Phase 5
-tooling in `PHASE 2 DIFF/` validated the crosswalk *shape* against real
-data, but production rows do not carry artifact objects. Downstream
-product impact is **inferred** from Impact Type + care-setting / role /
-jurisdiction applicability, not stored as catalog references in this site.
+`Impact Basis`, `Impact Confidence`, and `Impact Review` are first-class
+classification metadata on the same row. They are not stored in
+`Notes / Research Flags`. Downstream product impact is **inferred** from
+Impact Type + care-setting / role / jurisdiction applicability, not stored
+as catalog references.
 
 Legacy rows may still carry `Other` from an earlier product-routing pass;
 the site displays it but advises replacing it with specific types.
@@ -172,8 +187,10 @@ None of the unified admin tools write to it.
 ## 6. Type-level impact — not customer counts
 
 Facility/Learner Query is a **reusable archetype** (Jurisdiction × HSTM
-Setting × HSTM Role), not a customer. It answers “which obligations
-apply to this *type* of facility/learner?” across both extraction lanes.
+Setting × HSTM Role), not a customer. Forward query: which obligations
+apply to this *type* of facility/learner? Reverse query: which type-level
+dimensions — including Impact Types — a record touches. Neither query
+uses customer rosters or catalog IDs.
 
 When a classified batch is uploaded into Pending Review, the queue shows
 **type-level scope** for the incoming rows: how many and which care
@@ -197,18 +214,18 @@ Four screens, all reading/writing the projection file
    tags enter the projection.
 4. **Export** — convenience snapshot, not the write path.
 
-Human QA is part of the architecture: the site proposes nothing about
-raw source text. It reviews already-classified output.
+Human QA is part of the architecture: the site does not parse source
+text. It reviews already-classified output. For Impact Types, humans
+**override** parser judgments; they do not supply the primary tags.
 
 ## 8. Out of scope for this site
 
 - Parsing or diffing OpenLaws inside the browser.
 - Treating the Excel extraction spec as the runtime data model.
-- Persisting `obligation_id` on the JSON (still a pipeline grouping key).
 - A graph database.
 - Customer-specific facility or learner rosters, or storing “N learners
   affected” on a regulatory row.
 - **Organizational Artifact crosswalks** — no policy IDs, training module
-  IDs, or placeholder catalog entries in `requirements.json`. Impact Type
-  + applicability is the handoff for inferring downstream products outside
-  this site.
+  IDs, placeholder catalog entries, or artifact counts in
+  `requirements.json`. Impact Type + applicability is the handoff for
+  inferring downstream products outside this site.

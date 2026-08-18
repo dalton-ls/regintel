@@ -36,7 +36,7 @@ projection — internally authored Domain/KSA framework, not
 jurisdiction-driven regulatory content. None of the unified admin tools
 write to it.
 
-### Batch columns (26), in emission order
+### Batch columns (29), in emission order
 
 Batch sheets are read by **exact header name**:
 
@@ -48,10 +48,13 @@ Approval Required, Approval Basis, Hours Required, Frequency, Source URL,
 Notes / Research Flags
 ```
 
-The batch also carries `Obligation ID` plus optional reviewed enrichment fields:
-`Change Type`, `Change Detected Date`, `Change Source Path`, `Applicability Rules`,
-and `Impact Types`. Empty enrichment cells mean no opinion; the normalizer omits
-them rather than clearing existing reviewed tags.
+The batch also carries `Obligation ID` (distinct from Record ID) plus
+optional enrichment fields: `Change Type`, `Change Detected Date`,
+`Change Source Path`, `Applicability Rules`, `Impact Types`,
+`Impact Basis`, `Impact Confidence`, and `Impact Review`. Empty
+enrichment cells on an extraction sheet mean no opinion; the normalizer
+omits them rather than clearing existing tags. Impact Types on a
+classified batch are parser-assigned; human review is QA/override.
 
 RegIntel does **not** store Organizational Artifact crosswalks. Downstream
 product impact (which policies, modules, etc.) is **inferred** from Impact
@@ -80,9 +83,14 @@ Review. Absence = “this batch has no opinion,” not “clear the field.”
 - `Impact Types` — array of tags from the Phase 4 closed taxonomy (Policy,
   Procedure, Training, Competency, Credential, Documentation, Workflow,
   Staffing, Reporting, Audit, Physical Environment). One row may carry
-  several. See [`impact-types.js`](impact-types.js). This is the **terminal
-  implementation signal in RegIntel** — use it with care-setting / role /
-  jurisdiction to infer affected downstream products outside this site.
+  several. See [`impact-types.js`](impact-types.js). The parser assigns
+  these as a first-pass judgment; this site is QA/override, not the
+  primary tagger. This is the **terminal implementation signal in
+  RegIntel** — use it with care-setting / role / jurisdiction to infer
+  affected downstream products outside this site.
+- `Impact Basis`, `Impact Confidence` (`High` / `Medium` / `Low`),
+  `Impact Review` (`true` = needs QA) — parser evidence that travels with
+  Impact Types. First-class fields; not folded into Notes.
 
 Legacy `Other` values may appear on older rows; prefer specific types when
 reviewing new batches.

@@ -1165,7 +1165,16 @@ let selectedRole        = null;
     const applicabilitySummariesList = row ? applicabilitySummaries(row.applicability_rules) : [];
     const applicabilityChips = applicabilitySummariesList.length ? `<div class="drawer-row"><span class="drawer-label">Applicability</span><span class="drawer-value"><div class="chip-row">${applicabilitySummariesList.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div></span></div>` : '';
     const impactTypesList = row && Array.isArray(row.impact_types) ? row.impact_types : [];
-    const impactChips = impactTypesList.length ? `<div class="drawer-row"><span class="drawer-label">Impact Type</span><span class="drawer-value">${renderImpactChips(impactTypesList)}<div class="drawer-hint">Infer downstream products from Impact Type + setting/role — no catalog IDs stored here.</div></span></div>` : '';
+    const judgment = row ? readImpactJudgment(row) : { types: [], hasTypesField: false, basis: '', confidence: '', review: null };
+    const impactMeta = [];
+    if (judgment.confidence) impactMeta.push(esc(judgment.confidence) + ' confidence');
+    if (judgment.review === true) impactMeta.push('Needs QA');
+    const impactEvidence = (judgment.basis || impactMeta.length)
+      ? `<div class="drawer-hint">${impactMeta.length ? impactMeta.join(' · ') + '. ' : ''}${judgment.basis ? esc(judgment.basis) : ''} Infer downstream products from Impact Type + setting/role/jurisdiction — no catalog IDs stored here.</div>`
+      : (impactTypesList.length || judgment.hasTypesField ? `<div class="drawer-hint">Parser-assigned response category. Infer downstream products from Impact Type + setting/role/jurisdiction — no catalog IDs stored here.</div>` : '');
+    const impactChips = (impactTypesList.length || judgment.hasTypesField || judgment.basis || judgment.confidence || judgment.review !== null)
+      ? `<div class="drawer-row"><span class="drawer-label">Impact Type</span><span class="drawer-value">${impactTypesList.length ? renderImpactChips(impactTypesList) : (judgment.hasTypesField ? '<div class="chip-row"><span class="chip">None (reasoned)</span></div>' : '')}${impactEvidence}</span></div>`
+      : '';
     const overviewContent = row ? `
       ${settingsChips}
       ${impactChips}
@@ -1734,7 +1743,11 @@ let selectedRole        = null;
       change_source_path:  r['Change Source Path'] || '',
       regulation_type:     r['Regulation Type'] || '',
       applicability_rules: Array.isArray(r['Applicability Rules']) ? r['Applicability Rules'] : [],
-      impact_types:        Array.isArray(r['Impact Types']) ? r['Impact Types'] : []
+      impact_types:        Array.isArray(r['Impact Types']) ? r['Impact Types'] : [],
+      impact_types_present: Object.prototype.hasOwnProperty.call(r, 'Impact Types'),
+      impact_basis:        r['Impact Basis'] || '',
+      impact_confidence:   r['Impact Confidence'] || '',
+      impact_review:       Object.prototype.hasOwnProperty.call(r, 'Impact Review') ? r['Impact Review'] : null
     });
     ROLE_DATA = {};
     CS_DATA   = {};
