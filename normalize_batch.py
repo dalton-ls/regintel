@@ -8,7 +8,7 @@ drop-in replacement for requirements.json the way migrate_to_unified.py is.
 
 This script does **not** parse OpenLaws or run AI extraction. It only
 normalizes classified output that already matches the extraction column
-headers. Change / Applicability / Impact / Artifact fields are not produced
+headers. Change / Applicability / Impact fields are not produced
 here; those arrive as separate reviewed batches from the pre-site pipeline.
 
 Why this exists (and why it's not just "run migrate_to_unified.py again")
@@ -131,11 +131,11 @@ UNIFIED_FIELDS = [
 OPTIONAL_ENRICHMENT_FIELDS = [
     "Obligation ID",
     "Change Type", "Change Detected Date", "Change Source Path",
-    "Applicability Rules", "Impact Types", "Organizational Artifacts",
+    "Applicability Rules", "Impact Types",
 ]
 
 ARRAY_FIELDS = {"HSTM Role", "Impact Types"}
-JSON_FIELDS = {"Applicability Rules", "Organizational Artifacts"}
+JSON_FIELDS = {"Applicability Rules"}
 INTEGER_FIELDS = {"Hours Required"}
 PIPE_NULL = {"nan", "NaN", "None", "none", ""}
 

@@ -139,11 +139,12 @@
 
   // Phase 4 (Dalton, 2026-08-17): Impact Types is bulk-editable since it's a
   // flat array of strings from a small fixed vocabulary -- same ARRAY_FIELDS
-  // comma-split/join treatment as HSTM Role. Applicability Rules and
-  // Organizational Artifacts are deliberately NOT added here: they're
-  // arrays of structured objects, and this screen's newValue box is a plain
-  // comma-split text input with no JSON parsing -- bulk-editing those safely
-  // would need real UI work this round didn't scope.
+  // comma-split/join treatment as HSTM Role. Applicability Rules are
+  // deliberately NOT added here: they're arrays of structured objects, and
+  // this screen's newValue box is a plain comma-split text input with no
+  // JSON parsing -- bulk-editing those safely would need real UI work this
+  // round didn't scope. RegIntel does not store Organizational Artifact
+  // crosswalks; downstream products are inferred from Impact Type + setting/role.
 
   // Fields offered as filters (single-value dropdowns).
   const FILTER_FIELDS = [

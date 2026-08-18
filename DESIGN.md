@@ -16,7 +16,7 @@ on one engine:
 | Experience | Question |
 |---|---|
 | Intelligence | What changed? |
-| Policy | What organizational artifacts need to change? |
+| Policy | What kinds of organizational / product change may be required? |
 | Workforce | Who needs to know or do something differently? |
 
 This GitHub Pages app is the **Intelligence + Workforce research view**,
@@ -25,8 +25,7 @@ not the parser, not the source corpus, and not the ontology.
 
 The underlying question is no longer “does this regulation create a
 training obligation?” It is: **what obligations does this source create,
-who/what do they apply to, and which HealthStream product types
-what HealthStream product types are affected?**
+who/what do they apply to, and which HealthStream product types are affected?**
 
 ## 2. System boundary — parsing happens before the site
 
@@ -53,7 +52,7 @@ Output JSON  ──────────────────────�
 The site **never parses OpenLaws JSON**. Monthly snapshots, diffs, and
 AI-facilitated extraction run before `requirements.json` is populated.
 Incoming files are already-classified batches (extraction sheets, change
-tags, applicability/impact/artifact tags). `normalize_batch.py` only
+tags, applicability/impact tags). `normalize_batch.py` only
 normalizes an already-extracted 20-column sheet for Pending Review.
 
 The pre-site pipeline lives beside this repo (`PHASE 1/`, `PHASE 2 DIFF/`),
@@ -86,9 +85,14 @@ verbatim Training Topic, Frequency, Hours.
 **HealthStream product taxonomy** (how we organize): HSTM Setting, HSTM
 Role, Regulation Type. Jurisdiction Setting ≠ HSTM Setting.
 
-**Organizational implementation** (what must change): Impact Types →
-Organizational Artifacts. One requirement can carry multiple Impact
-Types.
+**Organizational implementation** (what must change): **Impact Types**
+only. One requirement may carry multiple Impact Types (Policy + Training +
+Documentation, etc.). RegIntel does **not** store Organizational Artifact
+crosswalks, catalog IDs, or “affected_policies: 7” counts. Those concrete
+references live in downstream HealthStream products. Here, **Impact Type +
+Applicability (HSTM Setting / Role / Jurisdiction)** is the terminal signal;
+the operator infers which downstream products (policy management, training
+modules, competency programs, etc.) may be affected.
 
 `Regulation Type` (Facility-Based/Organizational Training,
 Individual/Continuing Education, Organizational Policy) remains a
@@ -142,14 +146,18 @@ that way so an older extraction sheet cannot blank newer fields.
 | Change Detected Date | ISO date | — | Diff run timestamp |
 | Change Source Path | string | — | OpenLaws path that triggered the match |
 | Applicability Rules | array of objects | Anchor: setting / role / organization_type / profession / activity | Human-authored via Pending Review |
-| Impact Types | array of strings | **Policy, Procedure, Training, Competency, Credential, Documentation, Workflow, Staffing, Reporting, Audit, Physical Environment** | Human-authored via Pending Review |
-| Organizational Artifacts | array of objects | `artifact_type` ∈ Impact Types | Human-authored via Pending Review (placeholder catalog until a real HSTM catalog exists) |
+| Impact Types | array of strings | **Policy, Procedure, Training, Competency, Credential, Documentation, Workflow, Staffing, Reporting, Audit, Physical Environment** | Human-reviewed via Pending Review (often AI-assisted upstream) |
 
 Impact Type is a **closed taxonomy** (Phase 4). One obligation may carry
-**multiple** tags — e.g. Policy + Training + Documentation at once. Impact
-Type names **what kind** of organizational response is required; Phase 5's
-Organizational Artifacts name the specific **which** (which policy, which
-module). Definitions live in [`impact-types.js`](impact-types.js).
+**multiple** tags. Impact Type names **what kind** of organizational
+response is required — not a specific policy ID or training module.
+Definitions live in [`impact-types.js`](impact-types.js).
+
+**Organizational Artifacts are out of scope for RegIntel.** Phase 5
+tooling in `PHASE 2 DIFF/` validated the crosswalk *shape* against real
+data, but production rows do not carry artifact objects. Downstream
+product impact is **inferred** from Impact Type + care-setting / role /
+jurisdiction applicability, not stored as catalog references in this site.
 
 Legacy rows may still carry `Other` from an earlier product-routing pass;
 the site displays it but advises replacing it with specific types.
@@ -181,12 +189,12 @@ Four screens, all reading/writing the projection file
 
 1. **Record Editor** — spot-correct one output row.
 2. **Bulk-Apply** — one field change across a filtered set (Impact Types
-   included; structured Applicability / Artifact objects are not
-   bulk-edited from a plain text box).
+   included; structured Applicability objects are not bulk-edited from a
+   plain text box).
 3. **Pending Review** — classify an incoming batch by Record ID. New IDs
    can be added; differing content is always queued. **Nothing
-   auto-overwrites.** This is also how change tags and
-   applicability/impact/artifact tags enter the projection.
+   auto-overwrites.** This is also how change tags and applicability/impact
+   tags enter the projection.
 4. **Export** — convenience snapshot, not the write path.
 
 Human QA is part of the architecture: the site proposes nothing about
@@ -200,5 +208,7 @@ raw source text. It reviews already-classified output.
 - A graph database.
 - Customer-specific facility or learner rosters, or storing “N learners
   affected” on a regulatory row.
-- Replacing placeholder Organizational Artifacts with a live HealthStream
-  catalog (blocked on that catalog existing).
+- **Organizational Artifact crosswalks** — no policy IDs, training module
+  IDs, or placeholder catalog entries in `requirements.json`. Impact Type
+  + applicability is the handoff for inferring downstream products outside
+  this site.

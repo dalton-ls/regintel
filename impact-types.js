@@ -1,7 +1,9 @@
 // Phase 4 — Impact Type closed taxonomy (single source of truth for the site).
 // Names WHAT kind of organizational response an Obligation demands once it
-// applies. One obligation may carry multiple tags. Phase 5's Organizational
-// Artifacts name the specific WHICH (which policy, which module).
+// applies. One obligation may carry multiple tags. RegIntel stops here:
+// downstream products (specific policies, training modules, etc.) are
+// inferred by the operator from Impact Type + HSTM Setting/Role/Jurisdiction —
+// not stored as Organizational Artifact crosswalks in this site.
 const IMPACT_TYPES = [
   "Policy",
   "Procedure",

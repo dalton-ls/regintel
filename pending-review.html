@@ -112,7 +112,7 @@
 
   <div class="page-wrap">
     <h1 class="page-title">Pending Review Queue</h1>
-    <p class="page-desc">Upload a <strong>classified requirements JSON batch</strong> from the pre-site extraction pipeline (already-parsed output rows, change tags, or applicability/impact/artifact tags). Each record is matched by Record ID against the current projection. New IDs can be added directly; records whose content differs are queued as conflicts with a field-by-field diff. <strong>Nothing is applied automatically</strong> — for each conflict you choose to keep existing, use incoming, or manually reconcile, then apply your resolutions. The scope summary below shows type-level affected settings, roles, and jurisdictions — not customer headcounts.</p>
+    <p class="page-desc">Upload a <strong>classified requirements JSON batch</strong> from the pre-site extraction pipeline (already-parsed output rows, change tags, or applicability/impact tags). Each record is matched by Record ID against the current projection. New IDs can be added directly; records whose content differs are queued as conflicts with a field-by-field diff. <strong>Nothing is applied automatically</strong> — for each conflict you choose to keep existing, use incoming, or manually reconcile, then apply your resolutions. The scope summary below shows type-level affected settings, roles, and jurisdictions — not customer headcounts or downstream product catalog IDs.</p>
 
     <div class="upload-zone" id="uploadZone">
       <div class="upload-icon">
@@ -161,8 +161,7 @@
     "Source URL", "Notes / Research Flags",
     "Change Type", "Change Detected Date", "Change Source Path",
     "Applicability Rules",
-    "Impact Types",
-    "Organizational Artifacts"
+    "Impact Types"
   ];
   const ARRAY_FIELDS = new Set(["HSTM Role", "Impact Types"]);
 
@@ -178,17 +177,10 @@
   // label rather than folding into FIELDS_ADDED_IN_20.
   const FIELDS_ADDED_FOR_CHANGE_EVENTS = new Set(["Change Type", "Change Detected Date", "Change Source Path"]);
 
-  // Applicability Rule (Phase 3): additive, array-of-objects, not array-of-
-  // strings like HSTM Role -- comma-splitting a rule object makes no sense,
-  // so it gets JSON parse/stringify instead of the ARRAY_FIELDS treatment.
-  // Organizational Artifact (Phase 5): additive, array-of-objects like
-  // Applicability Rules -- each entry is a real (or, for now, illustrative
-  // placeholder) ID'd artifact {artifact_id, artifact_type, name,
-  // description}, not a bare string, so it shares Applicability Rule's
-  // JSON_FIELDS treatment rather than Impact Type's ARRAY_FIELDS one.
-  const JSON_FIELDS = new Set(["Applicability Rules", "Organizational Artifacts"]);
+  // Applicability Rule (Phase 3): additive, array-of-objects — JSON_FIELDS
+  // treatment in pending-review.html (not ARRAY_FIELDS comma-splitting).
+  const JSON_FIELDS = new Set(["Applicability Rules"]);
   const FIELDS_ADDED_FOR_APPLICABILITY = new Set(["Applicability Rules"]);
-  const FIELDS_ADDED_FOR_ARTIFACTS = new Set(["Organizational Artifacts"]);
 
   // Impact Type (Phase 4): additive, array-of-STRINGS from the closed
   // taxonomy in impact-types.js — reuses ARRAY_FIELDS like HSTM Role.
@@ -222,15 +214,6 @@
         if (!r || typeof r !== 'object') return;
         if (!APPLICABILITY_ANCHOR_FIELDS.some(f => r[f])) {
           warnings.push('Applicability Rules[' + i + ']: no anchor field populated.');
-        }
-      });
-    }
-    const artifacts = resolved['Organizational Artifacts'];
-    if (Array.isArray(artifacts)) {
-      artifacts.forEach((a, i) => {
-        if (!a || typeof a !== 'object') return;
-        if (!isKnownImpactType(a.artifact_type)) {
-          warnings.push('Organizational Artifacts[' + i + ']: artifact_type ' + JSON.stringify(a.artifact_type) + ' is not one of the allowed Impact Types (' + IMPACT_TYPES.join(', ') + ').');
         }
       });
     }
@@ -391,7 +374,7 @@
     panel.innerHTML =
       '<div class="scope-panel">' +
         '<div class="scope-panel-title">Type-level scope — new + conflict records</div>' +
-        '<div class="scope-panel-desc">Archetype counts for rows that would change the live projection (new Record IDs and conflicts). Filter by jurisdiction, HSTM Setting, HSTM Role, Regulation Type, or Impact Type. This is not a customer facility or learner headcount.</div>' +
+        '<div class="scope-panel-desc">Archetype counts for rows that would change the live projection (new Record IDs and conflicts). Filter by jurisdiction, HSTM Setting, HSTM Role, Regulation Type, or Impact Type. Use Impact Type + setting/role to infer downstream products — RegIntel does not store catalog artifact IDs. This is not a customer facility or learner headcount.</div>' +
         '<div class="scope-filters">' +
           sel('jurisdiction', scopeFilters.jurisdiction, opts.jurisdictions, 'Jurisdiction') +
           sel('hstmSetting', scopeFilters.hstmSetting, opts.settings, 'HSTM Setting') +
@@ -619,7 +602,6 @@
               (FIELDS_ADDED_FOR_CHANGE_EVENTS.has(f) && !present ? ' <span class="muted">(Change Event field)</span>' : '') +
               (FIELDS_ADDED_FOR_APPLICABILITY.has(f) && !present ? ' <span class="muted">(Applicability Rule field)</span>' : '') +
               (FIELDS_ADDED_FOR_IMPACT.has(f) && !present ? ' <span class="muted">(Impact Type field)</span>' : '') +
-              (FIELDS_ADDED_FOR_ARTIFACTS.has(f) && !present ? ' <span class="muted">(Organizational Artifact field)</span>' : '') +
             '</td>' +
             '<td class="val-existing">' + esc(displayVal(c.existing[f], f)) + '</td>' +
             '<td class="val-incoming">' + incomingCell +

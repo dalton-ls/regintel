@@ -36,7 +36,7 @@ projection — internally authored Domain/KSA framework, not
 jurisdiction-driven regulatory content. None of the unified admin tools
 write to it.
 
-### Batch columns (27), in emission order
+### Batch columns (26), in emission order
 
 Batch sheets are read by **exact header name**:
 
@@ -50,8 +50,12 @@ Notes / Research Flags
 
 The batch also carries `Obligation ID` plus optional reviewed enrichment fields:
 `Change Type`, `Change Detected Date`, `Change Source Path`, `Applicability Rules`,
-`Impact Types`, and `Organizational Artifacts`. Empty enrichment cells mean no opinion;
-the normalizer omits them rather than clearing existing reviewed tags.
+and `Impact Types`. Empty enrichment cells mean no opinion; the normalizer omits
+them rather than clearing existing reviewed tags.
+
+RegIntel does **not** store Organizational Artifact crosswalks. Downstream
+product impact (which policies, modules, etc.) is **inferred** from Impact
+Type plus HSTM Setting / Role / Jurisdiction — not catalog IDs in this site.
 
 `Authority Level` and `Approval Basis` were added in the 18 → 20 split.
 Two axes that used to be conflated in `Requirement Level` are now separate:
@@ -65,7 +69,7 @@ directly.
 
 Neither new field participates in `Record ID`. See [DESIGN.md §5.1](DESIGN.md).
 
-### Additive intelligence fields (Phases 2–5)
+### Additive intelligence fields (Phases 2–4)
 
 Optional on a row. Produced **after** extraction; uploaded through Pending
 Review. Absence = “this batch has no opinion,” not “clear the field.”
@@ -76,8 +80,9 @@ Review. Absence = “this batch has no opinion,” not “clear the field.”
 - `Impact Types` — array of tags from the Phase 4 closed taxonomy (Policy,
   Procedure, Training, Competency, Credential, Documentation, Workflow,
   Staffing, Reporting, Audit, Physical Environment). One row may carry
-  several. See [`impact-types.js`](impact-types.js).
-- `Organizational Artifacts` — array of ID’d artifact objects
+  several. See [`impact-types.js`](impact-types.js). This is the **terminal
+  implementation signal in RegIntel** — use it with care-setting / role /
+  jurisdiction to infer affected downstream products outside this site.
 
 Legacy `Other` values may appear on older rows; prefer specific types when
 reviewing new batches.
@@ -113,7 +118,7 @@ python3 normalize_batch.py incoming_sheet.xlsx --source-dataset Role
 
 This computes the same Record IDs as `migrate_to_unified.py`, validates
 the anchor rule, and warns (without blocking) on vocabulary drift.
-It does **not** emit Change / Applicability / Impact / Artifact fields;
+It does **not** emit Change / Applicability / Impact fields;
 those arrive as separate reviewed batches.
 
 Warnings raised:

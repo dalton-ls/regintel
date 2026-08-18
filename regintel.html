@@ -370,6 +370,7 @@
     .drawer-row { display: grid; grid-template-columns: 110px 1fr; gap: 4px; align-items: baseline; }
     .drawer-label { font-size: 11px; font-weight: 600; color: #6b7a99; text-transform: uppercase; letter-spacing: 0.04em; }
     .drawer-value { font-size: 13px; color: #1a2332; line-height: 1.5; }
+    .drawer-hint { font-size: 11px; color: #9aaac4; margin-top: 6px; line-height: 1.45; font-style: italic; }
 
     .notes-box {
       background: #fffbf0; border: 1px solid #fde68a;
@@ -959,21 +960,6 @@ let selectedRole        = null;
     }).filter(Boolean);
   }
 
-  // ─── Organizational Artifact helpers (Phase 5) ───
-  // Deliberately no filter dropdown for this one: artifact_type is drawn
-  // from the same fixed vocabulary the Impact Type filter already covers
-  // from the same closed Impact Type vocabulary, so a second filter on the same values
-  // would just duplicate that dropdown. This is display-only — see the
-  // artifact chips in the drawer's Metadata tab.
-  function artifactSummaries(artifacts) {
-    if (!Array.isArray(artifacts) || !artifacts.length) return [];
-    return artifacts.map(a => {
-      if (!a || typeof a !== 'object') return '';
-      const label = a.artifact_type ? `${a.artifact_type}: ${a.name || a.artifact_id}` : (a.name || a.artifact_id || '');
-      return label;
-    }).filter(Boolean);
-  }
-
   // ─── Facility/Learner Applicability Profile matching (Phase 6) ───
   // Mirrors facility_learner_profile.py's Profile/match_profile()/
   // has_valid_anchor() exactly -- same primary HSTM Setting/Role/
@@ -1179,9 +1165,7 @@ let selectedRole        = null;
     const applicabilitySummariesList = row ? applicabilitySummaries(row.applicability_rules) : [];
     const applicabilityChips = applicabilitySummariesList.length ? `<div class="drawer-row"><span class="drawer-label">Applicability</span><span class="drawer-value"><div class="chip-row">${applicabilitySummariesList.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div></span></div>` : '';
     const impactTypesList = row && Array.isArray(row.impact_types) ? row.impact_types : [];
-    const impactChips = impactTypesList.length ? `<div class="drawer-row"><span class="drawer-label">Impact Type</span><span class="drawer-value">${renderImpactChips(impactTypesList)}</span></div>` : '';
-    const artifactSummariesList = row ? artifactSummaries(row.organizational_artifacts) : [];
-    const artifactChips = artifactSummariesList.length ? `<div class="drawer-row"><span class="drawer-label">Artifacts</span><span class="drawer-value"><div class="chip-row">${artifactSummariesList.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div></span></div>` : '';
+    const impactChips = impactTypesList.length ? `<div class="drawer-row"><span class="drawer-label">Impact Type</span><span class="drawer-value">${renderImpactChips(impactTypesList)}<div class="drawer-hint">Infer downstream products from Impact Type + setting/role — no catalog IDs stored here.</div></span></div>` : '';
     const overviewContent = row ? `
       ${settingsChips}
       ${impactChips}
@@ -1199,7 +1183,6 @@ let selectedRole        = null;
       <div class="drawer-row"><span class="drawer-label">Approval</span><span class="drawer-value">${approval}</span></div>
       ${row.approval_basis ? `<div class="drawer-row"><span class="drawer-label">Approval basis</span><span class="drawer-value">${esc(row.approval_basis)}</span></div>` : ''}
       ${applicabilityChips}
-      ${artifactChips}
       ${(row.notes && adminMode) ? `<div class="drawer-row"><span class="drawer-label">Research Notes</span><span class="drawer-value"><div class="notes-box">${esc(row.notes)}</div></span></div>` : ''}
       <div class="drawer-row"><span class="drawer-label">Source</span><span class="drawer-value">${src}</span></div>
     ` : '';
@@ -1751,8 +1734,7 @@ let selectedRole        = null;
       change_source_path:  r['Change Source Path'] || '',
       regulation_type:     r['Regulation Type'] || '',
       applicability_rules: Array.isArray(r['Applicability Rules']) ? r['Applicability Rules'] : [],
-      impact_types:        Array.isArray(r['Impact Types']) ? r['Impact Types'] : [],
-      organizational_artifacts: Array.isArray(r['Organizational Artifacts']) ? r['Organizational Artifacts'] : []
+      impact_types:        Array.isArray(r['Impact Types']) ? r['Impact Types'] : []
     });
     ROLE_DATA = {};
     CS_DATA   = {};
