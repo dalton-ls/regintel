@@ -263,50 +263,83 @@
     .state-hr { border: none; border-top: 1.5px solid #e8ecf0; margin-bottom: 14px; }
 
 
-    /* ── Jurisdiction accordions ── */
-    .jurisdiction-accordion { margin-bottom: 16px; border: 1px solid #e8ecf0; border-radius: 10px; overflow: hidden; }
-    .jurisdiction-header { padding: 13px 16px; background: #f0f2f5; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; transition: background 0.15s; }
-    .jurisdiction-header:hover { background: #e8ecf0; }
-    .jurisdiction-title { font-size: 15px; font-weight: 700; color: #1a2332; }
-    .jurisdiction-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 200ms ease; }
-    .jurisdiction-accordion.closed .jurisdiction-body { grid-template-rows: 0fr; }
-    .jurisdiction-body-inner { overflow: hidden; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
-    .jurisdiction-accordion .accordion-chevron { color: #6b7a99; transition: transform 200ms ease; flex-shrink: 0; }
-    .jurisdiction-accordion.open .accordion-chevron { transform: rotate(180deg); }
+    /* ── Hierarchy tree ── */
+    .tree-crumb {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+      font-size: 12px; color: #6b7a99; margin-bottom: 14px; line-height: 1.4;
+    }
+    .tree-crumb[hidden] { display: none; }
+    .tree-crumb-sep { color: #c5cdd8; }
+    .tree-crumb-current { color: #1a2332; font-weight: 600; }
 
-    /* ── Flat rows ── */
-    .req-row {
-      display: flex; align-items: center; gap: 12px;
-      padding: 10px 14px;
-      background: #fff;
+    .tree-node { background: #fff; }
+    .tree-node.level-jurisdiction {
+      border: 1px solid #e8ecf0; border-radius: 10px; overflow: hidden; margin-bottom: 14px;
+    }
+    .tree-node.level-authority,
+    .tree-node.level-program,
+    .tree-node.level-module { border-bottom: 1px solid #f0f2f5; }
+    .tree-node.level-module:last-child,
+    .tree-node.level-program:last-child,
+    .tree-node.level-authority:last-child { border-bottom: none; }
+
+    .tree-body { display: grid; grid-template-rows: 1fr; transition: grid-template-rows 200ms ease; }
+    .tree-node.closed > .tree-body { grid-template-rows: 0fr; }
+    .tree-body-inner { overflow: hidden; min-height: 0; }
+
+    .tree-row {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; border: none; background: none;
+      font-family: inherit; text-align: left; cursor: pointer;
       border-left: 3px solid transparent;
-      border-bottom: 1px solid #f0f2f5;
-      cursor: pointer;
       transition: background 0.12s;
     }
-    .req-row:last-child { border-bottom: none; }
-    .req-row:hover { background: #f8fafc; }
-    .req-row.selected { background: #eef3fb; border-left-color: #2463eb !important; }
-    .req-row.sub-topic { border-left-color: #e8ecf0 !important; padding-left: 26px; background: #fafbfc; }
-    .req-row.sub-topic .req-topic { color: #4a5568; font-size: 12.5px; }
-    .req-row.sub-topic:hover { background: #f5f7fa; }
+    .tree-row:hover { background: #f8fafc; }
+    .tree-row:focus-visible { outline: 2px solid #2463eb; outline-offset: -2px; }
+    .tree-row.selected { background: #eef3fb; border-left-color: #2463eb; }
 
-    .req-topic { flex: 1; font-size: 13px; color: #1a2332; line-height: 1.45; min-width: 0; }
-    .req-badges { display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: wrap; row-gap: 4px; }
-    .req-arrow { color: #b0b8cc; flex-shrink: 0; }
+    .tree-head { display: flex; align-items: center; gap: 4px; }
+    .tree-head > .tree-row { flex: 1; width: auto; min-width: 0; }
+    .tree-head .tree-actions { padding-right: 12px; }
 
-    /* ── Group header (static agency/setting label) ── */
-    .group-header {
-      display: flex; align-items: center; gap: 8px;
-      padding: 8px 14px 6px;
-      background: #f5f7fa;
-      border-bottom: 1px solid #e8ecf0;
+    .tree-node.level-jurisdiction > .tree-head { background: #f0f2f5; }
+    .tree-node.level-jurisdiction > .tree-head .tree-row { padding: 13px 16px; background: #f0f2f5; }
+    .tree-node.level-jurisdiction > .tree-head .tree-row:hover { background: #e8ecf0; }
+    .tree-node.level-authority > .tree-head { background: #f7f9fc; }
+    .tree-node.level-authority > .tree-head .tree-row { padding: 11px 16px 11px 20px; background: #f7f9fc; }
+    .tree-node.level-program > .tree-head .tree-row { padding: 10px 16px 10px 36px; }
+    .tree-node.level-module > .tree-head .tree-row { padding: 9px 16px 9px 52px; }
+    .tree-leaf { padding: 9px 16px 9px 72px; background: #fff; }
+    .tree-node.level-program > .tree-body > .tree-body-inner > .tree-leaf { padding-left: 52px; }
+
+    .tree-chevron {
+      color: #6b7a99; flex-shrink: 0;
+      transition: transform 200ms ease;
     }
-    .group-header-label { font-size: 12px; font-weight: 600; color: #6b7a99; }
-    .group-header-count { font-size: 11px; color: #6b7a99; background: #e8ecf0; border-radius: 10px; padding: 1px 7px; }
+    .tree-node.open > .tree-head .tree-chevron { transform: rotate(180deg); }
+    .tree-leaf-spacer { width: 14px; flex-shrink: 0; }
 
-    /* ── Row list container ── */
-    .req-list { border: 1px solid #e8ecf0; border-radius: 8px; overflow: hidden; margin-bottom: 8px; }
+    .tree-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+    .tree-title { color: #1a2332; line-height: 1.4; }
+    .tree-title.jurisdiction { font-size: 15px; font-weight: 700; }
+    .tree-title.authority { font-size: 13.5px; font-weight: 650; }
+    .tree-title.program { font-size: 13px; font-weight: 600; }
+    .tree-title.module { font-size: 13px; font-weight: 600; }
+    .tree-title.leaf { font-size: 12.5px; font-weight: 400; color: #4a5568; }
+    .tree-sub { font-size: 11.5px; color: #8a94a6; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .tree-count {
+      font-size: 11px; color: #6b7a99; background: #e8ecf0;
+      border-radius: 10px; padding: 1px 7px; flex-shrink: 0; white-space: nowrap;
+    }
+    .tree-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .tree-action {
+      font-size: 11px; font-weight: 600; color: #2463eb;
+      background: #fff; border: 1px solid #c7d7f8; border-radius: 6px;
+      padding: 3px 8px; cursor: pointer; font-family: inherit;
+      text-decoration: none; white-space: nowrap;
+    }
+    .tree-action:hover { background: #eef3fb; }
 
     /* ── Badges ── */
     .badge {
@@ -361,6 +394,14 @@
     }
     .drawer-title-block { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
     .drawer-title { font-size: 13.5px; font-weight: 600; color: #1a2332; line-height: 1.45; }
+    .drawer-crumb { font-size: 12px; color: #6b7a99; line-height: 1.4; }
+    .drawer-crumb-sep { color: #c5cdd8; margin: 0 4px; }
+    .drawer-group {
+      display: flex; flex-direction: column; gap: 10px;
+      padding-bottom: 14px; margin-bottom: 4px;
+      border-bottom: 1px solid #f0f2f5;
+    }
+    .drawer-group:last-child { border-bottom: none; padding-bottom: 0; }
     .drawer-kickers { display: flex; flex-wrap: wrap; gap: 6px; }
     .drawer-close {
       flex-shrink: 0; background: none; border: none; cursor: pointer;
@@ -673,10 +714,6 @@
       .header-subtitle { display: none; }
 .detail-row { grid-template-columns: 100px 1fr; }
     }
-  
-    .req-row { align-items: flex-start; }
-    .req-main { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-    .req-purpose { font-size: 11.5px; color: #8a94a6; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
     .badge-setting { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
     .badge-policy-create { background: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; }
     .badge-policy-review { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
@@ -691,6 +728,7 @@
     .badge-lifecycle { background: #f8fafc; color: #334155; border: 1px solid #e2e8f0; }
     .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip { display: inline-flex; align-items: center; background: #f1f5f9; color: #1a2332; font-size: 11.5px; font-weight: 500; padding: 3px 9px; border-radius: 20px; border: 1px solid #e8ecf0; }
+    .drawer-crumb { font-size: 11.5px; color: #8a94a6; line-height: 1.4; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
@@ -985,10 +1023,17 @@ let selectedRole        = null;
     operationalDomains:  new Set()
   };
 
-  const openJurisdictions = new Set();
+  const openTree = {
+    jurisdiction: new Set(),
+    authority: new Set(),
+    program: new Set(),
+    module: new Set()
+  };
   let selectedCardKey = null;
   let drawerTab = 'overview';
   let rowMap = {};
+  let lastTree = [];
+  let obligationParent = {};
 
   const checkSvg = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`;
 
@@ -1095,44 +1140,11 @@ let selectedRole        = null;
   }
 
   function groupByHstmSetting(rows) {
-    const map = {};
-    rows.forEach(r => {
-      if (!map[r.state]) map[r.state] = {};
-      if (!map[r.state][r.oversight_agency]) map[r.state][r.oversight_agency] = [];
-      map[r.state][r.oversight_agency].push(r);
-    });
-    return statesInOrder(map).map(s => ({
-      state:    s,
-      name:     STATE_NAMES[s] || s,
-      total:    rows.filter(r => r.state === s).length,
-      agencies: Object.entries(map[s])
-    }));
+    return buildHierarchy(rows);
   }
 
   function unionImpactTypes(rows) {
     return [...new Set(rows.flatMap(r => Array.isArray(r.impact_types) ? r.impact_types : []).filter(isKnownImpactType))];
-  }
-
-  function renderImpactBadges(row) {
-    if (isSubTopic(row)) return '';
-    const types = Array.isArray(row.impact_types) ? row.impact_types.filter(isKnownImpactType) : [];
-    if (!types.length) return '';
-    return types.map(t => `<span class="badge badge-type ${impactBadgeClass(t)}" title="${esc(impactTypeTitle(t))}">${esc(t)}</span>`).join('');
-  }
-
-  function renderPolicyBadges(row) {
-    if (isSubTopic(row)) return '';
-    let html = '';
-    if (row.policy_action_relevance) {
-      html += `<span class="badge ${policyActionBadgeClass(row.policy_action_relevance)}">${esc(row.policy_action_relevance)}</span>`;
-    }
-    if (row.product_use_case && row.product_use_case !== 'Training/Content') {
-      html += `<span class="badge ${productUseCaseBadgeClass(row.product_use_case)}">${esc(row.product_use_case)}</span>`;
-    }
-    if (row.operational_domain && row.operational_domain !== 'Unknown') {
-      html += `<span class="badge badge-lifecycle">${esc(row.operational_domain)}</span>`;
-    }
-    return html;
   }
 
   function renderImpactChips(types) {
@@ -1166,84 +1178,260 @@ let selectedRole        = null;
     return merged;
   }
 
-  function groupData(rows) {
+  function obligationKey(row) {
+    return row.obligation_id || ('cite:' + (row.citation || '') + '|' + (row.training_topic || '').slice(0, 80));
+  }
+
+  function countLabel(n, singular, plural) {
+    return n + ' ' + (n === 1 ? singular : plural);
+  }
+
+  function compareTitles(a, b) {
+    return String(a || '').localeCompare(String(b || ''), undefined, { numeric: true, sensitivity: 'base' });
+  }
+
+  function programChildLabel(items) {
+    const mods = items.filter(i => i.kind === 'module').length;
+    const leaves = items.filter(i => i.kind === 'leaf').length;
+    const parts = [];
+    if (mods) parts.push(countLabel(mods, 'module', 'modules'));
+    if (leaves) parts.push(countLabel(leaves, 'requirement', 'requirements'));
+    return parts.join(' · ') || countLabel(items.length, 'item', 'items');
+  }
+
+  function rowActions(row, key) {
+    if (!row) return '';
+    const src = row.source_url
+      ? `<a class="tree-action" href="${esc(row.source_url)}" target="_blank" rel="noopener" data-tree-source="1">Source</a>`
+      : '';
+    return `<div class="tree-actions">
+      <button type="button" class="tree-action" data-open-drawer="${esc(key)}">Details</button>
+      ${src}
+    </div>`;
+  }
+
+  const chevronSvg = `<svg class="tree-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>`;
+
+  function buildHierarchy(rows) {
     const merged = mergeSettingVariants(rows);
-    merged.forEach(r => { rowMap[r._mergedKey || cardKey(r)] = r; });
-    const map = {};
+    rowMap = {};
+    obligationParent = {};
     merged.forEach(r => {
-      if (!map[r.state]) map[r.state] = {};
-      if (!map[r.state][r.oversight_agency]) map[r.state][r.oversight_agency] = [];
-      map[r.state][r.oversight_agency].push(r);
+      rowMap[r._mergedKey || cardKey(r)] = r;
+      if (r.row_type === 'Parent' && r.obligation_id) obligationParent[r.obligation_id] = r;
     });
-    return statesInOrder(map).map(s => ({
-      state: s,
-      name:  STATE_NAMES[s] || s,
-      total: merged.filter(r => r.state === s).length,
-      agencies: Object.entries(map[s])
-    }));
+
+    const byObl = {};
+    merged.forEach(r => {
+      const k = obligationKey(r);
+      (byObl[k] || (byObl[k] = [])).push(r);
+    });
+
+    const items = Object.entries(byObl).map(([ok, group]) => {
+      const parent = group.find(r => r.row_type === 'Parent') || null;
+      const children = group.filter(r => r.row_type === 'Child');
+      const sample = parent || group[0];
+      const state = sample.state || '';
+      const agency = sample.oversight_agency || 'Unspecified authority';
+      const program = sample.type || 'Unspecified program';
+      if (children.length) {
+        const title = parent
+          ? parent.training_topic
+          : (sample.source_change_context || sample.training_topic);
+        return {
+          kind: 'module',
+          key: 'mod:' + state + '|' + agency + '|' + program + '|' + ok,
+          title,
+          subtitle: sample.citation || '',
+          program, agency, state,
+          parent,
+          children,
+          row: parent || sample
+        };
+      }
+      const key = sample._mergedKey || cardKey(sample);
+      return {
+        kind: 'leaf',
+        key,
+        title: sample.training_topic,
+        subtitle: sample.citation || '',
+        program, agency, state,
+        row: sample
+      };
+    });
+
+    const tree = {};
+    items.forEach(item => {
+      if (!tree[item.state]) tree[item.state] = {};
+      if (!tree[item.state][item.agency]) tree[item.state][item.agency] = {};
+      if (!tree[item.state][item.agency][item.program]) tree[item.state][item.agency][item.program] = [];
+      tree[item.state][item.agency][item.program].push(item);
+    });
+
+    return statesInOrder(tree).map(s => {
+      const authorities = Object.entries(tree[s]).map(([agency, programs]) => {
+        const programList = Object.entries(programs).map(([program, list]) => {
+          const sorted = list.slice().sort((a, b) => {
+            const aMod = /^Module\s+\d+/i.test(a.title || '');
+            const bMod = /^Module\s+\d+/i.test(b.title || '');
+            if (a.kind !== b.kind) return a.kind === 'module' ? -1 : 1;
+            if (aMod !== bMod) return aMod ? -1 : 1;
+            return compareTitles(a.title, b.title);
+          });
+          return { program, items: sorted };
+        }).sort((a, b) => compareTitles(a.program, b.program));
+        return { agency, programs: programList };
+      }).sort((a, b) => compareTitles(a.agency, b.agency));
+      return { state: s, name: STATE_NAMES[s] || s, authorities };
+    });
   }
 
-  // ─── Sub-topic detection (data-driven) ─── 
-  function isSubTopic(row) {
-    if (row.row_type === 'Child') return true;
-    const h = (row.hours_raw || '').toLowerCase();
-    if (h.includes('included in')) return true;
-    if ((!row.hours_raw || row.hours_raw === '0') && row.hours_required === 0) return true;
-    return false;
-  }
-
-  // ─── Flat row ───
-  function renderRow(row) {
-    const key = row._mergedKey || cardKey(row);
-    const sub = isSubTopic(row) ? ' sub-topic' : '';
-    const isSelected = selectedCardKey === key;
-    const srcHref = row.source_url ? esc(row.source_url) : null;
-    const settings = row.settings || (row.hstm_setting ? [row.hstm_setting] : []);
-    const settingBadge = settings.length > 1
-      ? `<span class="badge badge-setting" title="${esc(settings.join(', '))}">${settings.length} settings</span>`
-      : settings.length === 1 ? `<span class="badge badge-setting">${esc(settings[0])}</span>` : '';
-    const hoursLabel = formatHoursDisplay(row);
-    return `<div class="req-row${sub}${isSelected ? ' selected' : ''}" data-card-key="${esc(key)}">
-  <div class="req-main">
-    <span class="req-topic">${esc(row.training_topic)}</span>
-    ${row.type ? `<span class="req-purpose">${esc(row.type)}</span>` : ''}
+  function renderTreeNode(level, key, title, subtitle, count, childrenHtml, row) {
+    const isOpen = openTree[level] && openTree[level].has(key);
+    const rowKey = row ? (row._mergedKey || cardKey(row)) : '';
+    const selected = rowKey && selectedCardKey === rowKey;
+    return `<div class="tree-node level-${level} ${isOpen ? 'open' : 'closed'}" data-tree-level="${level}" data-tree-key="${esc(key)}">
+  <div class="tree-head">
+    <button type="button" class="tree-row${selected ? ' selected' : ''}" data-tree-toggle="${level}" data-tree-key="${esc(key)}"${rowKey ? ` data-card-key="${esc(rowKey)}"` : ''} aria-expanded="${isOpen ? 'true' : 'false'}">
+      ${chevronSvg}
+      <span class="tree-main">
+        <span class="tree-title ${level}">${esc(title)}</span>
+        ${subtitle ? `<span class="tree-sub">${esc(subtitle)}</span>` : ''}
+      </span>
+      ${count ? `<span class="tree-count">${esc(count)}</span>` : ''}
+    </button>
+    ${row ? rowActions(row, rowKey) : ''}
   </div>
-  <div class="req-badges">
-    ${renderImpactBadges(row)}
-    ${renderPolicyBadges(row)}
-    ${settingBadge}
-    ${hoursLabel ? `<span class="badge badge-hours">${esc(hoursLabel)}</span>` : ''}
-    ${srcHref ? `<a href="${srcHref}" target="_blank" rel="noopener" class="badge badge-source" onclick="event.stopPropagation()">Source ↗</a>` : ''}
-  </div>
-  <svg class="req-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+  <div class="tree-body"><div class="tree-body-inner">${childrenHtml}</div></div>
 </div>`;
   }
 
-  function renderGroupSection(label, rows) {
-    return `<div class="req-list">
-  <div class="group-header">
-    <span class="group-header-label">${esc(label)}</span>
-    <span class="group-header-count">${rows.length}</span>
-  </div>
-  ${rows.map(renderRow).join('')}
-</div>`;
+  function renderLeaf(item) {
+    const row = item.row;
+    const key = item.key;
+    const selected = selectedCardKey === key;
+    const sub = [row.citation, item.program].filter(Boolean).join(' · ');
+    return `<div class="tree-row tree-leaf${selected ? ' selected' : ''}" role="button" tabindex="0" data-open-drawer="${esc(key)}" data-card-key="${esc(key)}" aria-selected="${selected ? 'true' : 'false'}">
+      <span class="tree-leaf-spacer" aria-hidden="true"></span>
+      <span class="tree-main">
+        <span class="tree-title leaf">${esc(item.title)}</span>
+        ${sub ? `<span class="tree-sub">${esc(sub)}</span>` : ''}
+      </span>
+      ${rowActions(row, key)}
+    </div>`;
   }
 
-  // ─── Jurisdiction accordion ───
+  function renderModule(item) {
+    const childHtml = item.children.map(child => {
+      const key = child._mergedKey || cardKey(child);
+      return renderLeaf({
+        kind: 'leaf',
+        key,
+        title: child.training_topic,
+        program: item.program,
+        row: child
+      });
+    }).join('');
+    const sub = [item.subtitle, item.program].filter(Boolean).join(' · ');
+    return renderTreeNode(
+      'module',
+      item.key,
+      item.title,
+      sub,
+      countLabel(item.children.length, 'topic', 'topics'),
+      childHtml,
+      item.row
+    );
+  }
+
+  function renderProgram(program) {
+    const key = program._key;
+    const children = program.items.map(item => item.kind === 'module' ? renderModule(item) : renderLeaf(item)).join('');
+    return renderTreeNode('program', key, program.program, '', programChildLabel(program.items), children, null);
+  }
+
+  function renderAuthority(auth) {
+    const children = auth.programs.map(renderProgram).join('');
+    return renderTreeNode(
+      'authority',
+      auth._key,
+      auth.agency,
+      '',
+      countLabel(auth.programs.length, 'program', 'programs'),
+      children,
+      null
+    );
+  }
+
+  function renderJurisdictionNode(group) {
+    const children = group.authorities.map(renderAuthority).join('');
+    return renderTreeNode(
+      'jurisdiction',
+      group.state,
+      group.name,
+      '',
+      countLabel(group.authorities.length, 'authority', 'authorities'),
+      children,
+      null
+    );
+  }
+
+  function annotateTreeKeys(tree) {
+    tree.forEach(j => {
+      j.authorities.forEach(a => {
+        a._key = j.state + '||' + a.agency;
+        a.programs.forEach(p => {
+          p._key = a._key + '||' + p.program;
+        });
+      });
+    });
+    return tree;
+  }
+
+  function renderTree(tree) {
+    lastTree = annotateTreeKeys(tree);
+    const crumb = `<nav class="tree-crumb" id="treeCrumb" hidden aria-label="Hierarchy path"></nav>`;
+    if (!lastTree.length) return crumb;
+    return crumb + lastTree.map(renderJurisdictionNode).join('');
+  }
+
+  function hierarchyPathForRow(row) {
+    if (!row) return [];
+    const parent = row.obligation_id ? obligationParent[row.obligation_id] : null;
+    const moduleTitle = row.row_type === 'Child'
+      ? (parent ? parent.training_topic : (row.source_change_context || ''))
+      : (/^Module\s+\d+/i.test(row.training_topic || '') ? row.training_topic : '');
+    const parts = [
+      STATE_NAMES[row.state] || row.state,
+      row.oversight_agency,
+      row.type,
+      moduleTitle && moduleTitle !== row.training_topic ? moduleTitle : '',
+      row.training_topic
+    ];
+    return parts.filter(Boolean);
+  }
+
+  function updateBreadcrumb() {
+    const el = document.getElementById('treeCrumb');
+    if (!el) return;
+    const row = selectedCardKey ? rowMap[selectedCardKey] : null;
+    const parts = row ? hierarchyPathForRow(row) : [];
+    if (!parts.length) { el.hidden = true; el.innerHTML = ''; return; }
+    el.hidden = false;
+    el.innerHTML = parts.map((p, i) => {
+      const sep = i ? '<span class="tree-crumb-sep" aria-hidden="true">/</span>' : '';
+      const cls = i === parts.length - 1 ? ' tree-crumb-current' : '';
+      return sep + `<span class="${cls.trim()}">${esc(p)}</span>`;
+    }).join('');
+  }
+
+  function groupData(rows) {
+    return buildHierarchy(rows);
+  }
+
   function renderJurisdiction(group) {
-    const key    = group.state;
-    const isOpen = openJurisdictions.has(key);
-    const subs   = group.agencies.map(([agency, rows]) => renderGroupSection(agency, rows)).join('');
-    return `<div class="jurisdiction-accordion ${isOpen ? 'open' : 'closed'}" data-juris-key="${esc(key)}">
-  <div class="jurisdiction-header">
-    <div style="display:flex;align-items:center;gap:8px;">
-      <span class="jurisdiction-title">${esc(group.name)}</span>
-      <span class="accordion-count">${group.total}</span>
-    </div>
-    <svg class="accordion-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
-  </div>
-  <div class="jurisdiction-body"><div class="jurisdiction-body-inner">${subs}</div></div>
-</div>`;
+    annotateTreeKeys([group]);
+    return renderJurisdictionNode(group);
   }
 
   // ─── Drawer ───
@@ -1263,6 +1451,18 @@ let selectedRole        = null;
   function interpCard(kind, kicker, body) {
     if (!body) return '';
     return `<div class="interp-card ${kind}"><div class="interp-kicker">${esc(kicker)}</div><div class="interp-body">${esc(body)}</div></div>`;
+  }
+
+  function drawerGroup(title, html) {
+    if (!html) return '';
+    return `<div class="drawer-group"><div class="drawer-section-title">${esc(title)}</div>${html}</div>`;
+  }
+
+  function moduleTitleForRow(row) {
+    if (!row) return '';
+    const parent = row.obligation_id ? obligationParent[row.obligation_id] : null;
+    if (row.row_type === 'Child') return parent ? parent.training_topic : (row.source_change_context || '');
+    return /^Module\s+\d+/i.test(row.training_topic || '') ? row.training_topic : '';
   }
 
   function renderDrawer() {
@@ -1288,32 +1488,57 @@ let selectedRole        = null;
     const hoursLabel = row ? formatHoursDisplay(row) : '';
     const related = row ? (row.related_provisions || []) : [];
     const relTypes = row ? (row.provision_relationship_types || []) : [];
+    const path = row ? hierarchyPathForRow(row) : [];
+    const crumb = path.length
+      ? `<div class="drawer-crumb">${path.map((p, i) => (i ? `<span class="drawer-crumb-sep" aria-hidden="true">/</span>` : '') + esc(p)).join('')}</div>`
+      : '';
+    const moduleTitle = row ? moduleTitleForRow(row) : '';
 
-    const kickers = row ? [
-      row.regulation_type ? `<span class="badge badge-type">${esc(row.regulation_type)}</span>` : '',
-      row.product_use_case ? `<span class="badge ${productUseCaseBadgeClass(row.product_use_case)}">${esc(row.product_use_case)}</span>` : '',
-      row.policy_action_relevance ? `<span class="badge ${policyActionBadgeClass(row.policy_action_relevance)}">${esc(row.policy_action_relevance)}</span>` : '',
-      row.change_type ? `<span class="badge badge-lifecycle">${esc(row.change_type)}</span>` : '',
-      row.lifecycle_stage ? `<span class="badge badge-lifecycle">${esc(row.lifecycle_stage)}</span>` : ''
+    const classificationHtml = row ? [
+      drawerText('Requirement type', row.regulation_type),
+      drawerText('Requirement level', row.requirement_level),
+      impactBlock,
+      hoursLabel ? drawerField('Hours', esc(hoursLabel)) : '',
+      drawerText('Frequency', row.frequency),
+      drawerText('Relationship', row.row_type)
     ].filter(Boolean).join('') : '';
 
-    const overviewContent = row ? `
-      <div class="drawer-section">
-        ${drawerChips('Applies to', settings)}
-        ${drawerChips('HSTM Role', roles)}
-        ${drawerText('Jurisdiction role', row.jurisdictional_name)}
-        ${drawerChips('Applicability', applicabilitySummariesList)}
-        ${impactBlock}
-      </div>
-      <div class="drawer-section">
-        ${hoursLabel ? drawerField('Hours', esc(hoursLabel)) : ''}
-        ${drawerText('Frequency', row.frequency)}
-        ${drawerText('Purpose', row.type)}
-        ${drawerText('Relationship', row.row_type)}
-        ${drawerText('Regulated competency', row.regulated_competency)}
-      </div>
-      ${row.interpretive_summary ? `<div class="drawer-section">${interpCard('analysis', 'What this implies', row.interpretive_summary)}</div>` : ''}
-    ` : '';
+    const applicabilityHtml = row ? [
+      drawerChips('Care setting', settings),
+      drawerChips('Role', roles),
+      drawerText('Facility / learner', row.jurisdictional_name),
+      drawerChips('Applicability', applicabilitySummariesList)
+    ].filter(Boolean).join('') : '';
+
+    const sourceContextHtml = row ? [
+      drawerText('Jurisdiction', STATE_NAMES[row.state] || row.state),
+      drawerText('Authority', row.oversight_agency),
+      drawerText('Program', row.type),
+      moduleTitle && moduleTitle !== row.training_topic ? drawerText('Module', moduleTitle) : ''
+    ].filter(Boolean).join('') : '';
+
+    const statusHtml = row ? [
+      drawerText('Lifecycle', row.lifecycle_stage),
+      drawerText('Change type', row.change_type),
+      drawerText('Detected', row.change_detected_date),
+      drawerText('Review status', row.interpretive_review_status),
+      drawerText('SME review', row.sme_review)
+    ].filter(Boolean).join('') : '';
+
+    const sourceOverviewHtml = row ? [
+      drawerText('Citation', row.citation),
+      src ? drawerField('Source', src) : '',
+      row.source_change_context ? interpCard('verbatim', 'Source language', row.source_change_context) : ''
+    ].filter(Boolean).join('') : '';
+
+    const overviewContent = row ? [
+      drawerGroup('Classification', classificationHtml),
+      drawerGroup('Applicability', applicabilityHtml),
+      drawerGroup('Source context', sourceContextHtml),
+      drawerGroup('Status', statusHtml),
+      drawerGroup('Source', sourceOverviewHtml),
+      row.interpretive_summary ? `<div class="drawer-group">${interpCard('analysis', 'What this implies', row.interpretive_summary)}</div>` : ''
+    ].filter(Boolean).join('') : '';
 
     const interpStack = row ? [interpCard('verbatim', 'Source language', row.source_change_context), interpCard('change', 'What the provision requires', row.regulatory_change_summary), interpCard('analysis', 'Product implication', row.interpretive_summary)].filter(Boolean).join('') : '';
     const policyHasContent = row && (row.product_use_case || row.policy_action_relevance || row.quality_manager_relevance || row.operational_domain || row.regulatory_change_summary || row.source_change_context || row.interpretive_summary || row.sme_review);
@@ -1379,7 +1604,7 @@ let selectedRole        = null;
       <div class="drawer-header">
         <div class="drawer-title-block">
           <span class="drawer-title">${row ? esc(row.training_topic) : ''}</span>
-          ${kickers ? `<div class="drawer-kickers">${kickers}</div>` : ''}
+          ${crumb}
         </div>
         <button type="button" class="drawer-close" id="drawerClose">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -1398,6 +1623,38 @@ let selectedRole        = null;
   function updateDrawer() {
     const el = document.getElementById('drawer');
     if (el) el.innerHTML = renderDrawer();
+    updateBreadcrumb();
+  }
+
+  function markSelectedRows() {
+    document.querySelectorAll('.tree-row[data-card-key], .tree-leaf[data-card-key]').forEach(el => {
+      const on = selectedCardKey !== null && el.dataset.cardKey === selectedCardKey;
+      el.classList.toggle('selected', on);
+      if (el.hasAttribute('aria-selected')) el.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+  }
+
+  function setSelectedRow(key) {
+    const next = key || null;
+    if (next && next !== selectedCardKey) drawerTab = 'overview';
+    selectedCardKey = next;
+    markSelectedRows();
+    updateDrawer();
+  }
+
+  function toggleTreeNode(level, key) {
+    const set = openTree[level];
+    if (!set || !key) return;
+    const willOpen = !set.has(key);
+    if (willOpen) set.add(key);
+    else set.delete(key);
+    const node = [...document.querySelectorAll('.tree-node[data-tree-level="' + level + '"]')]
+      .find(n => n.dataset.treeKey === key);
+    if (!node) return;
+    node.classList.toggle('open', willOpen);
+    node.classList.toggle('closed', !willOpen);
+    const btn = node.querySelector(':scope > .tree-head [data-tree-toggle]');
+    if (btn) btn.setAttribute('aria-expanded', willOpen ? 'true' : 'false');
   }
 
   // ─── Filter bar helpers ───
@@ -1566,9 +1823,9 @@ let selectedRole        = null;
       </div></div>`;
     }
     const filtered = filterPolicyData();
-    const groups = groupData(filtered);
-    const body = groups.length
-      ? groups.map(renderJurisdiction).join('')
+    const tree = buildHierarchy(filtered);
+    const body = tree.length
+      ? renderTree(tree)
       : `<div class="empty-state">
            <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
            <p class="empty-state-title">No results</p>
@@ -1736,11 +1993,15 @@ let selectedRole        = null;
         if (!filterState.jurisdictions.has(r.state))     return false;
         if (!filterState.requirementLevels.has(r.requirement_level)) return false;
         if (!filterState.authorityLevels.has(r.authority_level)) return false;
+        if (filterState.impactTypes.size < ALL_IMPACT_TYPES.length) {
+          const tags = Array.isArray(r.impact_types) ? r.impact_types : [];
+          if (!tags.some(t => filterState.impactTypes.has(t))) return false;
+        }
         return true;
       });
-      const groups = groupByHstmSetting(careFiltered);
-      const body = groups.length
-        ? groups.map(renderJurisdiction).join('')
+      const tree = buildHierarchy(careFiltered);
+      const body = tree.length
+        ? renderTree(tree)
         : `<div class="empty-state">
              <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
              <p class="empty-state-title">No results</p>
@@ -1762,9 +2023,9 @@ let selectedRole        = null;
         return;
       }
       const profileMatches = matchProfile(selectedProfileJurisdiction, selectedProfileSetting, selectedProfileRole, [...DATA, ...CARE_DATA]);
-      const profileGroups = groupData(profileMatches);
-      const profileBody = profileGroups.length
-        ? profileGroups.map(renderJurisdiction).join('')
+      const profileTree = buildHierarchy(profileMatches);
+      const profileBody = profileTree.length
+        ? renderTree(profileTree)
         : `<div class="empty-state">
              <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
              <p class="empty-state-title">No results</p>
@@ -1801,9 +2062,9 @@ let selectedRole        = null;
     }
 
     const filtered = filterData();
-    const groups   = groupData(filtered);
-    const body     = groups.length
-      ? groups.map(renderJurisdiction).join('')
+    const tree    = buildHierarchy(filtered);
+    const body    = tree.length
+      ? renderTree(tree)
       : `<div class="empty-state">
            <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
            <p class="empty-state-title">No results</p>
@@ -1816,13 +2077,20 @@ let selectedRole        = null;
 
   // ─── Event delegation on content panel ───
   document.getElementById('contentPanel').addEventListener('click', e => {
-    // Jurisdiction accordion header
-    const jurisHeader = e.target.closest('.jurisdiction-header');
-    if (jurisHeader) {
-      const acc = jurisHeader.closest('.jurisdiction-accordion');
-      const key = acc.dataset.jurisKey;
-      if (openJurisdictions.has(key)) { openJurisdictions.delete(key); acc.classList.replace('open','closed'); }
-      else { openJurisdictions.add(key); acc.classList.replace('closed','open'); }
+    if (e.target.closest('[data-tree-source]')) {
+      e.stopPropagation();
+      return;
+    }
+    const openDrawer = e.target.closest('[data-open-drawer]');
+    if (openDrawer) {
+      e.stopPropagation();
+      setSelectedRow(openDrawer.dataset.openDrawer);
+      return;
+    }
+    const treeToggle = e.target.closest('[data-tree-toggle]');
+    if (treeToggle) {
+      e.stopPropagation();
+      toggleTreeNode(treeToggle.dataset.treeToggle, treeToggle.dataset.treeKey);
       return;
     }
     // Dropdown trigger → open/close
@@ -1917,22 +2185,24 @@ let selectedRole        = null;
       e.stopPropagation();
       return;
     }
-    // Row click → open/close drawer
-    const reqRow = e.target.closest('.req-row');
-    if (reqRow && !e.target.closest('.badge-source')) {
-      const key = reqRow.dataset.cardKey;
-      selectedCardKey = selectedCardKey === key ? null : key;
-      render();
-      return;
+  });
+
+  document.getElementById('contentPanel').addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    if (e.target.closest('[data-tree-source]')) return;
+    const leaf = e.target.closest('.tree-leaf[data-open-drawer]');
+    if (leaf && !e.target.closest('.tree-action')) {
+      e.preventDefault();
+      setSelectedRow(leaf.dataset.openDrawer);
     }
   });
 
   // ─── Click outside closes dropdown; drawer controls ───
   document.addEventListener('click', e => {
     // Drawer overlay → close drawer
-    if (e.target.id === 'drawerOverlay') { selectedCardKey = null; render(); return; }
+    if (e.target.id === 'drawerOverlay') { setSelectedRow(null); return; }
     // Drawer close button
-    if (e.target.closest('#drawerClose')) { selectedCardKey = null; render(); return; }
+    if (e.target.closest('#drawerClose')) { setSelectedRow(null); return; }
     // Drawer tab switch
     const tab = e.target.closest('[data-drawer-tab]');
     if (tab) { drawerTab = tab.dataset.drawerTab; updateDrawer(); return; }
