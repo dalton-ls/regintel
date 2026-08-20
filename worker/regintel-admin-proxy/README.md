@@ -1,11 +1,13 @@
 # regintel-admin-proxy
 
 A small Cloudflare Worker that lets the RegIntel admin screens
-(`record-editor.html`, `bulk-apply.html`, `pending-review.html`) commit
-edits directly to `requirements.json` on GitHub — the live **output-row
-projection** for Role + Care Setting data, not the OpenLaws source corpus
-or any pre-site parsed JSON. `export.html` also reads through it (no auth
-needed for reads) so its snapshot always reflects the live committed data.
+(`record-editor.html`, `bulk-apply.html`, `pending-review.html`, and
+in-place Edit on `regintel.html`) commit edits directly to
+`requirements.json` (Role + Care Setting output rows) or `wr.json`
+(Workforce Readiness) on GitHub — the live **output-row projection**,
+not the OpenLaws source corpus or any pre-site parsed JSON. `export.html`
+also reads through it (no auth needed for reads) so its snapshot always
+reflects the live committed data.
 Because the committed file is the single source of truth, this lets one
 person work from multiple computers/browsers without losing edits or
 needing to manually re-export/re-commit.
@@ -53,8 +55,9 @@ Each admin screen prompts once per browser session for the `ADMIN_TOKEN`
 (the value you set in step 3) and caches it in `sessionStorage` — it is
 never written into the HTML/JS source, so it isn't exposed by "view
 source" on the static site. Enter it once per browser/device; after that,
-edits, bulk-applies, and conflict resolutions commit straight to the
-`claude/create-website-skeleton-hYJMa` branch on save (the branch GitHub Pages actually serves).
+edits, bulk-applies, conflict resolutions, and research-view in-place
+saves commit straight to the `claude/create-website-skeleton-hYJMa` branch
+on save (the branch GitHub Pages actually serves).
 
 ## Rotating the token
 
@@ -69,6 +72,7 @@ will start failing with 401s).
 - No per-user identity — anyone with the `ADMIN_TOKEN` can write.
 - No merge/conflict UI beyond a single retry-on-409 — built for one
   operator, not concurrent multi-user editing.
-- Only touches `requirements.json` on the `claude/create-website-skeleton-hYJMa`
-  branch — `wr.json` is untouched (Workforce Readiness is intentionally
-  outside the unified schema; see the repo's DESIGN.md).
+- Only writes `requirements.json` and `wr.json` on the configured GitHub
+  branch. Redeploy the Worker after changing `ALLOWED_PATHS` so Workforce
+  in-place saves are accepted. `wr.json` is still a separate projection
+  from the Role/Care Setting unified array.

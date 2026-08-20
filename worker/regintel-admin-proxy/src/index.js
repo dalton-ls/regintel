@@ -8,7 +8,7 @@
  * committed file on GitHub is the single source of truth.
  *
  * Endpoints:
- *   GET  /file?path=requirements.json  -> { content, sha }
+ *   GET  /file?path=requirements.json|wr.json  -> { content, sha }
  *   POST /commit                       -> { path, message, content } -> commits
  *
  * Auth: Authorization: Bearer <ADMIN_TOKEN>  (checked against the ADMIN_TOKEN
@@ -16,7 +16,7 @@
  * multi-user auth system.
  */
 
-const ALLOWED_PATHS = new Set(["requirements.json"]);
+const ALLOWED_PATHS = new Set(["requirements.json", "wr.json"]);
 
 function corsHeaders(origin) {
   return {

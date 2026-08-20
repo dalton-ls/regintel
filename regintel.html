@@ -424,6 +424,35 @@
 
     .drawer-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 
+    .drawer-edit-grid { display: flex; flex-direction: column; gap: 12px; }
+    .drawer-edit-field label {
+      display: block; font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.03em; color: #6b7a99; margin-bottom: 5px;
+    }
+    .drawer-edit-field input,
+    .drawer-edit-field select,
+    .drawer-edit-field textarea {
+      width: 100%; border: 1px solid #dde1ea; border-radius: 6px;
+      padding: 7px 10px; font-size: 13px; font-family: inherit; color: #1a2332; background: #fff;
+    }
+    .drawer-edit-field input:focus,
+    .drawer-edit-field select:focus,
+    .drawer-edit-field textarea:focus { outline: none; border-color: #2463eb; }
+    .drawer-edit-field textarea { resize: vertical; min-height: 64px; }
+    .drawer-edit-field input[readonly],
+    .drawer-edit-field input[disabled] { background: #f1f5f9; color: #64748b; cursor: not-allowed; }
+    .drawer-edit-hint { font-size: 10px; color: #b0b8cc; margin-top: 3px; }
+    .edit-impact-list { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+    .edit-impact-opt { font-size: 12px; color: #1a2332; font-weight: 500; display: inline-flex; align-items: center; gap: 5px; text-transform: none; letter-spacing: 0; }
+    .drawer-edit-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 8px; border-top: 1px solid #f0f2f5; }
+    .drawer-edit-actions .btn.primary { background: #2463eb; color: #fff; border-color: #2463eb; }
+    .drawer-edit-status { font-size: 12px; color: #6b7a99; }
+    .validation-warning { background: #fef3e2; border: 1px solid #f5cd87; color: #92620a; border-radius: 8px; padding: 10px 14px; font-size: 12px; }
+    .validation-advisory { background: #eef4fc; border: 1px solid #b8d0f5; color: #2b5aa1; border-radius: 8px; padding: 10px 14px; font-size: 12px; }
+    .error-banner { background: #fdecec; border: 1px solid #f5b8b8; color: #a12b2b; border-radius: 8px; padding: 10px 14px; font-size: 12px; }
+    .wf-domain-header, .wf-ksa-item { cursor: pointer; }
+    .wf-domain-header:hover, .wf-ksa-item:hover { background: #f7f9fc; }
+
     .drawer-row { display: grid; grid-template-columns: 118px 1fr; gap: 6px; align-items: baseline; }
     .drawer-label { font-size: 11px; font-weight: 600; color: #6b7a99; text-transform: uppercase; letter-spacing: 0.04em; }
     .drawer-value { font-size: 13px; color: #1a2332; line-height: 1.5; }
@@ -936,6 +965,70 @@
   // legacy Import/Export JSON tools and re-parse-on-import logic read/write.
   let CURRENT_SHEETS = {};
 
+  const WORKER_URL = 'https://regintel-admin-proxy.regintel.workers.dev';
+  const TOKEN_KEY = 'regintel_admin_token';
+
+  const EDIT_FIELDS = [
+    "Obligation ID",
+    "Jurisdiction", "Jurisdiction Setting", "Jurisdiction Role",
+    "HSTM Setting", "HSTM Role", "Regulation Type",
+    "Oversight / Professional Agency", "Requirement Level", "Authority Level",
+    "Explicit Training",
+    "Citation", "Related Regulatory Provisions",
+    "Training Topic / Competency Item", "Relationship", "Purpose",
+    "Approval Required", "Approval Basis",
+    "Approval Scope", "Approval Responsibility", "Approval Timing",
+    "Instructor/SME Qualification Required",
+    "Hours Required", "Frequency",
+    "Source URL", "Notes / Research Flags",
+    "Change Type", "Change Detected Date", "Change Source Path",
+    "Applicability Rules",
+    "Impact Types", "Impact Basis", "Impact Confidence", "Impact Review",
+    "Provision Relationship Types", "Interpretive Conditions",
+    "Prior Training Credit / Exemption", "Prior Training Qualification",
+    "Interpretive Review Status", "Regulatory Lifecycle Stage",
+    "Product Use Case", "Regulated Competency",
+    "Regulatory Change Summary", "Interpretive Summary",
+    "Policy Action Relevance", "Quality Manager Relevance", "Operational Domain",
+    "Human Interpretation / SME Review", "Source Change Context"
+  ];
+  const EDIT_TEXTAREA_FIELDS = new Set([
+    "Training Topic / Competency Item", "Purpose", "Notes / Research Flags",
+    "Source URL", "Approval Basis", "Related Regulatory Provisions",
+    "Interpretive Conditions", "Prior Training Qualification",
+    "Regulatory Change Summary", "Interpretive Summary", "Source Change Context",
+    "Impact Basis", "Applicability Rules"
+  ]);
+  const EDIT_ARRAY_FIELDS = new Set(["HSTM Role", "Impact Types", "Provision Relationship Types", "Related Regulatory Provisions"]);
+  const EDIT_JSON_FIELDS = new Set(["Applicability Rules"]);
+  const EDIT_COMPUTED_FIELDS = new Set(["Explicit Training"]);
+  const EDIT_SELECT_OPTIONS = {
+    "Requirement Level": SCHEMA_VOCAB["Requirement Level"].slice(),
+    "Authority Level": SCHEMA_VOCAB["Authority Level"].slice(),
+    "Approval Required": SCHEMA_VOCAB["Approval Required"].slice(),
+    "Relationship": SCHEMA_VOCAB["Relationship"].slice(),
+    "Regulation Type": SCHEMA_VOCAB["Regulation Type"].slice(),
+    "Approval Scope": SCHEMA_VOCAB["Approval Scope"].slice(),
+    "Approval Responsibility": SCHEMA_VOCAB["Approval Responsibility"].slice(),
+    "Approval Timing": SCHEMA_VOCAB["Approval Timing"].slice(),
+    "Instructor/SME Qualification Required": SCHEMA_VOCAB["Instructor/SME Qualification Required"].slice(),
+    "Prior Training Credit / Exemption": SCHEMA_VOCAB["Prior Training Credit / Exemption"].slice(),
+    "Interpretive Review Status": SCHEMA_VOCAB["Interpretive Review Status"].slice(),
+    "Regulatory Lifecycle Stage": SCHEMA_VOCAB["Regulatory Lifecycle Stage"].slice(),
+    "Product Use Case": SCHEMA_VOCAB["Product Use Case"].slice(),
+    "Regulated Competency": SCHEMA_VOCAB["Regulated Competency"].slice(),
+    "Policy Action Relevance": SCHEMA_VOCAB["Policy Action Relevance"].slice(),
+    "Quality Manager Relevance": SCHEMA_VOCAB["Quality Manager Relevance"].slice(),
+    "Operational Domain": SCHEMA_VOCAB["Operational Domain"].slice(),
+    "Human Interpretation / SME Review": SCHEMA_VOCAB["Human Interpretation / SME Review"].slice(),
+    "Change Type": SCHEMA_VOCAB["Change Type"].slice(),
+    "Impact Confidence": ["High", "Medium", "Low"]
+  };
+
+  function deriveExplicitTraining(requirementLevel) {
+    return requirementLevel === 'Explicit Training' ? 'Yes' : 'No';
+  }
+
   // ─── UI state ───
   let sidebarOpen   = true;
   let activeSection = 'roles';
@@ -971,15 +1064,16 @@ let selectedRole        = null;
     const domains = [];
     let current = null;
     rows.forEach(r => {
+      const key = r._mergedKey || cardKey(r);
       if (r.row_type === 'Parent') {
-        current = { title: r.training_topic, ksas: [] };
+        current = { title: r.training_topic, ksas: [], row: r, key };
         domains.push(current);
       } else if (r.row_type === 'Child' && current) {
         const m = r.training_topic.match(/^(Knowledge|Skill|Ability)\s*:\s*(.*)$/i);
         if (m) {
-          current.ksas.push({ type: m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase(), text: m[2] });
+          current.ksas.push({ type: m[1].charAt(0).toUpperCase() + m[1].slice(1).toLowerCase(), text: m[2], row: r, key });
         } else {
-          current.ksas.push({ type: '', text: r.training_topic });
+          current.ksas.push({ type: '', text: r.training_topic, row: r, key });
         }
       }
     });
@@ -1216,6 +1310,7 @@ let selectedRole        = null;
     const merged = mergeSettingVariants(rows);
     rowMap = {};
     obligationParent = {};
+    WR_DATA.forEach(r => { rowMap[r._mergedKey || cardKey(r)] = r; });
     merged.forEach(r => {
       rowMap[r._mergedKey || cardKey(r)] = r;
       if (r.row_type === 'Parent' && r.obligation_id) obligationParent[r.obligation_id] = r;
@@ -1414,7 +1509,7 @@ let selectedRole        = null;
   function updateBreadcrumb() {
     const el = document.getElementById('treeCrumb');
     if (!el) return;
-    const row = selectedCardKey ? rowMap[selectedCardKey] : null;
+    const row = selectedCardKey ? lookupRow(selectedCardKey) : null;
     const parts = row ? hierarchyPathForRow(row) : [];
     if (!parts.length) { el.hidden = true; el.innerHTML = ''; return; }
     el.hidden = false;
@@ -1465,9 +1560,308 @@ let selectedRole        = null;
     return /^Module\s+\d+/i.test(row.training_topic || '') ? row.training_topic : '';
   }
 
+  function rawRecord(row) {
+    return (row && row._raw) ? row._raw : {};
+  }
+
+  function editFieldText(record, field) {
+    const v = record[field];
+    if (EDIT_JSON_FIELDS.has(field)) return Array.isArray(v) || (v && typeof v === 'object') ? JSON.stringify(v, null, 2) : (v || '');
+    if (EDIT_ARRAY_FIELDS.has(field)) return Array.isArray(v) ? v.join(', ') : (v || '');
+    if (field === 'Impact Review') {
+      if (v === true) return 'true';
+      if (v === false) return 'false';
+      return '';
+    }
+    return v == null ? '' : String(v);
+  }
+
+  function renderImpactTypeChecks(selected) {
+    const set = new Set(Array.isArray(selected) ? selected : splitPipeList(selected));
+    return '<div class="edit-impact-list">' + IMPACT_TYPES.concat(LEGACY_IMPACT_TYPES).map(t =>
+      '<label class="edit-impact-opt"><input type="checkbox" data-impact-type="' + esc(t) + '"' + (set.has(t) ? ' checked' : '') + '> ' + esc(t) + '</label>'
+    ).join('') + '</div>';
+  }
+
+  function renderDrawerEditForm(row) {
+    const rec = rawRecord(row);
+    const recordId = rec['Record ID'] || row.record_id || '';
+    let fieldsHtml = '';
+    EDIT_FIELDS.forEach(field => {
+      const value = editFieldText(rec, field);
+      let inputEl = '';
+      let hint = '';
+      if (EDIT_COMPUTED_FIELDS.has(field)) {
+        const derived = deriveExplicitTraining(rec['Requirement Level'] || row.requirement_level);
+        inputEl = '<input type="text" id="explicitTrainingDisplay" value="' + esc(derived) + '" readonly disabled>';
+        hint = '<div class="drawer-edit-hint">Computed from Requirement Level — not editable</div>';
+      } else if (field === 'Impact Types') {
+        inputEl = renderImpactTypeChecks(rec['Impact Types'] || row.impact_types);
+        hint = '<div class="drawer-edit-hint">Parser-assigned response categories. No catalog IDs.</div>';
+      } else if (field === 'Impact Review') {
+        const cur = rec['Impact Review'];
+        const sel = cur === true ? 'true' : cur === false ? 'false' : '';
+        inputEl = '<select data-field="Impact Review">' +
+          '<option value=""' + (sel === '' ? ' selected' : '') + '>— none —</option>' +
+          '<option value="true"' + (sel === 'true' ? ' selected' : '') + '>Needs QA</option>' +
+          '<option value="false"' + (sel === 'false' ? ' selected' : '') + '>Not flagged</option>' +
+          '</select>';
+      } else if (EDIT_SELECT_OPTIONS[field]) {
+        const opts = EDIT_SELECT_OPTIONS[field];
+        const known = opts.includes(value);
+        let optsHtml = '<option value=""' + (value === '' ? ' selected' : '') + '>— none —</option>';
+        opts.forEach(o => {
+          optsHtml += '<option value="' + esc(o) + '"' + (o === value ? ' selected' : '') + '>' + esc(o) + '</option>';
+        });
+        if (value !== '' && !known) {
+          optsHtml += '<option value="' + esc(value) + '" selected>' + esc(value) + ' (legacy — must be corrected)</option>';
+        }
+        inputEl = '<select data-field="' + esc(field) + '">' + optsHtml + '</select>';
+        if (EDIT_ARRAY_FIELDS.has(field)) hint = '<div class="drawer-edit-hint">Comma-separated list</div>';
+      } else {
+        inputEl = EDIT_TEXTAREA_FIELDS.has(field)
+          ? '<textarea data-field="' + esc(field) + '">' + esc(value) + '</textarea>'
+          : '<input type="text" data-field="' + esc(field) + '" value="' + esc(value) + '">';
+        if (EDIT_ARRAY_FIELDS.has(field)) hint = '<div class="drawer-edit-hint">Comma-separated list</div>';
+        if (EDIT_JSON_FIELDS.has(field)) hint = '<div class="drawer-edit-hint">JSON array of applicability objects</div>';
+      }
+      fieldsHtml += '<div class="drawer-edit-field"><label>' + esc(field) + '</label>' + inputEl + hint + '</div>';
+    });
+
+    return '<div class="drawer-edit-grid">' +
+      '<div class="drawer-edit-field"><label>Record ID</label>' +
+        '<input type="text" value="' + esc(recordId) + '" readonly disabled>' +
+        '<div class="drawer-edit-hint">Identity hash — never rewritten from this form</div></div>' +
+      '<div id="drawerValidation"></div>' +
+      fieldsHtml +
+      '<div class="drawer-edit-actions">' +
+        '<button type="button" class="btn primary" id="drawerSaveBtn">Save to dataset</button>' +
+        '<button type="button" class="btn" id="drawerDiscardBtn">Discard</button>' +
+        '<span class="drawer-edit-status" id="drawerSaveStatus"></span>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function readDrawerValues(original) {
+    const panel = document.getElementById('drawerPanel');
+    const values = {};
+    if (!panel) return values;
+    panel.querySelectorAll('[data-field]').forEach(el => {
+      const field = el.dataset.field;
+      const raw = el.value;
+      const val = (raw == null ? '' : String(raw)).trim();
+      if (val === editFieldText(original, field).trim()) return;
+      if (EDIT_JSON_FIELDS.has(field)) {
+        if (!val) { values[field] = []; return; }
+        try { values[field] = JSON.parse(val); }
+        catch { values[field] = { __invalidJson: true, text: val }; }
+        return;
+      }
+      if (field === 'Impact Review') {
+        values[field] = val === 'true' ? true : val === 'false' ? false : null;
+        return;
+      }
+      if (EDIT_ARRAY_FIELDS.has(field)) {
+        values[field] = val ? val.split(',').map(s => s.trim()).filter(Boolean) : [];
+        return;
+      }
+      values[field] = val === '' ? null : val;
+    });
+    const impactBoxes = panel.querySelectorAll('[data-impact-type]');
+    if (impactBoxes.length) {
+      const types = [];
+      impactBoxes.forEach(box => { if (box.checked) types.push(box.dataset.impactType); });
+      const prev = Array.isArray(original['Impact Types']) ? original['Impact Types'] : splitPipeList(original['Impact Types']);
+      if (JSON.stringify(types) !== JSON.stringify(prev)) values['Impact Types'] = types;
+    }
+    return values;
+  }
+
+  function drawerValidationErrors(merged) {
+    const errors = [];
+    if (!merged['Jurisdiction Setting'] && !merged['Jurisdiction Role']) {
+      errors.push('At least one of Jurisdiction Setting or Jurisdiction Role is required.');
+    }
+    const rl = merged['Requirement Level'];
+    if (rl && !EDIT_SELECT_OPTIONS['Requirement Level'].includes(rl)) {
+      errors.push('Requirement Level must be Explicit Training or Other Training Reference.');
+    }
+    const al = merged['Authority Level'];
+    if (al && !EDIT_SELECT_OPTIONS['Authority Level'].includes(al)) {
+      errors.push('Authority Level must be Federal Floor, State Floor, or Competency.');
+    }
+    const ar = merged['Approval Required'];
+    if (ar && !EDIT_SELECT_OPTIONS['Approval Required'].includes(ar)) {
+      errors.push('Approval Required must be Yes, No, or Unknown.');
+    }
+    if (merged['Applicability Rules'] && merged['Applicability Rules'].__invalidJson) {
+      errors.push('Applicability Rules must be valid JSON.');
+    }
+    return errors;
+  }
+
+  function drawerAdvisoryWarnings(merged) {
+    const warnings = [];
+    const impactTypes = merged['Impact Types'];
+    if (Array.isArray(impactTypes)) {
+      impactTypes.forEach(t => {
+        if (!IMPACT_TYPES.includes(t) && !LEGACY_IMPACT_TYPES.includes(t)) {
+          warnings.push('Impact Types: ' + JSON.stringify(t) + ' is not in the closed taxonomy.');
+        } else if (LEGACY_IMPACT_TYPES.includes(t)) {
+          warnings.push('Impact Types: ' + JSON.stringify(t) + ' is a legacy bucket — prefer a specific type.');
+        }
+      });
+    }
+    return warnings;
+  }
+
+  function getAdminToken() {
+    let t = sessionStorage.getItem(TOKEN_KEY);
+    if (!t) {
+      t = prompt('Enter the RegIntel admin token (asked once per browser session):');
+      if (t) sessionStorage.setItem(TOKEN_KEY, t);
+    }
+    return t;
+  }
+
+  async function fetchWorkerFile(path) {
+    const res = await fetch(WORKER_URL + '/file?path=' + encodeURIComponent(path));
+    if (!res.ok) throw new Error('Failed to load ' + path + ' (HTTP ' + res.status + ')');
+    const body = await res.json();
+    if (body.content === undefined) throw new Error(path + ' did not return content');
+    return body.content;
+  }
+
+  async function commitWorkerFile(path, content, message) {
+    const token = getAdminToken();
+    if (!token) throw new Error('Admin token is required to save.');
+    const res = await fetch(WORKER_URL + '/commit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify({ path, message, content })
+    });
+    if (res.status === 401) {
+      sessionStorage.removeItem(TOKEN_KEY);
+      throw new Error('Admin token was rejected. It has been cleared — try saving again to re-enter it.');
+    }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || ('Save failed (HTTP ' + res.status + ')'));
+    }
+    return res.json();
+  }
+
+  function findJsonByRecordId(store, id) {
+    if (Array.isArray(store)) return store.find(r => r && r['Record ID'] === id) || null;
+    if (!store || typeof store !== 'object') return null;
+    let found = null;
+    Object.keys(store).forEach(k => {
+      if (!Array.isArray(store[k]) || found) return;
+      found = store[k].find(r => r && r['Record ID'] === id) || null;
+    });
+    return found;
+  }
+
+  function patchJsonByRecordId(store, id, values) {
+    if (Array.isArray(store)) {
+      return store.map(r => r && r['Record ID'] === id ? Object.assign({}, r, values) : r);
+    }
+    const out = {};
+    Object.keys(store).forEach(k => {
+      if (!Array.isArray(store[k])) { out[k] = store[k]; return; }
+      out[k] = store[k].map(r => r && r['Record ID'] === id ? Object.assign({}, r, values) : r);
+    });
+    return out;
+  }
+
+  function applySavedRaw(id, savedRaw, sheet, lane) {
+    const n = normalizeRow(savedRaw);
+    n._raw = savedRaw;
+    n._sheet = sheet;
+    n._lane = lane;
+    const replaceIn = arr => {
+      if (!Array.isArray(arr)) return;
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i] && arr[i].record_id === id) arr[i] = n;
+      }
+    };
+    replaceIn(DATA);
+    replaceIn(CARE_DATA);
+    replaceIn(WR_DATA);
+    Object.keys(ROLE_DATA).forEach(k => replaceIn(ROLE_DATA[k]));
+    Object.keys(CS_DATA).forEach(k => replaceIn(CS_DATA[k]));
+    Object.keys(CURRENT_SHEETS).forEach(k => {
+      if (!Array.isArray(CURRENT_SHEETS[k])) return;
+      CURRENT_SHEETS[k] = CURRENT_SHEETS[k].map(r => r && r['Record ID'] === id ? savedRaw : r);
+    });
+    rowMap[cardKey(n)] = n;
+    if (selectedCardKey) rowMap[selectedCardKey] = n;
+  }
+
+  function valuesMatchSaved(saved, values) {
+    return Object.keys(values).every(k => JSON.stringify(saved[k] ?? null) === JSON.stringify(values[k] ?? null));
+  }
+
+  async function saveDrawerRecord() {
+    const row = selectedCardKey ? lookupRow(selectedCardKey) : null;
+    if (!row || !adminMode) return;
+    const original = rawRecord(row);
+    const id = original['Record ID'] || row.record_id;
+    if (!id) {
+      showToast('This row has no Record ID — cannot save');
+      return;
+    }
+    const values = readDrawerValues(original);
+    if ('Requirement Level' in values) {
+      const derived = deriveExplicitTraining(values['Requirement Level']);
+      if (derived !== original['Explicit Training']) values['Explicit Training'] = derived;
+    }
+    const merged = Object.assign({}, original, values);
+    const warnEl = document.getElementById('drawerValidation');
+    const status = document.getElementById('drawerSaveStatus');
+    const saveBtn = document.getElementById('drawerSaveBtn');
+    const errors = drawerValidationErrors(merged);
+    if (errors.length) {
+      if (warnEl) warnEl.innerHTML = '<div class="validation-warning">Cannot save:<ul>' + errors.map(e => '<li>' + esc(e) + '</li>').join('') + '</ul></div>';
+      return;
+    }
+    const advisories = drawerAdvisoryWarnings(merged);
+    if (warnEl) {
+      warnEl.innerHTML = advisories.length
+        ? '<div class="validation-advisory">Heads up (does not block save):<ul>' + advisories.map(e => '<li>' + esc(e) + '</li>').join('') + '</ul></div>'
+        : '';
+    }
+    if (!Object.keys(values).length) { showToast('No changes to save'); return; }
+
+    const path = row._lane === 'wr' ? 'wr.json' : 'requirements.json';
+    if (saveBtn) saveBtn.disabled = true;
+    if (status) status.textContent = 'Fetching latest and committing…';
+    try {
+      const latest = await fetchWorkerFile(path);
+      if (path === 'requirements.json' && !Array.isArray(latest)) throw new Error('requirements.json is not a record array');
+      const existing = findJsonByRecordId(latest, id);
+      if (!existing) throw new Error('Record ' + id + ' was not found in ' + path);
+      const updated = patchJsonByRecordId(latest, id, values);
+      const result = await commitWorkerFile(path, updated, 'Edit ' + id + ' via research view');
+      const verified = await fetchWorkerFile(path);
+      const saved = findJsonByRecordId(verified, id);
+      if (!saved) throw new Error('Save did not persist ' + id + ' to ' + path);
+      if (!valuesMatchSaved(saved, values)) throw new Error('Save did not persist all fields to ' + path);
+      applySavedRaw(id, saved, row._sheet, row._lane || (path === 'wr.json' ? 'wr' : 'requirements'));
+      render();
+      showToast('Saved ' + id + (result.commitUrl ? ' — ' + result.commitUrl : ''));
+    } catch (err) {
+      if (warnEl) warnEl.innerHTML = '<div class="error-banner">' + esc(err.message) + '</div>';
+      showToast(err.message);
+    } finally {
+      if (saveBtn) saveBtn.disabled = false;
+      if (status) status.textContent = '';
+    }
+  }
+
   function renderDrawer() {
     const isOpen = selectedCardKey !== null;
-    const row = isOpen ? rowMap[selectedCardKey] : null;
+    const row = isOpen ? lookupRow(selectedCardKey) : null;
     const src = row && row.source_url
       ? `<a href="${esc(row.source_url)}" target="_blank" rel="noopener" class="source-link">${esc(truncUrl(row.source_url, 64))}</a>`
       : '';
@@ -1593,10 +1987,15 @@ let selectedRole        = null;
     ` : '';
 
     const body = !row ? ''
+      : drawerTab === 'edit' && adminMode ? renderDrawerEditForm(row)
       : drawerTab === 'policy' ? policyContent
       : drawerTab === 'approval' ? approvalContent
       : drawerTab === 'source' ? sourceContent
       : overviewContent;
+
+    const editTab = adminMode
+      ? `<button type="button" class="drawer-tab${drawerTab === 'edit' ? ' active' : ''}" data-drawer-tab="edit">Edit</button>`
+      : '';
 
     return `
     <div class="drawer-overlay${isOpen ? ' open' : ''}" id="drawerOverlay"></div>
@@ -1615,9 +2014,17 @@ let selectedRole        = null;
         <button type="button" class="drawer-tab${drawerTab === 'policy' ? ' active' : ''}" data-drawer-tab="policy">Policy</button>
         <button type="button" class="drawer-tab${drawerTab === 'approval' ? ' active' : ''}" data-drawer-tab="approval">Approval</button>
         <button type="button" class="drawer-tab${drawerTab === 'source' ? ' active' : ''}" data-drawer-tab="source">Source</button>
+        ${editTab}
       </div>
       <div class="drawer-body">${body}</div>
     </div>`;
+  }
+
+  function lookupRow(key) {
+    if (!key) return null;
+    if (rowMap[key]) return rowMap[key];
+    const all = DATA.concat(CARE_DATA, WR_DATA);
+    return all.find(r => (r._mergedKey || cardKey(r)) === key) || null;
   }
 
   function updateDrawer() {
@@ -1636,7 +2043,7 @@ let selectedRole        = null;
 
   function setSelectedRow(key) {
     const next = key || null;
-    if (next && next !== selectedCardKey) drawerTab = 'overview';
+    if (next && next !== selectedCardKey) drawerTab = adminMode ? 'edit' : 'overview';
     selectedCardKey = next;
     markSelectedRows();
     updateDrawer();
@@ -1746,11 +2153,17 @@ let selectedRole        = null;
   }
 
   function renderProfileQueryBar() {
+    const hasQuery = !!(selectedProfileSetting || selectedProfileRole);
+    const exportBtn = hasQuery ? `<button class="export-btn" onclick="exportToExcel()" title="Export matching obligations to Excel">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Export .xlsx
+    </button>` : '';
     return `<div class="filter-bar">
     ${renderProfileSingleSelect('profile-jurisdiction', 'Jurisdiction', ALL_JURISDICTIONS, selectedProfileJurisdiction)}
     ${renderProfileSingleSelect('profile-setting', 'HSTM Setting', ALL_HSTM_SETTINGS, selectedProfileSetting)}
     ${renderProfileSingleSelect('profile-role', 'HSTM Role', ALL_HSTM_ROLES, selectedProfileRole)}
     <button type="button" class="btn" id="profileClearBtn">Clear</button>
+    ${exportBtn}
   </div>`;
   }
 
@@ -1924,12 +2337,12 @@ let selectedRole        = null;
 
     const domainCards = domains.map((d, i) => `
       <div class="wf-domain-card">
-        <div class="wf-domain-header">
+        <div class="wf-domain-header"${d.key ? ` role="button" tabindex="0" data-open-drawer="${esc(d.key)}" data-card-key="${esc(d.key)}"` : ''}>
           <span class="wf-domain-num">${i + 1}</span>
           <span class="wf-domain-title">${esc(d.title.replace(/^Domain\s+\d+:\s*/i, ''))}</span>
         </div>
         <ul class="wf-ksa-list">
-          ${d.ksas.map(k => `<li class="wf-ksa-item">${ksaBadge(k.type)}<span class="wf-ksa-text">${esc(k.text)}</span></li>`).join('')}
+          ${d.ksas.map(k => `<li class="wf-ksa-item"${k.key ? ` role="button" tabindex="0" data-open-drawer="${esc(k.key)}" data-card-key="${esc(k.key)}"` : ''}>${ksaBadge(k.type)}<span class="wf-ksa-text">${esc(k.text)}</span></li>`).join('')}
         </ul>
       </div>
     `).join('');
@@ -2190,10 +2603,10 @@ let selectedRole        = null;
   document.getElementById('contentPanel').addEventListener('keydown', e => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     if (e.target.closest('[data-tree-source]')) return;
-    const leaf = e.target.closest('.tree-leaf[data-open-drawer]');
-    if (leaf && !e.target.closest('.tree-action')) {
+    const opener = e.target.closest('[data-open-drawer]');
+    if (opener && !e.target.closest('.tree-action')) {
       e.preventDefault();
-      setSelectedRow(leaf.dataset.openDrawer);
+      setSelectedRow(opener.dataset.openDrawer);
     }
   });
 
@@ -2206,10 +2619,18 @@ let selectedRole        = null;
     // Drawer tab switch
     const tab = e.target.closest('[data-drawer-tab]');
     if (tab) { drawerTab = tab.dataset.drawerTab; updateDrawer(); return; }
-    // Click outside filter group → close dropdown
-    if (openDropdown !== null && !e.target.closest('.filter-group')) {
+    if (e.target.closest('#drawerSaveBtn')) { e.preventDefault(); saveDrawerRecord(); return; }
+    if (e.target.closest('#drawerDiscardBtn')) { e.preventDefault(); updateDrawer(); return; }
+    if (openDropdown !== null && !e.target.closest('.filter-group') && !e.target.closest('#drawerPanel')) {
       openDropdown = null;
       render();
+    }
+  });
+
+  document.addEventListener('change', e => {
+    if (e.target && e.target.dataset && e.target.dataset.field === 'Requirement Level') {
+      const et = document.getElementById('explicitTrainingDisplay');
+      if (et) et.value = deriveExplicitTraining(e.target.value);
     }
   });
 
@@ -2309,9 +2730,17 @@ let selectedRole        = null;
     CS_DATA   = {};
     WR_DATA   = [];
     Object.keys(json).forEach(k => {
-      if (k.startsWith('R '))  ROLE_DATA[k] = (json[k] || []).map(normalizeRow);
-      else if (k.startsWith('CS ')) CS_DATA[k] = (json[k] || []).map(normalizeRow);
-      else if (k.startsWith('WR ')) (json[k] || []).forEach(r => WR_DATA.push(normalizeRow(r)));
+      const lane = k.startsWith('WR ') ? 'wr' : 'requirements';
+      const tagged = (json[k] || []).map(r => {
+        const n = normalizeRow(r);
+        n._raw = r;
+        n._sheet = k;
+        n._lane = lane;
+        return n;
+      });
+      if (k.startsWith('R '))  ROLE_DATA[k] = tagged;
+      else if (k.startsWith('CS ')) CS_DATA[k] = tagged;
+      else if (k.startsWith('WR ')) tagged.forEach(row => WR_DATA.push(row));
     });
     DATA      = Object.values(ROLE_DATA).flat();
     CARE_DATA = Object.values(CS_DATA).flat();
@@ -2376,6 +2805,8 @@ let selectedRole        = null;
     // confined to whichever lane a record happened to arrive in.
     ALL_HSTM_SETTINGS = [...new Set([...DATA, ...CARE_DATA].map(r => r.hstm_setting).filter(Boolean))].sort();
     ALL_HSTM_ROLES = [...new Set([...DATA, ...CARE_DATA].flatMap(r => Array.isArray(r.hstm_role) ? r.hstm_role : (r.hstm_role ? [r.hstm_role] : [])))].sort();
+    rowMap = {};
+    [...DATA, ...CARE_DATA, ...WR_DATA].forEach(r => { rowMap[cardKey(r)] = r; });
   }
 
   // parseData() expects the legacy sheet-keyed shape ({ "R <role>": [...],
@@ -2483,7 +2914,7 @@ let selectedRole        = null;
   loadData().then(() => {
     applyHashSection();
     rowMap = {};
-    [...DATA, ...CARE_DATA].forEach(r => { rowMap[cardKey(r)] = r; });
+    [...DATA, ...CARE_DATA, ...WR_DATA].forEach(r => { rowMap[cardKey(r)] = r; });
     render();
   });
   // ─── Admin Mode ───
@@ -2497,7 +2928,9 @@ let selectedRole        = null;
       document.getElementById('adminLabel').textContent = 'Admin';
       document.getElementById('adminBar').classList.remove('visible');
       document.body.classList.remove('admin-on');
+      if (drawerTab === 'edit') drawerTab = 'overview';
       showToast('Admin mode deactivated');
+      render();
       return;
     }
     const pass = prompt('Enter admin passphrase:');
@@ -2509,7 +2942,9 @@ let selectedRole        = null;
       document.getElementById('adminBar').classList.add('visible');
       document.body.classList.add('admin-on');
       refreshClearImportsBtn();
+      if (selectedCardKey) drawerTab = 'edit';
       showToast('Admin mode activated');
+      render();
     } else {
       showToast('Incorrect passphrase');
     }
@@ -2537,9 +2972,17 @@ let selectedRole        = null;
         if (!filterState.jurisdictions.has(r.state)) return false;
         if (!filterState.requirementLevels.has(r.requirement_level)) return false;
         if (!filterState.authorityLevels.has(r.authority_level)) return false;
+        if (filterState.impactTypes.size < ALL_IMPACT_TYPES.length) {
+          const tags = Array.isArray(r.impact_types) ? r.impact_types : [];
+          if (!tags.some(t => filterState.impactTypes.has(t))) return false;
+        }
         return true;
       });
       filename = `regintel-care-settings-${(selectedCareSetting || 'all').replace(/\s+/g, '-').toLowerCase()}`;
+    } else if (activeSection === 'profile') {
+      rows = matchProfile(selectedProfileJurisdiction, selectedProfileSetting, selectedProfileRole, [...DATA, ...CARE_DATA]);
+      const label = (selectedProfileSetting || selectedProfileRole || 'all').replace(/\s+/g, '-').toLowerCase();
+      filename = `regintel-facility-learner-${label}`;
     } else if (activeSection === 'workforce') {
       rows = WR_DATA.filter(r => {
         if (selectedWFSetting && r.hstm_setting !== selectedWFSetting) return false;
@@ -2707,7 +3150,7 @@ let selectedRole        = null;
     // Re-parse and re-render
     parseData(CURRENT_SHEETS);
     rowMap = {};
-    [...DATA, ...CARE_DATA].forEach(r => { rowMap[cardKey(r)] = r; });
+    [...DATA, ...CARE_DATA, ...WR_DATA].forEach(r => { rowMap[cardKey(r)] = r; });
     // Update dynamic lists
     ALL_JURISDICTIONS = [...new Set([...DATA, ...CARE_DATA].map(r => r.state))].sort();
     ALL_REQUIREMENT_LEVELS = [...new Set([...DATA, ...CARE_DATA].map(r => r.requirement_level).filter(Boolean))];
