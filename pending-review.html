@@ -123,6 +123,8 @@
       <input type="file" id="fileInput" accept=".json" style="display:none">
     </div>
 
+    <div id="projectionStatus"></div>
+
     <div id="summaryBar" style="display:none" class="summary-bar">
       <div class="summary-stat"><strong id="statTotal">0</strong>Incoming records</div>
       <div class="summary-stat new"><strong id="statNew">0</strong>New (addable)</div>
@@ -268,15 +270,39 @@
     return false;
   }
 
+  function asPipeList(val) {
+    if (typeof splitPipeList === 'function') return splitPipeList(val);
+    if (Array.isArray(val)) return val.map(v => String(v).trim()).filter(Boolean);
+    if (val == null || val === '') return [];
+    return String(val).split(/\s*\|\s*/).map(s => s.trim()).filter(Boolean);
+  }
+
   function coerceParserRecord(rec) {
     const out = Object.assign({}, rec);
     if (out['Change Source path'] && !out['Change Source Path']) {
       out['Change Source Path'] = out['Change Source path'];
     }
     ARRAY_FIELDS.forEach(function (field) {
-      if (typeof out[field] === 'string') out[field] = splitPipeList(out[field]);
+      if (typeof out[field] === 'string') out[field] = asPipeList(out[field]);
     });
     return out;
+  }
+
+  function unwrapRecordArray(raw) {
+    if (Array.isArray(raw)) return raw;
+    if (!raw || typeof raw !== 'object') return null;
+    if (Array.isArray(raw.content)) return raw.content;
+    if (Array.isArray(raw.records)) return raw.records;
+    if (Array.isArray(raw.rows)) return raw.rows;
+    const buckets = Object.keys(raw)
+      .filter(k => Array.isArray(raw[k]) && raw[k].length && raw[k][0] && typeof raw[k][0] === 'object')
+      .map(k => raw[k]);
+    return buckets.length ? buckets.flat() : null;
+  }
+
+  function parseJsonText(text) {
+    const src = (text && text.charCodeAt(0) === 0xFEFF) ? text.slice(1) : text;
+    return JSON.parse(src);
   }
 
   let baseRecords = [];
@@ -284,6 +310,7 @@
   let conflicts = [];   // { id, incoming, existing, choice, topic }
   let newRecords = [];  // incoming records with unknown Record ID
   let lastIncomingAll = []; // full uploaded batch for scope summary
+  let projectionSource = 'none'; // worker | local | none
 
   const scopeFilters = {
     jurisdiction: '',
@@ -487,11 +514,33 @@
     return t;
   }
 
-  async function fetchLatestRecords() {
+  async function fetchWorkerRecords() {
     const res = await fetch(WORKER_URL + '/file?path=requirements.json');
     if (!res.ok) throw new Error('Failed to load requirements.json (HTTP ' + res.status + ')');
     const body = await res.json();
-    return body.content;
+    let content = body.content;
+    if (typeof content === 'string') content = JSON.parse(content);
+    const rows = unwrapRecordArray(content);
+    if (!rows) throw new Error('Admin proxy did not return a record array');
+    return rows;
+  }
+
+  async function fetchLatestRecords() {
+    if (WORKER_URL && WORKER_URL !== 'REPLACE_WITH_WORKER_URL') {
+      try {
+        const rows = await fetchWorkerRecords();
+        projectionSource = 'worker';
+        return rows;
+      } catch (err) {
+        console.warn('Admin proxy unavailable', err);
+      }
+    }
+    const local = await fetch('requirements.json');
+    if (!local.ok) throw new Error('Failed to load requirements.json (admin proxy unavailable, local HTTP ' + local.status + ')');
+    const rows = unwrapRecordArray(await local.json());
+    if (!rows) throw new Error('requirements.json is not a JSON array of records');
+    projectionSource = 'local';
+    return rows;
   }
 
   async function commitRecords(newRecordsArr, message) {
@@ -535,28 +584,51 @@
   }
 
   async function init() {
-    if (WORKER_URL === 'REPLACE_WITH_WORKER_URL') {
-      document.getElementById('results').innerHTML =
-        '<div class="empty-state"><p>This screen has not been pointed at a deployed admin proxy yet. See <code>worker/regintel-admin-proxy/README.md</code> for setup, then set <code>WORKER_URL</code> at the top of this file.</p></div>';
-      return;
-    }
+    bindUpload();
     try {
       baseRecords = await fetchLatestRecords();
     } catch (err) {
-      document.getElementById('results').innerHTML = '<div class="empty-state"><p>Could not load requirements.json: ' + esc(err.message) + '</p></div>';
+      baseRecords = [];
+      projectionSource = 'none';
+      currentById = {};
+      renderProjectionStatus(err);
       return;
     }
-    baseRecords.forEach(r => { currentById[r['Record ID']] = r; });
+    currentById = {};
+    baseRecords.forEach(r => {
+      if (r && r['Record ID']) currentById[r['Record ID']] = r;
+    });
+    renderProjectionStatus();
+  }
 
-    document.getElementById('fileInput').addEventListener('change', function () {
+  function renderProjectionStatus(err) {
+    const el = document.getElementById('projectionStatus');
+    if (!el) return;
+    if (projectionSource === 'worker') {
+      el.innerHTML = '';
+      return;
+    }
+    if (projectionSource === 'local') {
+      el.innerHTML = '<div class="warn-note">Admin proxy is unavailable, so this queue is comparing against local <code>requirements.json</code> (' + baseRecords.length + ' records). You can still classify a batch. Apply/commit needs the proxy.</div>';
+      return;
+    }
+    el.innerHTML = '<div class="warn-note">Could not load the live projection' + (err ? ' (' + esc(err.message) + ')' : '') + '. Upload still works — incoming Record IDs will look new until the projection loads. Apply/commit needs the admin proxy.</div>';
+  }
+
+  function bindUpload() {
+    const input = document.getElementById('fileInput');
+    if (!input || input.dataset.bound) return;
+    input.dataset.bound = '1';
+    input.addEventListener('change', function () {
       if (this.files[0]) loadFile(this.files[0]);
     });
     const zone = document.getElementById('uploadZone');
-    zone.addEventListener('click', () => document.getElementById('fileInput').click());
+    zone.addEventListener('click', () => input.click());
     zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
     zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
     zone.addEventListener('drop', e => {
-      e.preventDefault(); zone.classList.remove('dragover');
+      e.preventDefault();
+      zone.classList.remove('dragover');
       if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
     });
     document.getElementById('applyAllBtn').addEventListener('click', applyResolutions);
@@ -565,14 +637,19 @@
   function loadFile(file) {
     const reader = new FileReader();
     reader.onload = e => {
-      let incoming;
-      try { incoming = JSON.parse(e.target.result); }
-      catch (err) { showToast('JSON parse error: ' + err.message); return; }
-      if (!Array.isArray(incoming)) { showToast('Expected a JSON array of records'); return; }
-      incoming = incoming.map(coerceParserRecord);
-      document.getElementById('advisoryPanel').innerHTML = ''; // clear any stale advisory from a prior review round
-      classify(incoming);
+      try {
+        const incoming = unwrapRecordArray(parseJsonText(e.target.result));
+        if (!incoming) {
+          showToast('Expected a JSON array of records (or a sheet-keyed object of record arrays)');
+          return;
+        }
+        document.getElementById('advisoryPanel').innerHTML = '';
+        classify(incoming.map(coerceParserRecord));
+      } catch (err) {
+        showToast('Could not load JSON: ' + err.message);
+      }
     };
+    reader.onerror = () => showToast('Could not read that file');
     reader.readAsText(file);
   }
 
@@ -634,7 +711,12 @@
     if (conflicts.length) {
       html += '<div class="section-title">Conflicts &mdash; ' + conflicts.length + ' record(s) differ from existing data</div>';
       conflicts.forEach((c, idx) => {
-        const rows = UNIFIED_FIELDS.map(f => {
+        const fieldList = UNIFIED_FIELDS.filter(f => {
+          if (c.showAllFields) return true;
+          return hasIncomingValue(c.incoming, f) && normVal(c.existing[f]) !== normVal(c.incoming[f]);
+        });
+        const hidden = UNIFIED_FIELDS.length - fieldList.length;
+        const rows = fieldList.map(f => {
           const present = hasIncomingValue(c.incoming, f);
           const changed = present && normVal(c.existing[f]) !== normVal(c.incoming[f]);
 
@@ -664,14 +746,15 @@
             '</tr>';
         }).join('');
 
-        html += '<div class="conflict-card" data-idx="' + idx + '">' +
+        html += '<div class="conflict-card' + (c.choice === 'manual' ? ' mode-manual' : '') + '" data-idx="' + idx + '">' +
           '<div class="conflict-head">' +
             '<span class="conflict-id">' + esc(c.id) + '</span>' +
             '<span class="conflict-topic">' + esc(c.topic) + '</span>' +
             '<div class="resolution-pills">' +
-              '<button class="pill active" data-choice="existing" data-idx="' + idx + '">Keep existing</button>' +
-              '<button class="pill" data-choice="incoming" data-idx="' + idx + '">Use incoming</button>' +
-              '<button class="pill" data-choice="manual" data-idx="' + idx + '">Reconcile</button>' +
+              '<button class="pill' + (c.choice === 'existing' ? ' active' : '') + '" data-choice="existing" data-idx="' + idx + '">Keep existing</button>' +
+              '<button class="pill' + (c.choice === 'incoming' ? ' active' : '') + '" data-choice="incoming" data-idx="' + idx + '">Use incoming</button>' +
+              '<button class="pill' + (c.choice === 'manual' ? ' active' : '') + '" data-choice="manual" data-idx="' + idx + '">Reconcile</button>' +
+              '<button class="pill" data-toggle-fields="' + idx + '">' + (c.showAllFields ? 'Changed fields' : 'All fields' + (hidden ? ' (' + hidden + ' hidden)' : '')) + '</button>' +
             '</div>' +
           '</div>' +
           '<table class="diff"><thead><tr><th>Field</th><th>Existing</th><th>Incoming</th></tr></thead>' +
@@ -694,8 +777,15 @@
 
     document.getElementById('results').innerHTML = html;
 
-    document.querySelectorAll('.pill').forEach(p => {
+    document.querySelectorAll('.pill[data-choice]').forEach(p => {
       p.addEventListener('click', () => setChoice(+p.dataset.idx, p.dataset.choice));
+    });
+    document.querySelectorAll('[data-toggle-fields]').forEach(p => {
+      p.addEventListener('click', () => {
+        const idx = +p.dataset.toggleFields;
+        conflicts[idx].showAllFields = !conflicts[idx].showAllFields;
+        render();
+      });
     });
   }
 
@@ -769,7 +859,7 @@
     try {
       // Re-fetch the freshest copy so we don't stomp a change made from
       // another tab/device since this page loaded.
-      const latest = await fetchLatestRecords();
+      const latest = await fetchWorkerRecords();
       const latestIds = new Set(latest.map(r => r['Record ID']));
       let updated = latest.map(r => resolutions[r['Record ID']] ? { ...r, ...resolutions[r['Record ID']] } : r);
 
