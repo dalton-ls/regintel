@@ -145,6 +145,7 @@
   <div class="toast" id="toast"></div>
 
   <script src="impact-types.js"></script>
+  <script src="schema.js"></script>
   <script>
   // Set this to the deployed Worker URL from worker/regintel-admin-proxy (see its README).
   const WORKER_URL = 'https://regintel-admin-proxy.regintel.workers.dev';
@@ -156,14 +157,25 @@
     "HSTM Setting", "HSTM Role", "Regulation Type",
     "Oversight / Professional Agency", "Requirement Level", "Authority Level",
     "Explicit Training",
-    "Citation", "Training Topic / Competency Item", "Relationship", "Purpose",
-    "Approval Required", "Approval Basis", "Hours Required", "Frequency",
+    "Citation", "Related Regulatory Provisions",
+    "Training Topic / Competency Item", "Relationship", "Purpose",
+    "Approval Required", "Approval Basis",
+    "Approval Scope", "Approval Responsibility", "Approval Timing",
+    "Instructor/SME Qualification Required",
+    "Hours Required", "Frequency",
     "Source URL", "Notes / Research Flags",
     "Change Type", "Change Detected Date", "Change Source Path",
     "Applicability Rules",
-    "Impact Types", "Impact Basis", "Impact Confidence", "Impact Review"
+    "Impact Types", "Impact Basis", "Impact Confidence", "Impact Review",
+    "Provision Relationship Types", "Interpretive Conditions",
+    "Prior Training Credit / Exemption", "Prior Training Qualification",
+    "Interpretive Review Status", "Regulatory Lifecycle Stage",
+    "Product Use Case", "Regulated Competency",
+    "Regulatory Change Summary", "Interpretive Summary",
+    "Policy Action Relevance", "Quality Manager Relevance", "Operational Domain",
+    "Human Interpretation / SME Review", "Source Change Context"
   ];
-  const ARRAY_FIELDS = new Set(["HSTM Role", "Impact Types"]);
+  const ARRAY_FIELDS = new Set(["HSTM Role", "Impact Types", "Provision Relationship Types", "Related Regulatory Provisions"]);
   const BOOLEAN_FIELDS = new Set(["Impact Review"]);
 
   // Fields added in the 18 -> 20 schema split. A batch produced by an older
@@ -186,6 +198,15 @@
   // Impact Type (Phase 4): additive, array-of-STRINGS from the closed
   // taxonomy in impact-types.js — reuses ARRAY_FIELDS like HSTM Role.
   const FIELDS_ADDED_FOR_IMPACT = new Set(["Impact Types", "Impact Basis", "Impact Confidence", "Impact Review"]);
+  const FIELDS_ADDED_FOR_PARSER = new Set([
+    "Related Regulatory Provisions", "Approval Scope", "Approval Responsibility", "Approval Timing",
+    "Instructor/SME Qualification Required", "Provision Relationship Types", "Interpretive Conditions",
+    "Prior Training Credit / Exemption", "Prior Training Qualification", "Interpretive Review Status",
+    "Regulatory Lifecycle Stage", "Product Use Case", "Regulated Competency",
+    "Regulatory Change Summary", "Interpretive Summary", "Policy Action Relevance",
+    "Quality Manager Relevance", "Operational Domain", "Human Interpretation / SME Review",
+    "Source Change Context"
+  ]);
 
   function deriveExplicitTraining(requirementLevel) {
     return requirementLevel === 'Explicit Training' ? 'Yes' : 'No';
@@ -242,7 +263,20 @@
   // silently wipe Approval Basis and Authority Level across every record it
   // touches.
   function hasIncomingValue(rec, field) {
-    return Object.prototype.hasOwnProperty.call(rec, field);
+    if (Object.prototype.hasOwnProperty.call(rec, field)) return true;
+    if (field === 'Change Source Path' && Object.prototype.hasOwnProperty.call(rec, 'Change Source path')) return true;
+    return false;
+  }
+
+  function coerceParserRecord(rec) {
+    const out = Object.assign({}, rec);
+    if (out['Change Source path'] && !out['Change Source Path']) {
+      out['Change Source Path'] = out['Change Source path'];
+    }
+    ARRAY_FIELDS.forEach(function (field) {
+      if (typeof out[field] === 'string') out[field] = splitPipeList(out[field]);
+    });
+    return out;
   }
 
   let baseRecords = [];
@@ -535,6 +569,7 @@
       try { incoming = JSON.parse(e.target.result); }
       catch (err) { showToast('JSON parse error: ' + err.message); return; }
       if (!Array.isArray(incoming)) { showToast('Expected a JSON array of records'); return; }
+      incoming = incoming.map(coerceParserRecord);
       document.getElementById('advisoryPanel').innerHTML = ''; // clear any stale advisory from a prior review round
       classify(incoming);
     };
@@ -621,6 +656,7 @@
               (FIELDS_ADDED_FOR_CHANGE_EVENTS.has(f) && !present ? ' <span class="muted">(Change Event field)</span>' : '') +
               (FIELDS_ADDED_FOR_APPLICABILITY.has(f) && !present ? ' <span class="muted">(Applicability Rule field)</span>' : '') +
               (FIELDS_ADDED_FOR_IMPACT.has(f) && !present ? ' <span class="muted">(parser judgment field)</span>' : '') +
+              (FIELDS_ADDED_FOR_PARSER.has(f) && !present ? ' <span class="muted">(parser routing / interpretation)</span>' : '') +
             '</td>' +
             '<td class="val-existing">' + esc(displayVal(c.existing[f], f)) + '</td>' +
             '<td class="val-incoming">' + incomingCell +

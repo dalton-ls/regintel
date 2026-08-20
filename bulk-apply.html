@@ -120,6 +120,7 @@
   <div class="toast" id="toast"></div>
 
   <script src="impact-types.js"></script>
+  <script src="schema.js"></script>
   <script>
   // Set this to the deployed Worker URL from worker/regintel-admin-proxy (see its README).
   const WORKER_URL = 'https://regintel-admin-proxy.regintel.workers.dev';
@@ -130,12 +131,20 @@
     "HSTM Setting", "HSTM Role", "Regulation Type",
     "Oversight / Professional Agency", "Requirement Level", "Authority Level",
     "Explicit Training",
-    "Citation", "Training Topic / Competency Item", "Relationship", "Purpose",
-    "Approval Required", "Approval Basis", "Hours Required", "Frequency",
+    "Citation", "Related Regulatory Provisions",
+    "Training Topic / Competency Item", "Relationship", "Purpose",
+    "Approval Required", "Approval Basis",
+    "Approval Scope", "Approval Responsibility", "Approval Timing",
+    "Instructor/SME Qualification Required",
+    "Hours Required", "Frequency",
     "Source URL", "Notes / Research Flags",
-    "Impact Types"
+    "Impact Types",
+    "Product Use Case", "Policy Action Relevance",
+    "Quality Manager Relevance", "Operational Domain",
+    "Interpretive Review Status", "Regulatory Lifecycle Stage",
+    "Regulated Competency", "Human Interpretation / SME Review"
   ];
-  const ARRAY_FIELDS = new Set(["HSTM Role", "Impact Types"]);
+  const ARRAY_FIELDS = new Set(["HSTM Role", "Impact Types", "Related Regulatory Provisions"]);
 
   // Phase 4 (Dalton, 2026-08-17): Impact Types is bulk-editable since it's a
   // flat array of strings from a small fixed vocabulary -- same ARRAY_FIELDS
@@ -149,15 +158,24 @@
   // Fields offered as filters (single-value dropdowns).
   const FILTER_FIELDS = [
     "Source Dataset", "Jurisdiction", "HSTM Setting", "HSTM Role",
-    "Regulation Type", "Requirement Level", "Authority Level", "Relationship"
+    "Regulation Type", "Requirement Level", "Authority Level", "Relationship",
+    "Product Use Case", "Policy Action Relevance", "Operational Domain"
   ];
 
-  // Closed vocabularies — mirrors record-editor.html. A bulk change into one of
-  // these fields is validated against the list before it can be applied.
   const SELECT_OPTIONS = {
-    "Requirement Level": ["Explicit Training", "Other Training Reference"],
-    "Authority Level": ["Federal Floor", "State Floor", "Competency"],
-    "Approval Required": ["Yes", "No"]
+    "Requirement Level": SCHEMA_VOCAB["Requirement Level"].slice(),
+    "Authority Level": SCHEMA_VOCAB["Authority Level"].slice(),
+    "Approval Required": SCHEMA_VOCAB["Approval Required"].slice(),
+    "Relationship": SCHEMA_VOCAB["Relationship"].slice(),
+    "Regulation Type": SCHEMA_VOCAB["Regulation Type"].slice(),
+    "Product Use Case": SCHEMA_VOCAB["Product Use Case"].slice(),
+    "Policy Action Relevance": SCHEMA_VOCAB["Policy Action Relevance"].slice(),
+    "Quality Manager Relevance": SCHEMA_VOCAB["Quality Manager Relevance"].slice(),
+    "Operational Domain": SCHEMA_VOCAB["Operational Domain"].slice(),
+    "Interpretive Review Status": SCHEMA_VOCAB["Interpretive Review Status"].slice(),
+    "Regulatory Lifecycle Stage": SCHEMA_VOCAB["Regulatory Lifecycle Stage"].slice(),
+    "Regulated Competency": SCHEMA_VOCAB["Regulated Competency"].slice(),
+    "Human Interpretation / SME Review": SCHEMA_VOCAB["Human Interpretation / SME Review"].slice()
   };
 
   const LEGACY_REQUIREMENT_LEVELS = ["State Floor", "Federal Floor", "Competency"];

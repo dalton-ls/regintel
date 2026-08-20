@@ -1,13 +1,282 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>RegIntel | Knowledge Home</title>
-<style>
-body{margin:0;font:16px system-ui,-apple-system,Segoe UI,sans-serif;color:#18243a;background:#f6f8fb}header{background:#172e57;color:#fff;padding:18px 7%;display:flex;justify-content:space-between;align-items:center}a{color:inherit}main{max-width:1100px;margin:0 auto;padding:56px 24px}.eyebrow{color:#2563eb;font-weight:700;text-transform:uppercase;letter-spacing:.08em;font-size:12px}h1{font-size:42px;margin:8px 0 14px}.lead{max-width:760px;line-height:1.6;color:#506078}.flow{display:flex;gap:12px;align-items:center;margin:34px 0;flex-wrap:wrap}.node{padding:14px 18px;border-radius:10px;background:#fff;border:1px solid #d9e1ed;font-weight:650}.arrow{color:#7990af}.tabs{display:flex;gap:8px;flex-wrap:wrap}.tabs button{border:1px solid #ccd6e5;background:#fff;border-radius:99px;padding:9px 14px;cursor:pointer}.tabs button.active{background:#2563eb;color:#fff;border-color:#2563eb}.panel{background:#fff;border:1px solid #d9e1ed;border-radius:14px;padding:26px;margin-top:18px}.field{display:inline-block;background:#eef4ff;color:#1e4da1;border-radius:6px;padding:5px 8px;margin:4px;font-size:13px}.rule{display:grid;grid-template-columns:1fr 42px 1fr;gap:12px;align-items:center;margin:18px 0}.box{padding:16px;background:#f6f8fb;border-radius:10px;line-height:1.55}.muted{color:#60718c;font-size:14px}@media(max-width:650px){h1{font-size:32px}.rule{grid-template-columns:1fr}.rule div:nth-child(2){display:none}}</style>
-</head><body><header><strong>RegIntel</strong><nav><a href="regintel.html">Research view</a></nav></header><main>
-<div class="eyebrow">Regulatory knowledge model</div><h1>One obligation, many downstream decisions.</h1><p class="lead">This is the operating map behind RegIntel. It separates what a source says from how HealthStream organizes it and how an organization implements it.</p>
-<div class="flow"><span class="node">Regulatory source</span><span class="arrow">→</span><span class="node">Obligation</span><span class="arrow">→</span><span class="node">Applicability</span><span class="arrow">→</span><span class="node">Impact Types</span></div>
-<div class="tabs"><button class="active" data-layer="facts">1. Regulatory reality</button><button data-layer="product">2. Product taxonomy</button><button data-layer="implementation">3. Implementation</button><button data-layer="identity">Identity & time</button></div><section class="panel" id="panel"></section>
-</main><script>
-const content={facts:{title:'Regulatory reality — source-backed and auditable',body:'These fields retain the regulator’s language or are mechanically derived from it.',fields:['Jurisdiction','Jurisdiction Setting','Jurisdiction Role','Agency','Citation','Training Topic / Competency Item','Hours Required','Frequency','Source URL','Authority Level','Requirement Level']},product:{title:'HealthStream product taxonomy — controlled mappings',body:'These fields are not claims made by the regulation. They are the controlled vocabulary used for navigation, content routing, and product fit.',fields:['HSTM Setting','HSTM Role','Regulation Type','Explicit Training']},implementation:{title:'Organizational implementation — response category, not a catalog',body:'Impact Type names WHAT KIND of organizational response an obligation demands once it applies (policy, training, documentation, audit, etc.). The parser assigns a first-pass, evidence-based judgment with confidence and a review flag; human review is QA/override for ambiguous cases. RegIntel does not store policies, courses, checklists, or other catalog IDs — you infer which downstream products may be affected from Impact Type plus HSTM Setting, HSTM Role, jurisdiction setting/role, and learner/care-setting context.',fields:['Applicability Rules','Impact Types (Policy, Procedure, Training, Competency, Credential, Documentation, Workflow, Staffing, Reporting, Audit, Physical Environment)','Impact Basis','Impact Confidence','Impact Review']},identity:{title:'Identity and temporal traceability',body:'Record ID identifies one flattened output row. Obligation ID identifies the underlying regulatory requirement before row explosion — that is where shared impacts belong.',fields:['Obligation ID','Record ID','Change Type','Change Detected Date','Change Source Path']}};
-function render(key){const x=content[key];document.getElementById('panel').innerHTML=`<h2>${x.title}</h2><p>${x.body}</p><div>${x.fields.map(f=>`<span class="field">${f}</span>`).join('')}</div><div class="rule"><div class="box"><b>Question answered</b><br>${key==='facts'?'What does the source require?':key==='product'?'How does HealthStream organize it?':key==='implementation'?'What kind of organizational response is implicated?':'How do we trace and compare it over time?'}</div><div>→</div><div class="box"><b>Rule</b><br>${key==='implementation'?'Parser assigns Impact Types from source language. Human review overrides low-confidence cases. Never invent catalog artifacts.':'Keep provenance and controlled vocabulary distinct.'}</div></div><p class="muted">See the Research view to browse live records and their metadata.</p>`}render('facts');document.querySelectorAll('button[data-layer]').forEach(b=>b.onclick=()=>{document.querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active');render(b.dataset.layer)});
-</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>RegIntel | Knowledge Home</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      min-height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 14px;
+      color: #1a2332;
+      background: #f0f2f5;
+    }
+    a { color: inherit; }
+    .app-header {
+      height: 60px;
+      background: #1a2e5a;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .header-brand { display: flex; align-items: center; gap: 10px; }
+    .logo-text { font-size: 17px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+    .header-sep { color: rgba(255,255,255,0.25); font-size: 20px; font-weight: 200; }
+    .header-subtitle { font-size: 12px; font-weight: 400; color: rgba(255,255,255,0.6); }
+    .header-link {
+      font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.7);
+      text-decoration: none; padding: 6px 12px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .header-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 48px 24px 80px; }
+    .eyebrow {
+      color: #2463eb; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; font-size: 11px;
+    }
+    h1 { font-size: 36px; font-weight: 700; margin: 8px 0 12px; letter-spacing: -0.4px; line-height: 1.15; }
+    .lead { max-width: 760px; line-height: 1.65; color: #6b7a99; font-size: 15px; }
+
+    .experiences {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      margin: 32px 0 8px;
+    }
+    .experience {
+      background: #fff;
+      border: 1px solid #e8ecf0;
+      border-radius: 12px;
+      padding: 20px 20px 18px;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: border-color 0.15s, box-shadow 0.15s;
+      min-height: 180px;
+    }
+    .experience:hover { border-color: #c7d7f8; box-shadow: 0 4px 16px rgba(26,46,90,0.08); }
+    .experience-kicker {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: #6b7a99;
+    }
+    .experience h2 { font-size: 16px; font-weight: 700; color: #1a2332; }
+    .experience p { font-size: 13px; line-height: 1.55; color: #6b7a99; flex: 1; }
+    .experience-cta { font-size: 12px; font-weight: 600; color: #2463eb; }
+    .experience.policy { border-top: 3px solid #5b21b6; }
+    .experience.intel { border-top: 3px solid #2463eb; }
+    .experience.workforce { border-top: 3px solid #15803d; }
+
+    .flow {
+      display: flex; gap: 8px; align-items: center;
+      margin: 28px 0 8px; flex-wrap: wrap;
+    }
+    .node {
+      padding: 9px 12px; border-radius: 8px; background: #fff;
+      border: 1px solid #e8ecf0; font-weight: 650; font-size: 12px; color: #1a2332;
+    }
+    .arrow { color: #9aaac4; font-size: 14px; }
+
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 28px; }
+    .tabs button {
+      border: 1px solid #dde1ea; background: #fff; border-radius: 99px;
+      padding: 8px 14px; cursor: pointer; font-family: inherit;
+      font-size: 13px; font-weight: 500; color: #4a5568;
+    }
+    .tabs button.active { background: #2463eb; color: #fff; border-color: #2463eb; }
+
+    .panel {
+      background: #fff; border: 1px solid #e8ecf0; border-radius: 12px;
+      padding: 24px; margin-top: 14px;
+    }
+    .panel h2 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+    .panel p { line-height: 1.6; color: #4a5568; margin-bottom: 14px; }
+    .field {
+      display: inline-block; background: #eef3fb; color: #1e4da1;
+      border-radius: 6px; padding: 4px 8px; margin: 3px; font-size: 12px; font-weight: 500;
+    }
+    .field.additive { background: #f5f3ff; color: #5b21b6; }
+    .rule {
+      display: grid; grid-template-columns: 1fr 36px 1fr; gap: 12px;
+      align-items: stretch; margin: 18px 0 8px;
+    }
+    .box {
+      padding: 14px 16px; background: #f7f9fc; border-radius: 10px;
+      line-height: 1.55; font-size: 13px; color: #1a2332;
+    }
+    .box b { display: block; margin-bottom: 4px; font-size: 11px;
+      text-transform: uppercase; letter-spacing: 0.04em; color: #6b7a99; }
+    .rule-arrow { color: #9aaac4; display: flex; align-items: center; justify-content: center; }
+    .muted { color: #6b7a99; font-size: 13px; margin-top: 8px; }
+    .legend {
+      display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: #6b7a99;
+    }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+    .swatch.core { background: #eef3fb; border: 1px solid #c7d7f8; }
+    .swatch.add { background: #f5f3ff; border: 1px solid #ddd6fe; }
+
+    @media (max-width: 800px) {
+      h1 { font-size: 28px; }
+      .experiences { grid-template-columns: 1fr; }
+      .rule { grid-template-columns: 1fr; }
+      .rule-arrow { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-brand">
+      <span class="logo-text">RegIntel</span>
+      <span class="header-sep">|</span>
+      <span class="header-subtitle">Regulatory knowledge home</span>
+    </div>
+    <a class="header-link" href="regintel.html">Open research view →</a>
+  </header>
+  <main>
+    <div class="eyebrow">Regulatory knowledge model</div>
+    <h1>One obligation, three ways to act on it.</h1>
+    <p class="lead">RegIntel separates what a source requires from how HealthStream organizes it and what kind of organizational response it implies. The parser emits a 47-column batch. This site is the research view and human QA over that projection — not the parser, and not a product catalog.</p>
+
+    <div class="experiences">
+      <a class="experience intel" href="regintel.html">
+        <div class="experience-kicker">Intelligence</div>
+        <h2>What changed, and who does it apply to?</h2>
+        <p>Browse Roles and Care Settings, or query a facility/learner archetype. Impact Types name the kind of response; they do not name a course or policy ID.</p>
+        <span class="experience-cta">Browse Roles &amp; Care Settings</span>
+      </a>
+      <a class="experience policy" href="regintel.html#policy">
+        <div class="experience-kicker">Policy</div>
+        <h2>What written response may be required?</h2>
+        <p>Policy Manager routing, Create/Update vs Review, and operational domain. A policy-only provision is not a training row. Linked training, when the source also requires it, stays a separate obligation.</p>
+        <span class="experience-cta">Open Policy</span>
+      </a>
+      <a class="experience workforce" href="regintel.html#workforce">
+        <div class="experience-kicker">Workforce</div>
+        <h2>Who needs to know or do something differently?</h2>
+        <p>Workforce Readiness is a Domain/KSA framework authored internally — not jurisdiction-driven regulatory content. Training, competency, and credential obligations still live on the Role and Care Setting rows.</p>
+        <span class="experience-cta">Open Workforce Readiness</span>
+      </a>
+    </div>
+
+    <div class="flow">
+      <span class="node">Regulatory source</span><span class="arrow">→</span>
+      <span class="node">Obligation</span><span class="arrow">→</span>
+      <span class="node">Applicability</span><span class="arrow">→</span>
+      <span class="node">Impact Types</span><span class="arrow">→</span>
+      <span class="node">Product routing</span>
+    </div>
+
+    <div class="tabs">
+      <button class="active" data-layer="facts">1. Regulatory reality</button>
+      <button data-layer="product">2. Product taxonomy</button>
+      <button data-layer="impact">3. Impact</button>
+      <button data-layer="policy">4. Policy &amp; product routing</button>
+      <button data-layer="interp">5. Interpretation</button>
+      <button data-layer="identity">6. Identity &amp; time</button>
+    </div>
+    <section class="panel" id="panel"></section>
+  </main>
+  <script>
+    const content = {
+      facts: {
+        title: "Regulatory reality — source-backed and auditable",
+        body: "These fields retain the regulator’s language or are mechanically derived from it. Citation is grammatical, not composed. Training Topic is verbatim. Frequency stays in the source’s own words.",
+        fields: [
+          ["Jurisdiction", false], ["Jurisdiction Setting", false], ["Jurisdiction Role", false],
+          ["Oversight / Professional Agency", false], ["Citation", false],
+          ["Related Regulatory Provisions", true], ["Training Topic / Competency Item", false],
+          ["Hours Required", false], ["Frequency", false], ["Source URL", false],
+          ["Authority Level", false], ["Requirement Level", false]
+        ],
+        question: "What does the source require?",
+        rule: "Never paraphrase a topic. Never invent a setting to satisfy the anchor. Federal jurisdiction is US, never Federal."
+      },
+      product: {
+        title: "HealthStream product taxonomy — controlled mappings",
+        body: "These fields are not claims made by the regulation. They are the vocabulary used for navigation and product fit. Jurisdiction Setting is not HSTM Setting.",
+        fields: [
+          ["HSTM Setting", false], ["HSTM Role", false], ["Regulation Type", false],
+          ["Explicit Training", false], ["Regulated Competency", true], ["Relationship (Parent/Child)", false]
+        ],
+        question: "How does HealthStream organize it?",
+        rule: "Regulation Type is a routing field (facility training, individual CE, or organizational policy). It is not the ontology. Impact Type is."
+      },
+      impact: {
+        title: "Organizational implementation — response category, not a catalog",
+        body: "Impact Type names WHAT KIND of organizational response an obligation demands once it applies. The parser assigns a first-pass judgment with evidence, confidence, and a review flag. Human review is QA/override. Downstream products are inferred outside this site.",
+        fields: [
+          ["Applicability Rules", true],
+          ["Impact Types", true], ["Impact Basis", true], ["Impact Confidence", true], ["Impact Review", true]
+        ],
+        question: "What kind of organizational response is implicated?",
+        rule: "Parser assigns Impact Types from source language. Empty array with a basis is a reasoned none. Missing the field is a classification error. Never invent catalog artifacts."
+      },
+      policy: {
+        title: "Policy & product routing — what to do with the obligation",
+        body: "Pass 5b-5 decides which product path is live. Policy Manager cares whether a written policy, plan, or procedure is implicated. Quality Manager is currently SNF-only except PIP/PDSA. Training/Content is the workforce path. Multiple is for a genuine dual hook in the source — most often a policy that also requires training on it.",
+        fields: [
+          ["Product Use Case", true], ["Policy Action Relevance", true],
+          ["Quality Manager Relevance", true], ["Operational Domain", true]
+        ],
+        question: "Which HealthStream path does this obligation activate?",
+        rule: "Do not infer a template ID, an owner, or customer-local policy language. Create/Update vs Review is a regulatory implication, not a catalog assignment. Research-only and Unknown stop product-specific judgment."
+      },
+      interp: {
+        title: "Interpretation layers — keep source, change, and implication apart",
+        body: "Three columns, not one summary. Collapse them and a reader cannot tell which clause is the regulation and which is analysis. Related provisions and approval-family detail sit beside these so a reviewer can audit the call.",
+        fields: [
+          ["Source Change Context", true], ["Regulatory Change Summary", true], ["Interpretive Summary", true],
+          ["Interpretive Conditions", true], ["Interpretive Review Status", true],
+          ["Human Interpretation / SME Review", true],
+          ["Approval Scope", true], ["Approval Responsibility", true], ["Approval Timing", true],
+          ["Instructor/SME Qualification Required", true],
+          ["Prior Training Credit / Exemption", true], ["Prior Training Qualification", true],
+          ["Provision Relationship Types", true]
+        ],
+        question: "What did the source say, what changed, and what does it imply?",
+        rule: "Source Change Context is a verbatim excerpt. Regulatory Change Summary preserves meaning. Interpretive Summary is the only analysis — and it names no course, template, or artifact ID."
+      },
+      identity: {
+        title: "Identity and temporal traceability",
+        body: "Record ID identifies one flattened output row. Obligation ID identifies the underlying requirement before row explosion — that is where shared impacts belong. None of the 27 additive columns participates in the Record ID hash.",
+        fields: [
+          ["Obligation ID", true], ["Record ID", false],
+          ["Change Type", true], ["Change Detected Date", true], ["Change Source path", true],
+          ["Regulatory Lifecycle Stage", true]
+        ],
+        question: "How do we trace and compare it over time?",
+        rule: "Keep provenance and controlled vocabulary distinct. A changed Source Dataset or citation grammar re-mints the corpus; a remapped HSTM Setting does not."
+      }
+    };
+
+    function render(key) {
+      const x = content[key];
+      document.getElementById("panel").innerHTML =
+        "<h2>" + x.title + "</h2><p>" + x.body + "</p>" +
+        "<div>" + x.fields.map(function (f) {
+          return '<span class="field' + (f[1] ? " additive" : "") + '">' + f[0] + "</span>";
+        }).join("") + "</div>" +
+        '<div class="legend"><span><i class="swatch core"></i> Extraction / identity</span><span><i class="swatch add"></i> Additive parser field</span></div>' +
+        '<div class="rule"><div class="box"><b>Question answered</b>' + x.question +
+        '</div><div class="rule-arrow">→</div><div class="box"><b>Rule</b>' + x.rule +
+        "</div></div>" +
+        '<p class="muted">Open the research view to browse live records. Policy is a first-class left-nav category, not a leftover Regulation Type value.</p>';
+    }
+
+    render("facts");
+    document.querySelectorAll("button[data-layer]").forEach(function (b) {
+      b.onclick = function () {
+        document.querySelectorAll(".tabs button").forEach(function (x) { x.classList.remove("active"); });
+        b.classList.add("active");
+        render(b.dataset.layer);
+      };
+    });
+  </script>
+</body>
+</html>

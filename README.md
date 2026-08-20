@@ -16,11 +16,13 @@ folder, not this git repo). Broader ontology:
 
 ## Live site
 
-- **Research view**: `regintel.html` — Roles, Care Settings, Workforce
-  Readiness, and Facility/Learner Query (a **type-level** archetype:
-  Jurisdiction × HSTM Setting × HSTM Role — not a customer roster).
-  Loads fresh from `requirements.json` and `wr.json` on every page load.
-  Falls back to legacy `data.json` only if those two fetches fail.
+- **Research view**: `regintel.html` — Roles, Care Settings, **Policy
+  Manager**, Workforce Readiness, and Facility/Learner Query (a
+  **type-level** archetype: Jurisdiction × HSTM Setting × HSTM Role —
+  not a customer roster). Loads fresh from `requirements.json` and
+  `wr.json` on every page load. Falls back to legacy `data.json` only if
+  those two fetches fail. Policy Manager lists obligations the parser
+  routed to a written-policy response (or tagged Policy / Procedure).
 - **Admin tools** (passphrase toggle, top-right): Record Editor,
   Bulk-Apply, Pending Review, Export, WR Ingest — see below.
 
@@ -36,22 +38,33 @@ projection — internally authored Domain/KSA framework, not
 jurisdiction-driven regulatory content. None of the unified admin tools
 write to it.
 
-### Batch columns (29), in emission order
+### Batch columns (47), in parser emission order
 
-Batch sheets are read by **exact header name**:
+The parser skill emits 47 columns. `normalize_batch.py` still reads by
+**exact header name**. The original 20 extraction columns are required
+for identity; the rest are optional enrichment (absent = no opinion):
 
 ```
 Jurisdiction, Jurisdiction Setting, Jurisdiction Role, HSTM Setting, HSTM Role,
 Regulation Type, Oversight / Professional Agency, Requirement Level, Authority Level,
-Explicit Training, Citation, Training Topic / Competency Item, Relationship, Purpose,
-Approval Required, Approval Basis, Hours Required, Frequency, Source URL,
-Notes / Research Flags
+Explicit Training, Citation, Related Regulatory Provisions, Training Topic / Competency Item,
+Relationship, Purpose, Approval Required, Approval Basis, Approval Scope,
+Approval Responsibility, Approval Timing, Instructor/SME Qualification Required,
+Hours Required, Frequency, Source URL, Notes / Research Flags,
+Change Type, Change Detected Date, Change Source path, Applicability Rules, Impact Types,
+Record ID, Obligation ID, Provision Relationship Types, Interpretive Conditions,
+Prior Training Credit / Exemption, Prior Training Qualification,
+Interpretive Review Status, Regulatory Lifecycle Stage, Product Use Case,
+Regulated Competency, Regulatory Change Summary, Interpretive Summary,
+Policy Action Relevance, Quality Manager Relevance, Operational Domain,
+Human Interpretation / SME Review, Source Change Context
 ```
 
-The batch also carries `Obligation ID` (distinct from Record ID) plus
-optional enrichment fields: `Change Type`, `Change Detected Date`,
-`Change Source Path`, `Applicability Rules`, `Impact Types`,
-`Impact Basis`, `Impact Confidence`, and `Impact Review`. Empty
+`Change Source path` (parser spelling) is accepted interchangeably with
+the earlier `Change Source Path`. `Approval Required` is `Yes` / `No` /
+`Unknown`. Hours Required stays verbatim (`NR` when unstated — never `0`).
+
+The batch also carries `Obligation ID` (distinct from Record ID). Empty
 enrichment cells on an extraction sheet mean no opinion; the normalizer
 omits them rather than clearing existing tags. Impact Types on a
 classified batch are parser-assigned; human review is QA/override.
@@ -137,7 +150,8 @@ Warnings raised:
 - `Requirement Level` arriving as `State Floor` / `Federal Floor` /
   `Competency` (pre-18→20 sheet; those values belong in `Authority Level`)
 - `Authority Level` missing or outside the closed set
-- `Approval Required` still carrying a rationale clause
+- `Approval Required` arriving as a rationale clause instead of bare
+  `Yes` / `No` / `Unknown`
 - `Explicit Training` disagreeing with `Requirement Level`
 
 Upload the written JSON into `pending-review.html`. New IDs can be added;
@@ -192,7 +206,8 @@ is).
 
 | File | Purpose |
 |---|---|
-| `regintel.html` | Research view (Roles, Care Settings, WR, Facility/Learner Query) |
+| `regintel.html` | Research view (Roles, Care Settings, Policy Manager, WR, Facility/Learner Query) |
+| `schema.js` | 47-column parser contract, closed vocabularies, Policy-relevance helper |
 | `record-editor.html` / `bulk-apply.html` / `pending-review.html` / `export.html` | Unified admin tools |
 | `requirements.json` | Live output-row projection — source of truth for Role + Care Setting |
 | `wr.json` | Workforce Readiness (`WR *` sheets) |
@@ -200,7 +215,7 @@ is).
 | `migrate_to_unified.py` | One-time / full regeneration of `requirements.json` |
 | `normalize_batch.py` | Normalize one already-extracted sheet for Pending Review |
 | `impact-types.js` | Phase 4 Impact Type closed taxonomy (shared by admin + research UI) |
-| `index.html` | Taxonomy home — regulatory reality vs product vs implementation |
+| `index.html` | Knowledge home — Intelligence / Policy / Workforce plus the 47-column schema map |
 | `DESIGN.md` | Site boundary, projection schema, admin workflow |
 | `worker/regintel-admin-proxy/` | Cloudflare Worker that commits `requirements.json` |
 | `ingest.html` | WR ingest only |

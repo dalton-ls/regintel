@@ -107,9 +107,22 @@
     }
     .sidebar.collapsed { width: 40px; }
 
-    .sidebar-nav { padding: 16px 0; }
+    .sidebar-nav { padding: 8px 0 16px; }
     #adminNav { display: none !important; }
     body.admin-on #adminNav { display: block !important; }
+
+    .nav-section {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #9aaac4;
+      padding: 14px 16px 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      transition: opacity 200ms ease;
+    }
+    .sidebar.collapsed .nav-section { opacity: 0; height: 0; padding: 0; overflow: hidden; }
 
     .nav-item {
       display: flex;
@@ -330,13 +343,14 @@
 
     .drawer-panel {
       position: fixed; top: 60px; right: 0; bottom: 0;
-      width: 380px; z-index: 150;
+      width: 460px; z-index: 150;
       background: #fff; border-left: 1px solid #e8ecf0;
       box-shadow: -4px 0 20px rgba(0,0,0,0.10);
       display: flex; flex-direction: column;
       transform: translateX(100%);
       transition: transform 220ms ease;
     }
+    @media (max-width: 560px) { .drawer-panel { width: 100%; } }
     .drawer-panel.open { transform: translateX(0); }
 
     .drawer-header {
@@ -345,7 +359,9 @@
       border-bottom: 1px solid #e8ecf0;
       flex-shrink: 0;
     }
-    .drawer-title { flex: 1; font-size: 13.5px; font-weight: 600; color: #1a2332; line-height: 1.45; min-width: 0; }
+    .drawer-title-block { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+    .drawer-title { font-size: 13.5px; font-weight: 600; color: #1a2332; line-height: 1.45; }
+    .drawer-kickers { display: flex; flex-wrap: wrap; gap: 6px; }
     .drawer-close {
       flex-shrink: 0; background: none; border: none; cursor: pointer;
       color: #6b7a99; padding: 2px; border-radius: 4px;
@@ -354,10 +370,10 @@
     }
     .drawer-close:hover { background: #f0f2f5; color: #1a2332; }
 
-    .drawer-tabs { display: flex; border-bottom: 1px solid #e8ecf0; flex-shrink: 0; }
+    .drawer-tabs { display: flex; border-bottom: 1px solid #e8ecf0; flex-shrink: 0; flex-wrap: wrap; }
     .drawer-tab {
-      flex: 1; padding: 10px 0; text-align: center;
-      font-size: 12px; font-weight: 600; color: #6b7a99;
+      flex: 1 1 25%; min-width: 90px; padding: 9px 4px; text-align: center;
+      font-size: 11.5px; font-weight: 600; color: #6b7a99;
       cursor: pointer; border-bottom: 2px solid transparent;
       background: none; border-top: none; border-left: none; border-right: none;
       font-family: inherit; transition: color 0.12s, border-color 0.12s;
@@ -367,10 +383,36 @@
 
     .drawer-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 
-    .drawer-row { display: grid; grid-template-columns: 110px 1fr; gap: 4px; align-items: baseline; }
+    .drawer-row { display: grid; grid-template-columns: 118px 1fr; gap: 6px; align-items: baseline; }
     .drawer-label { font-size: 11px; font-weight: 600; color: #6b7a99; text-transform: uppercase; letter-spacing: 0.04em; }
     .drawer-value { font-size: 13px; color: #1a2332; line-height: 1.5; }
     .drawer-hint { font-size: 11px; color: #9aaac4; margin-top: 6px; line-height: 1.45; font-style: italic; }
+    .drawer-section {
+      display: flex; flex-direction: column; gap: 10px;
+      padding-bottom: 12px; margin-bottom: 4px;
+      border-bottom: 1px solid #f0f2f5;
+    }
+    .drawer-section:last-child { border-bottom: none; padding-bottom: 0; }
+    .drawer-section-title {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.06em; color: #9aaac4;
+    }
+    .interp-stack { display: flex; flex-direction: column; gap: 8px; }
+    .interp-card {
+      background: #f7f9fc; border: 1px solid #e8ecf0; border-radius: 8px;
+      padding: 10px 12px; border-left: 3px solid #dde1ea;
+    }
+    .interp-card.verbatim { background: #fafbfc; border-left-color: #1a2e5a; }
+    .interp-card.change { background: #fffbeb; border-left-color: #d97706; }
+    .interp-card.analysis { background: #eef3fb; border-left-color: #2463eb; }
+    .interp-kicker {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.05em; color: #6b7a99; margin-bottom: 4px;
+    }
+    .interp-body { font-size: 13px; color: #1a2332; line-height: 1.55; }
+    .drawer-empty {
+      font-size: 12.5px; color: #9aaac4; line-height: 1.5; padding: 8px 0;
+    }
 
     .notes-box {
       background: #fffbf0; border: 1px solid #fde68a;
@@ -636,6 +678,17 @@
     .req-main { flex: 1; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
     .req-purpose { font-size: 11.5px; color: #8a94a6; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
     .badge-setting { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+    .badge-policy-create { background: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; }
+    .badge-policy-review { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .badge-policy-none { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; }
+    .badge-policy-unknown { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+    .badge-puc-policy { background: #ede9fe; color: #5b21b6; border: 1px solid #ddd6fe; }
+    .badge-puc-training { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .badge-puc-quality { background: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
+    .badge-puc-multiple { background: #eef3fb; color: #1e40af; border: 1px solid #c7d7f8; }
+    .badge-puc-research { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+    .badge-puc-unknown { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+    .badge-lifecycle { background: #f8fafc; color: #334155; border: 1px solid #e2e8f0; }
     .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip { display: inline-flex; align-items: center; background: #f1f5f9; color: #1a2332; font-size: 11.5px; font-weight: 500; padding: 3px 9px; border-radius: 20px; border: 1px solid #e8ecf0; }
   </style>
@@ -716,6 +769,7 @@
         <a href="index.html" class="nav-item">
           <span class="nav-icon">⌂</span><span class="nav-label">Home</span>
         </a>
+        <div class="nav-section">Intelligence</div>
         <a href="#" class="nav-item active" data-section="roles">
           <span class="nav-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -736,14 +790,6 @@
           </span>
           <span class="nav-label">Care Settings</span>
         </a>
-        <a href="#" class="nav-item" data-section="workforce">
-          <span class="nav-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
-          </span>
-          <span class="nav-label">Workforce Readiness</span>
-        </a>
         <a href="#" class="nav-item" data-section="profile">
           <span class="nav-icon">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -751,6 +797,28 @@
             </svg>
           </span>
           <span class="nav-label">Facility/Learner Query</span>
+        </a>
+        <div class="nav-section">Policy</div>
+        <a href="#" class="nav-item" data-section="policy">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </span>
+          <span class="nav-label">Policy Manager</span>
+        </a>
+        <div class="nav-section">Workforce</div>
+        <a href="#" class="nav-item" data-section="workforce">
+          <span class="nav-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </span>
+          <span class="nav-label">Workforce Readiness</span>
         </a>
         <div id="adminNav" style="display:none">
           <div style="border-top:1px solid #e8ecf0;margin:12px 0;"></div>
@@ -806,6 +874,7 @@
   </div><!-- /body-row -->
 
   <script src="impact-types.js"></script>
+  <script src="schema.js"></script>
   <script>
   // ─── Shared note for all NALPN rows ───
   const NALPN_NOTE = 'NALPN is a membership association; these standards are not mandated by any state or federal body and carry no enforcement mechanism. Content built against these rows is competency-positioned, not compliance-driven. Standards applicable across all states.';
@@ -899,6 +968,9 @@ let selectedRole        = null;
 
   // Impact Type facet (Phase 4). Closed taxonomy — not mutually exclusive.
   let ALL_IMPACT_TYPES = IMPACT_TYPES.slice();
+  let ALL_POLICY_ACTIONS = [];
+  let ALL_PRODUCT_USE_CASES = [];
+  let ALL_OPERATIONAL_DOMAINS = [];
   const STATE_NAMES       = {CA:'California', FL:'Florida', US:'United States'};
   const STATE_ORDER       = ['CA','FL','US'];
 
@@ -907,7 +979,10 @@ let selectedRole        = null;
     requirementLevels:   new Set(),
     authorityLevels:     new Set(),
     applicabilityValues: new Set(),
-    impactTypes:         new Set(IMPACT_TYPES)
+    impactTypes:         new Set(IMPACT_TYPES),
+    policyActions:       new Set(),
+    productUseCases:     new Set(),
+    operationalDomains:  new Set()
   };
 
   const openJurisdictions = new Set();
@@ -1045,6 +1120,21 @@ let selectedRole        = null;
     return types.map(t => `<span class="badge badge-type ${impactBadgeClass(t)}" title="${esc(impactTypeTitle(t))}">${esc(t)}</span>`).join('');
   }
 
+  function renderPolicyBadges(row) {
+    if (isSubTopic(row)) return '';
+    let html = '';
+    if (row.policy_action_relevance) {
+      html += `<span class="badge ${policyActionBadgeClass(row.policy_action_relevance)}">${esc(row.policy_action_relevance)}</span>`;
+    }
+    if (row.product_use_case && row.product_use_case !== 'Training/Content') {
+      html += `<span class="badge ${productUseCaseBadgeClass(row.product_use_case)}">${esc(row.product_use_case)}</span>`;
+    }
+    if (row.operational_domain && row.operational_domain !== 'Unknown') {
+      html += `<span class="badge badge-lifecycle">${esc(row.operational_domain)}</span>`;
+    }
+    return html;
+  }
+
   function renderImpactChips(types) {
     const list = Array.isArray(types) ? types.filter(isKnownImpactType) : [];
     if (!list.length) return '';
@@ -1112,6 +1202,7 @@ let selectedRole        = null;
     const settingBadge = settings.length > 1
       ? `<span class="badge badge-setting" title="${esc(settings.join(', '))}">${settings.length} settings</span>`
       : settings.length === 1 ? `<span class="badge badge-setting">${esc(settings[0])}</span>` : '';
+    const hoursLabel = formatHoursDisplay(row);
     return `<div class="req-row${sub}${isSelected ? ' selected' : ''}" data-card-key="${esc(key)}">
   <div class="req-main">
     <span class="req-topic">${esc(row.training_topic)}</span>
@@ -1119,8 +1210,9 @@ let selectedRole        = null;
   </div>
   <div class="req-badges">
     ${renderImpactBadges(row)}
+    ${renderPolicyBadges(row)}
     ${settingBadge}
-    ${row.hours_required > 0 ? `<span class="badge badge-hours">${row.hours_required} hr${row.hours_required !== 1 ? 's' : ''}</span>` : ''}
+    ${hoursLabel ? `<span class="badge badge-hours">${esc(hoursLabel)}</span>` : ''}
     ${srcHref ? `<a href="${srcHref}" target="_blank" rel="noopener" class="badge badge-source" onclick="event.stopPropagation()">Source ↗</a>` : ''}
   </div>
   <svg class="req-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
@@ -1155,15 +1247,33 @@ let selectedRole        = null;
   }
 
   // ─── Drawer ───
+  function drawerField(label, valueHtml) {
+    if (!valueHtml) return '';
+    return `<div class="drawer-row"><span class="drawer-label">${esc(label)}</span><span class="drawer-value">${valueHtml}</span></div>`;
+  }
+  function drawerText(label, value) {
+    if (value == null || value === '') return '';
+    return drawerField(label, esc(String(value)));
+  }
+  function drawerChips(label, values) {
+    const list = (values || []).filter(Boolean);
+    if (!list.length) return '';
+    return drawerField(label, `<div class="chip-row">${list.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div>`);
+  }
+  function interpCard(kind, kicker, body) {
+    if (!body) return '';
+    return `<div class="interp-card ${kind}"><div class="interp-kicker">${esc(kicker)}</div><div class="interp-body">${esc(body)}</div></div>`;
+  }
+
   function renderDrawer() {
     const isOpen = selectedCardKey !== null;
     const row = isOpen ? rowMap[selectedCardKey] : null;
-    const approval = row && row.approval_required != null ? esc(String(row.approval_required)) : '—';
-    const src = row && row.source_url ? `<a href="${esc(row.source_url)}" target="_blank" rel="noopener" class="source-link">${esc(truncUrl(row.source_url))}</a>` : '—';
+    const src = row && row.source_url
+      ? `<a href="${esc(row.source_url)}" target="_blank" rel="noopener" class="source-link">${esc(truncUrl(row.source_url, 64))}</a>`
+      : '';
     const settings = row ? (row.settings || (row.hstm_setting ? [row.hstm_setting] : [])) : [];
-    const settingsChips = settings.length ? `<div class="drawer-row"><span class="drawer-label">Applies To</span><span class="drawer-value"><div class="chip-row">${settings.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div></span></div>` : '';
+    const roles = row ? (Array.isArray(row.hstm_role) ? row.hstm_role : (row.hstm_role ? [row.hstm_role] : [])) : [];
     const applicabilitySummariesList = row ? applicabilitySummaries(row.applicability_rules) : [];
-    const applicabilityChips = applicabilitySummariesList.length ? `<div class="drawer-row"><span class="drawer-label">Applicability</span><span class="drawer-value"><div class="chip-row">${applicabilitySummariesList.map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div></span></div>` : '';
     const impactTypesList = row && Array.isArray(row.impact_types) ? row.impact_types : [];
     const judgment = row ? readImpactJudgment(row) : { types: [], hasTypesField: false, basis: '', confidence: '', review: null };
     const impactMeta = [];
@@ -1172,43 +1282,116 @@ let selectedRole        = null;
     const impactEvidence = (judgment.basis || impactMeta.length)
       ? `<div class="drawer-hint">${impactMeta.length ? impactMeta.join(' · ') + '. ' : ''}${judgment.basis ? esc(judgment.basis) : ''} Infer downstream products from Impact Type + setting/role/jurisdiction — no catalog IDs stored here.</div>`
       : (impactTypesList.length || judgment.hasTypesField ? `<div class="drawer-hint">Parser-assigned response category. Infer downstream products from Impact Type + setting/role/jurisdiction — no catalog IDs stored here.</div>` : '');
-    const impactChips = (impactTypesList.length || judgment.hasTypesField || judgment.basis || judgment.confidence || judgment.review !== null)
-      ? `<div class="drawer-row"><span class="drawer-label">Impact Type</span><span class="drawer-value">${impactTypesList.length ? renderImpactChips(impactTypesList) : (judgment.hasTypesField ? '<div class="chip-row"><span class="chip">None (reasoned)</span></div>' : '')}${impactEvidence}</span></div>`
+    const impactBlock = (impactTypesList.length || judgment.hasTypesField || judgment.basis || judgment.confidence || judgment.review !== null)
+      ? drawerField('Impact Type', (impactTypesList.length ? renderImpactChips(impactTypesList) : (judgment.hasTypesField ? '<div class="chip-row"><span class="chip">None (reasoned)</span></div>' : '')) + impactEvidence)
       : '';
+    const hoursLabel = row ? formatHoursDisplay(row) : '';
+    const related = row ? (row.related_provisions || []) : [];
+    const relTypes = row ? (row.provision_relationship_types || []) : [];
+
+    const kickers = row ? [
+      row.regulation_type ? `<span class="badge badge-type">${esc(row.regulation_type)}</span>` : '',
+      row.product_use_case ? `<span class="badge ${productUseCaseBadgeClass(row.product_use_case)}">${esc(row.product_use_case)}</span>` : '',
+      row.policy_action_relevance ? `<span class="badge ${policyActionBadgeClass(row.policy_action_relevance)}">${esc(row.policy_action_relevance)}</span>` : '',
+      row.change_type ? `<span class="badge badge-lifecycle">${esc(row.change_type)}</span>` : '',
+      row.lifecycle_stage ? `<span class="badge badge-lifecycle">${esc(row.lifecycle_stage)}</span>` : ''
+    ].filter(Boolean).join('') : '';
+
     const overviewContent = row ? `
-      ${settingsChips}
-      ${impactChips}
-      ${row.hours_required > 0 ? `<div class="drawer-row"><span class="drawer-label">Hours</span><span class="drawer-value">${row.hours_required} hr${row.hours_required !== 1 ? 's' : ''}</span></div>` : ''}
-      ${row.frequency ? `<div class="drawer-row"><span class="drawer-label">Frequency</span><span class="drawer-value">${esc(row.frequency)}</span></div>` : ''}
-      ${row.type ? `<div class="drawer-row"><span class="drawer-label">Purpose</span><span class="drawer-value">${esc(row.type)}</span></div>` : ''}
+      <div class="drawer-section">
+        ${drawerChips('Applies to', settings)}
+        ${drawerChips('HSTM Role', roles)}
+        ${drawerText('Jurisdiction role', row.jurisdictional_name)}
+        ${drawerChips('Applicability', applicabilitySummariesList)}
+        ${impactBlock}
+      </div>
+      <div class="drawer-section">
+        ${hoursLabel ? drawerField('Hours', esc(hoursLabel)) : ''}
+        ${drawerText('Frequency', row.frequency)}
+        ${drawerText('Purpose', row.type)}
+        ${drawerText('Relationship', row.row_type)}
+        ${drawerText('Regulated competency', row.regulated_competency)}
+      </div>
+      ${row.interpretive_summary ? `<div class="drawer-section">${interpCard('analysis', 'What this implies', row.interpretive_summary)}</div>` : ''}
     ` : '';
-    const metaContent = row ? `
-      ${row.obligation_id ? `<div class="drawer-row"><span class="drawer-label">Obligation ID</span><span class="drawer-value">${esc(row.obligation_id)}</span></div>` : ''}
-      ${row.change_type ? `<div class="drawer-row"><span class="drawer-label">Change</span><span class="drawer-value">${esc(row.change_type)}${row.change_detected_date ? ' — detected ' + esc(row.change_detected_date) : ''}${row.change_source_path ? ' — ' + esc(row.change_source_path) : ''}</span></div>` : ''}
-      ${row.requirement_level ? `<div class="drawer-row"><span class="drawer-label">Requirement</span><span class="drawer-value">${esc(row.requirement_level)}</span></div>` : ''}
-      ${row.authority_level ? `<div class="drawer-row"><span class="drawer-label">Authority</span><span class="drawer-value">${esc(row.authority_level)}</span></div>` : ''}
-      <div class="drawer-row"><span class="drawer-label">Agency</span><span class="drawer-value">${esc(row.oversight_agency)}</span></div>
-      <div class="drawer-row"><span class="drawer-label">Citation</span><span class="drawer-value">${esc(row.citation)}</span></div>
-      <div class="drawer-row"><span class="drawer-label">Approval</span><span class="drawer-value">${approval}</span></div>
-      ${row.approval_basis ? `<div class="drawer-row"><span class="drawer-label">Approval basis</span><span class="drawer-value">${esc(row.approval_basis)}</span></div>` : ''}
-      ${applicabilityChips}
-      ${(row.notes && adminMode) ? `<div class="drawer-row"><span class="drawer-label">Research Notes</span><span class="drawer-value"><div class="notes-box">${esc(row.notes)}</div></span></div>` : ''}
-      <div class="drawer-row"><span class="drawer-label">Source</span><span class="drawer-value">${src}</span></div>
+
+    const interpStack = row ? [interpCard('verbatim', 'Source language', row.source_change_context), interpCard('change', 'What the provision requires', row.regulatory_change_summary), interpCard('analysis', 'Product implication', row.interpretive_summary)].filter(Boolean).join('') : '';
+    const policyHasContent = row && (row.product_use_case || row.policy_action_relevance || row.quality_manager_relevance || row.operational_domain || row.regulatory_change_summary || row.source_change_context || row.interpretive_summary || row.sme_review);
+    const policyContent = row ? (policyHasContent ? `
+      <div class="drawer-section">
+        ${drawerText('Product use case', row.product_use_case)}
+        ${drawerText('Policy action', row.policy_action_relevance)}
+        ${drawerText('Quality Manager', row.quality_manager_relevance)}
+        ${drawerText('Operational domain', row.operational_domain)}
+        ${drawerText('SME review', row.sme_review)}
+        <div class="drawer-hint">Policy Action is a regulatory implication — not a template ID, owner, or customer-local document.</div>
+      </div>
+      ${interpStack ? `<div class="drawer-section"><div class="drawer-section-title">Interpretation layers</div><div class="interp-stack">${interpStack}</div></div>` : ''}
+    ` : `<div class="drawer-empty">No Policy Manager or Quality Manager routing on this row yet. Those fields arrive with a classified parser batch (Product Use Case, Policy Action Relevance, Operational Domain, and the three interpretation layers).</div>`) : '';
+
+    const approvalHasContent = row && ((row.approval_required != null && row.approval_required !== '') || row.approval_basis || row.approval_scope || row.approval_responsibility || row.approval_timing || row.instructor_qualification || row.prior_training_credit || row.prior_training_qualification);
+    const approvalContent = row ? (approvalHasContent ? `
+      <div class="drawer-section">
+        ${drawerText('Required', row.approval_required != null ? String(row.approval_required) : '')}
+        ${drawerText('Basis', row.approval_basis)}
+        ${drawerText('Scope', row.approval_scope)}
+        ${drawerText('Responsibility', row.approval_responsibility)}
+        ${drawerText('Timing', row.approval_timing)}
+        ${drawerText('Instructor/SME', row.instructor_qualification)}
+      </div>
+      <div class="drawer-section">
+        ${drawerText('Prior credit', row.prior_training_credit)}
+        ${drawerText('Qualification', row.prior_training_qualification)}
+        <div class="drawer-hint">Unknown is a filterable review state — not a Yes or No guess. Policy-only rows skip this family.</div>
+      </div>
+    ` : `<div class="drawer-empty">No approval-family fields on this row. The parser populates them only when a training or CE gate activates approval; Organizational Policy rows skip the family.</div>`) : '';
+
+    const sourceContent = row ? `
+      <div class="drawer-section">
+        ${drawerText('Citation', row.citation)}
+        ${drawerChips('Related provisions', related)}
+        ${drawerChips('Relationship types', relTypes)}
+        ${drawerText('Interpretive conditions', row.interpretive_conditions)}
+        ${drawerText('Review status', row.interpretive_review_status)}
+        ${drawerText('Agency', row.oversight_agency)}
+        ${drawerText('Requirement', row.requirement_level)}
+        ${drawerText('Authority', row.authority_level)}
+        ${src ? drawerField('Source', src) : ''}
+      </div>
+      <div class="drawer-section">
+        ${drawerText('Obligation ID', row.obligation_id)}
+        ${drawerText('Record ID', row.record_id)}
+        ${row.change_type ? drawerField('Change', esc(row.change_type) + (row.change_detected_date ? ' — detected ' + esc(row.change_detected_date) : '') + (row.change_source_path ? ' — ' + esc(row.change_source_path) : '')) : ''}
+        ${drawerText('Lifecycle', row.lifecycle_stage)}
+        ${(row.notes && adminMode) ? drawerField('Research notes', `<div class="notes-box">${esc(row.notes)}</div>`) : ''}
+      </div>
     ` : '';
+
+    const body = !row ? ''
+      : drawerTab === 'policy' ? policyContent
+      : drawerTab === 'approval' ? approvalContent
+      : drawerTab === 'source' ? sourceContent
+      : overviewContent;
+
     return `
     <div class="drawer-overlay${isOpen ? ' open' : ''}" id="drawerOverlay"></div>
     <div class="drawer-panel${isOpen ? ' open' : ''}" id="drawerPanel">
       <div class="drawer-header">
-        <span class="drawer-title">${row ? esc(row.training_topic) : ''}</span>
+        <div class="drawer-title-block">
+          <span class="drawer-title">${row ? esc(row.training_topic) : ''}</span>
+          ${kickers ? `<div class="drawer-kickers">${kickers}</div>` : ''}
+        </div>
         <button type="button" class="drawer-close" id="drawerClose">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </div>
       <div class="drawer-tabs">
         <button type="button" class="drawer-tab${drawerTab === 'overview' ? ' active' : ''}" data-drawer-tab="overview">Overview</button>
-        <button type="button" class="drawer-tab${drawerTab === 'metadata' ? ' active' : ''}" data-drawer-tab="metadata">Metadata</button>
+        <button type="button" class="drawer-tab${drawerTab === 'policy' ? ' active' : ''}" data-drawer-tab="policy">Policy</button>
+        <button type="button" class="drawer-tab${drawerTab === 'approval' ? ' active' : ''}" data-drawer-tab="approval">Approval</button>
+        <button type="button" class="drawer-tab${drawerTab === 'source' ? ' active' : ''}" data-drawer-tab="source">Source</button>
       </div>
-      <div class="drawer-body">${drawerTab === 'overview' ? overviewContent : metaContent}</div>
+      <div class="drawer-body">${body}</div>
     </div>`;
   }
 
@@ -1332,6 +1515,68 @@ let selectedRole        = null;
   </div>`;
   }
 
+  function renderPolicyFilterBar() {
+    const exportBtn = `<button class="export-btn" onclick="exportToExcel()" title="Export filtered results to Excel">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Export .xlsx
+    </button>`;
+    return `<div class="filter-bar">
+    ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
+    ${ALL_POLICY_ACTIONS.length ? renderDropdown('policyActions', 'Policy action', ALL_POLICY_ACTIONS, filterState.policyActions) : ''}
+    ${ALL_PRODUCT_USE_CASES.length ? renderDropdown('productUseCases', 'Use case', ALL_PRODUCT_USE_CASES, filterState.productUseCases) : ''}
+    ${ALL_OPERATIONAL_DOMAINS.length ? renderDropdown('operationalDomains', 'Domain', ALL_OPERATIONAL_DOMAINS, filterState.operationalDomains) : ''}
+    ${renderDropdown('impactTypes', 'Impact Type', ALL_IMPACT_TYPES, filterState.impactTypes)}
+    ${exportBtn}
+  </div>`;
+  }
+
+  function policyUniverse() {
+    return [...DATA, ...CARE_DATA].filter(isPolicyRelevant);
+  }
+
+  function filterPolicyData() {
+    return policyUniverse().filter(r => {
+      if (ALL_JURISDICTIONS.length && !filterState.jurisdictions.has(r.state)) return false;
+      if (ALL_POLICY_ACTIONS.length && filterState.policyActions.size < ALL_POLICY_ACTIONS.length) {
+        if (!filterState.policyActions.has(r.policy_action_relevance)) return false;
+      }
+      if (ALL_PRODUCT_USE_CASES.length && filterState.productUseCases.size < ALL_PRODUCT_USE_CASES.length) {
+        if (!filterState.productUseCases.has(r.product_use_case)) return false;
+      }
+      if (ALL_OPERATIONAL_DOMAINS.length && filterState.operationalDomains.size < ALL_OPERATIONAL_DOMAINS.length) {
+        if (!filterState.operationalDomains.has(r.operational_domain)) return false;
+      }
+      if (filterState.impactTypes.size < ALL_IMPACT_TYPES.length) {
+        const tags = Array.isArray(r.impact_types) ? r.impact_types : [];
+        if (!tags.some(t => filterState.impactTypes.has(t))) return false;
+      }
+      return true;
+    });
+  }
+
+  function renderPolicy() {
+    const universe = policyUniverse();
+    if (!universe.length) {
+      return renderPolicyFilterBar() + `<div class="main-content"><div class="empty-state">
+        <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+        </svg>
+        <p class="empty-state-title">Policy Manager</p>
+        <p class="empty-state-text">Policy-relevant obligations appear here when a classified batch routes Product Use Case to Policy Manager, marks Policy Action as Create/Update or Review, types the row Organizational Policy, or tags Impact Type Policy / Procedure.</p>
+      </div></div>`;
+    }
+    const filtered = filterPolicyData();
+    const groups = groupData(filtered);
+    const body = groups.length
+      ? groups.map(renderJurisdiction).join('')
+      : `<div class="empty-state">
+           <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+           <p class="empty-state-title">No results</p>
+           <p class="empty-state-text">Try adjusting your Policy filters.</p>
+         </div>`;
+    return renderPolicyFilterBar() + `<div class="main-content">${body}</div>`;
+  }
+
   // ─── Filter bar ─── 
   function renderFilterBar(roleOnly = false) {
     const roleDD = renderRoleDropdown();
@@ -1442,6 +1687,12 @@ let selectedRole        = null;
 
     if (activeSection === 'workforce') {
       panel.innerHTML = renderWorkforce();
+      updateDrawer();
+      return;
+    }
+
+    if (activeSection === 'policy') {
+      panel.innerHTML = renderPolicy();
       updateDrawer();
       return;
     }
@@ -1639,7 +1890,7 @@ let selectedRole        = null;
     if (opt) {
       const dim = opt.dataset.dropdown;
       const val = opt.dataset.value;
-      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS, applicabilityValues: ALL_APPLICABILITY_VALUES, impactTypes: ALL_IMPACT_TYPES };
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS, applicabilityValues: ALL_APPLICABILITY_VALUES, impactTypes: ALL_IMPACT_TYPES, policyActions: ALL_POLICY_ACTIONS, productUseCases: ALL_PRODUCT_USE_CASES, operationalDomains: ALL_OPERATIONAL_DOMAINS };
       const s = filterState[dim];
       if (s.has(val)) s.delete(val);
       else s.add(val);
@@ -1650,7 +1901,7 @@ let selectedRole        = null;
     const allBtn = e.target.closest('[data-dropdown-all]');
     if (allBtn) {
       const dim = allBtn.dataset.dropdownAll;
-      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS, applicabilityValues: ALL_APPLICABILITY_VALUES, impactTypes: ALL_IMPACT_TYPES };
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS, applicabilityValues: ALL_APPLICABILITY_VALUES, impactTypes: ALL_IMPACT_TYPES, policyActions: ALL_POLICY_ACTIONS, productUseCases: ALL_PRODUCT_USE_CASES, operationalDomains: ALL_OPERATIONAL_DOMAINS };
       allMap[dim].forEach(v => filterState[dim].add(v));
       render();
       e.stopPropagation();
@@ -1660,7 +1911,7 @@ let selectedRole        = null;
     const clearBtn = e.target.closest('[data-dropdown-clear]');
     if (clearBtn) {
       const dim = clearBtn.dataset.dropdownClear;
-      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS, applicabilityValues: ALL_APPLICABILITY_VALUES, impactTypes: ALL_IMPACT_TYPES };
+      const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS, applicabilityValues: ALL_APPLICABILITY_VALUES, impactTypes: ALL_IMPACT_TYPES, policyActions: ALL_POLICY_ACTIONS, productUseCases: ALL_PRODUCT_USE_CASES, operationalDomains: ALL_OPERATIONAL_DOMAINS };
       filterState[dim].clear();
       render();
       e.stopPropagation();
@@ -1709,19 +1960,34 @@ let selectedRole        = null;
       const section = item.dataset.section;
       if (section === activeSection) return;
       activeSection = section;
+      drawerTab = 'overview';
+      selectedCardKey = null;
+      history.replaceState(null, '', '#' + section);
       document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
       item.classList.add('active');
       render();
     });
   });
 
+  function applyHashSection() {
+    const hash = (location.hash || '').replace('#', '');
+    const allowed = { roles: 1, 'care-settings': 1, policy: 1, workforce: 1, profile: 1 };
+    if (!allowed[hash]) return;
+    activeSection = hash;
+    document.querySelectorAll('.nav-item[data-section]').forEach(n => {
+      n.classList.toggle('active', n.dataset.section === hash);
+    });
+  }
+  window.addEventListener('hashchange', () => { applyHashSection(); render(); });
+
   // ─── Data loader ───
   function parseData(json) {
     const normalizeRow = r => ({
       state:               r['Jurisdiction'],
-      hstm_role:           r['HSTM Role'],
+      hstm_role:           splitPipeList(r['HSTM Role']),
       hstm_setting:        r['HSTM Setting'],
       jurisdictional_name: r['Jurisdiction Role'],
+      jurisdiction_setting: r['Jurisdiction Setting'] || '',
       oversight_agency:    r['Oversight / Professional Agency'],
       requirement_level:   r['Requirement Level'],
       authority_level:     r['Authority Level'],
@@ -1730,6 +1996,10 @@ let selectedRole        = null;
       training_topic:      r['Training Topic / Competency Item'],
       approval_required:   r['Approval Required'],
       approval_basis:      r['Approval Basis'] || '',
+      approval_scope:      r['Approval Scope'] || '',
+      approval_responsibility: r['Approval Responsibility'] || '',
+      approval_timing:     r['Approval Timing'] || '',
+      instructor_qualification: r['Instructor/SME Qualification Required'] || '',
       hours_required:      Number(r['Hours Required']) || 0,
       hours_raw:           String(r['Hours Required'] || ''),
       frequency:           r['Frequency'],
@@ -1740,10 +2010,26 @@ let selectedRole        = null;
       obligation_id:       r['Obligation ID'] || '',
       change_type:         r['Change Type'] || '',
       change_detected_date:r['Change Detected Date'] || '',
-      change_source_path:  r['Change Source Path'] || '',
+      change_source_path:  readChangeSourcePath(r),
       regulation_type:     r['Regulation Type'] || '',
+      related_provisions:  splitPipeList(r['Related Regulatory Provisions']),
+      provision_relationship_types: splitPipeList(r['Provision Relationship Types']),
+      interpretive_conditions: r['Interpretive Conditions'] || '',
+      prior_training_credit: r['Prior Training Credit / Exemption'] || '',
+      prior_training_qualification: r['Prior Training Qualification'] || '',
+      interpretive_review_status: r['Interpretive Review Status'] || '',
+      lifecycle_stage:     r['Regulatory Lifecycle Stage'] || '',
+      product_use_case:    r['Product Use Case'] || '',
+      regulated_competency: r['Regulated Competency'] || '',
+      regulatory_change_summary: r['Regulatory Change Summary'] || '',
+      interpretive_summary: r['Interpretive Summary'] || '',
+      policy_action_relevance: r['Policy Action Relevance'] || '',
+      quality_manager_relevance: r['Quality Manager Relevance'] || '',
+      operational_domain:  r['Operational Domain'] || '',
+      sme_review:          r['Human Interpretation / SME Review'] || '',
+      source_change_context: r['Source Change Context'] || '',
       applicability_rules: Array.isArray(r['Applicability Rules']) ? r['Applicability Rules'] : [],
-      impact_types:        Array.isArray(r['Impact Types']) ? r['Impact Types'] : [],
+      impact_types:        splitPipeList(r['Impact Types']),
       impact_types_present: Object.prototype.hasOwnProperty.call(r, 'Impact Types'),
       impact_basis:        r['Impact Basis'] || '',
       impact_confidence:   r['Impact Confidence'] || '',
@@ -1803,11 +2089,17 @@ let selectedRole        = null;
     ALL_AUTHORITY_LEVELS    = [...new Set([...DATA, ...CARE_DATA].map(r => r.authority_level).filter(Boolean))];
     ALL_APPLICABILITY_VALUES = [...new Set([...DATA, ...CARE_DATA].flatMap(r => applicabilityTokens(r.applicability_rules)))].sort();
     ALL_IMPACT_TYPES = buildImpactTypeFacetValues([...DATA, ...CARE_DATA]);
+    ALL_POLICY_ACTIONS = [...new Set([...DATA, ...CARE_DATA].map(r => r.policy_action_relevance).filter(Boolean))];
+    ALL_PRODUCT_USE_CASES = [...new Set([...DATA, ...CARE_DATA].map(r => r.product_use_case).filter(Boolean))];
+    ALL_OPERATIONAL_DOMAINS = [...new Set([...DATA, ...CARE_DATA].map(r => r.operational_domain).filter(Boolean))];
     filterState.jurisdictions = new Set(ALL_JURISDICTIONS);
     filterState.requirementLevels   = new Set(ALL_REQUIREMENT_LEVELS);
     filterState.authorityLevels     = new Set(ALL_AUTHORITY_LEVELS);
     filterState.applicabilityValues = new Set(ALL_APPLICABILITY_VALUES);
     filterState.impactTypes         = new Set(ALL_IMPACT_TYPES);
+    filterState.policyActions       = new Set(ALL_POLICY_ACTIONS);
+    filterState.productUseCases     = new Set(ALL_PRODUCT_USE_CASES);
+    filterState.operationalDomains  = new Set(ALL_OPERATIONAL_DOMAINS);
 
     // Facility/Learner Applicability Profile facets (Phase 6) — derived from
     // the FULL flat dataset (both lanes), since a profile query isn't
@@ -1919,6 +2211,7 @@ let selectedRole        = null;
 
   // ─── Init ───
   loadData().then(() => {
+    applyHashSection();
     rowMap = {};
     [...DATA, ...CARE_DATA].forEach(r => { rowMap[cardKey(r)] = r; });
     render();
@@ -1986,6 +2279,9 @@ let selectedRole        = null;
         return true;
       });
       filename = `regintel-workforce`;
+    } else if (activeSection === 'policy') {
+      rows = filterPolicyData();
+      filename = 'regintel-policy';
     }
 
     if (!rows.length) {
@@ -1995,18 +2291,33 @@ let selectedRole        = null;
 
     const exportRows = rows.map(r => ({
       'Jurisdiction':              r.state,
-      'HSTM Role':                 Array.isArray(r.hstm_role) ? r.hstm_role.join(', ') : r.hstm_role,
+      'HSTM Role':                 Array.isArray(r.hstm_role) ? r.hstm_role.join(' | ') : r.hstm_role,
       'HSTM Setting':              r.hstm_setting || '',
       'Oversight Agency':          r.oversight_agency || '',
       'Requirement Level':         r.requirement_level || '',
       'Authority Level':           r.authority_level || '',
+      'Regulation Type':           r.regulation_type || '',
       'Citation':                  r.citation || '',
+      'Related Regulatory Provisions': Array.isArray(r.related_provisions) ? r.related_provisions.join(' | ') : '',
       'Training Topic':            r.training_topic || '',
       'Purpose':                   r.type || '',
       'Approval Required':         r.approval_required || '',
       'Approval Basis':            r.approval_basis || '',
-      'Hours Required':            r.hours_required || 0,
+      'Approval Scope':            r.approval_scope || '',
+      'Approval Responsibility':   r.approval_responsibility || '',
+      'Approval Timing':           r.approval_timing || '',
+      'Hours Required':            r.hours_raw || r.hours_required || '',
       'Frequency':                 r.frequency || '',
+      'Impact Types':              Array.isArray(r.impact_types) ? r.impact_types.join(' | ') : '',
+      'Product Use Case':          r.product_use_case || '',
+      'Policy Action Relevance':   r.policy_action_relevance || '',
+      'Quality Manager Relevance': r.quality_manager_relevance || '',
+      'Operational Domain':        r.operational_domain || '',
+      'Regulatory Change Summary': r.regulatory_change_summary || '',
+      'Interpretive Summary':      r.interpretive_summary || '',
+      'Source Change Context':     r.source_change_context || '',
+      'Obligation ID':             r.obligation_id || '',
+      'Record ID':                 r.record_id || '',
       'Notes':                     r.notes || '',
       'Source URL':                 r.source_url || '',
       'Relationship':              r.row_type || ''
@@ -2133,11 +2444,17 @@ let selectedRole        = null;
     ALL_AUTHORITY_LEVELS   = [...new Set([...DATA, ...CARE_DATA].map(r => r.authority_level).filter(Boolean))];
     ALL_APPLICABILITY_VALUES = [...new Set([...DATA, ...CARE_DATA].flatMap(r => applicabilityTokens(r.applicability_rules)))].sort();
     ALL_IMPACT_TYPES = buildImpactTypeFacetValues([...DATA, ...CARE_DATA]);
+    ALL_POLICY_ACTIONS = [...new Set([...DATA, ...CARE_DATA].map(r => r.policy_action_relevance).filter(Boolean))];
+    ALL_PRODUCT_USE_CASES = [...new Set([...DATA, ...CARE_DATA].map(r => r.product_use_case).filter(Boolean))];
+    ALL_OPERATIONAL_DOMAINS = [...new Set([...DATA, ...CARE_DATA].map(r => r.operational_domain).filter(Boolean))];
     filterState.jurisdictions = new Set(ALL_JURISDICTIONS);
     filterState.requirementLevels = new Set(ALL_REQUIREMENT_LEVELS);
     filterState.authorityLevels = new Set(ALL_AUTHORITY_LEVELS);
     filterState.applicabilityValues = new Set(ALL_APPLICABILITY_VALUES);
     filterState.impactTypes = new Set(ALL_IMPACT_TYPES);
+    filterState.policyActions = new Set(ALL_POLICY_ACTIONS);
+    filterState.productUseCases = new Set(ALL_PRODUCT_USE_CASES);
+    filterState.operationalDomains = new Set(ALL_OPERATIONAL_DOMAINS);
     ALL_HSTM_SETTINGS = [...new Set([...DATA, ...CARE_DATA].map(r => r.hstm_setting).filter(Boolean))].sort();
     ALL_HSTM_ROLES = [...new Set([...DATA, ...CARE_DATA].flatMap(r => Array.isArray(r.hstm_role) ? r.hstm_role : (r.hstm_role ? [r.hstm_role] : [])))].sort();
     render();

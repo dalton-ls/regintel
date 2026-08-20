@@ -6,7 +6,7 @@
 > is, what happens before it is populated, and how the current flattened
 > projection maps to that architecture. Field-level extraction rules live
 > in `PHASE 1/Metadata Summary v3.xlsx`. The broader ontology lives in
-> `RegIntel Knowledge Architecture v3.docx` (document title: Version 4.0).
+> `RegIntel Knowledge Architecture v3.docx` (document title: Version 5.0).
 > How admin writes actually commit:
 > [worker/regintel-admin-proxy/README.md](worker/regintel-admin-proxy/README.md).
 
@@ -21,7 +21,7 @@ on one engine:
 | Policy | What kinds of organizational / product change may be required? |
 | Workforce | Who needs to know or do something differently? |
 
-This GitHub Pages app is the **Intelligence + Workforce research view**,
+This GitHub Pages app is the **Intelligence + Policy + Workforce research view**,
 plus human-QA admin, over a flattened **output-row projection**. It is
 not the parser, not the source corpus, and not the ontology.
 
@@ -107,6 +107,12 @@ is not the ontology. Impact Type is.
 
 ## 5. Current projection schema
 
+The live file is still a flat output-row projection. The parser skill now
+emits **47 columns**. The original 20 extraction columns plus Record ID
+remain the identity core. The other 27 are additive — none participates
+in the Record ID hash — so every ID minted under the 20-column schema
+stays valid.
+
 ### 5.1 Extraction columns (the original 20)
 
 Canonical definitions: Metadata Summary v3, FIELDS tab. Emission order:
@@ -127,7 +133,9 @@ Record Editor, Bulk-Apply, Pending Review):
 - `Authority Level` ∈ {Federal Floor, State Floor, Competency}
   — **authority only**. The 18 → 20 split exists because these two axes
   used to share one field.
-- `Approval Required` ∈ {Yes, No}. Rationale lives in Approval Basis.
+- `Approval Required` ∈ {Yes, No, Unknown}. Rationale lives in Approval Basis.
+  `Unknown` is a filterable review state for unresolved cross-references,
+  not a Yes/No guess.
 - `Explicit Training` is derived from Requirement Level; never set
   independently.
 - Neither Authority Level nor Approval Basis participates in the Record
@@ -180,6 +188,26 @@ the site displays it but advises replacing it with specific types.
 Applicability Rule is a parallel, additive check. It does **not** replace
 the output-row anchor (Setting OR Role). A rule with only
 jurisdiction/authority/circumstance set has no target.
+
+### 5.3 Parser routing and interpretation (47-column batch)
+
+A classified parser batch also carries product-routing and interpretation
+fields. Vocabularies live in [`schema.js`](schema.js). Empty still means
+“no opinion” on an older extraction sheet.
+
+| Field | Closed values | Role |
+|---|---|---|
+| Product Use Case | Training/Content, Policy Manager, Quality Manager, Multiple, Research-only, Unknown | Router. Research-only / Unknown stop product-specific judgment. |
+| Policy Action Relevance | Create/Update Policy, Review Existing Policy, Policy Not Indicated, Unknown | Regulatory implication only — not a template ID or owner. |
+| Quality Manager Relevance | SNF operational logic, SNF quality/safety action, PIP/PDSA, Not applicable, Unknown | Currently SNF-only except PIP/PDSA. |
+| Operational Domain | Investigations, Facility Assessment, Survey Process, Quality/Safety, Policy/Procedure, Infection Control, Other, Unknown | Operational area implicated. |
+| Source Change Context / Regulatory Change Summary / Interpretive Summary | free text | Three layers: verbatim excerpt, source-grounded requirement, product implication. |
+| Approval Scope / Responsibility / Timing, Instructor/SME Qualification, Prior Training Credit | see schema.js | Approval family. Activated by training/CE gates; skipped on Organizational Policy. |
+
+The research-view **Policy Manager** sidebar is the Policy experience:
+rows whose Regulation Type is Organizational Policy, whose Impact Types
+include Policy or Procedure, or whose parser routing marks Policy Manager
+/ Create-or-Review. It is not a leftover `Regulation Type` value.
 
 Workforce Readiness (`wr.json`) stays a separate Domain/KSA framework.
 None of the unified admin tools write to it.

@@ -2,14 +2,16 @@
 normalize_batch.py
 
 Converts one **already-extracted** incoming sheet (Excel workbook, one or more
-tabs) using the 20-column extraction template into a flat JSON array, ready
-to upload into the Pending Review Queue (pending-review.html) -- NOT a
-drop-in replacement for requirements.json the way migrate_to_unified.py is.
+tabs) using the 20-column extraction template — or a 47-column classified
+parser batch — into a flat JSON array, ready to upload into the Pending
+Review Queue (pending-review.html) -- NOT a drop-in replacement for
+requirements.json the way migrate_to_unified.py is.
 
 This script does **not** parse OpenLaws or run AI extraction. It only
 normalizes classified output that already matches the extraction column
-headers. Change / Applicability / Impact fields are not produced
-here; those arrive as separate reviewed batches from the pre-site pipeline.
+headers. Additive parser fields (approval family, product routing,
+interpretation layers, change/applicability/impact) are copied through
+when present; absence still means "no opinion" rather than "clear this."
 
 Why this exists (and why it's not just "run migrate_to_unified.py again")
 ---------------------------------------------------------------------------
@@ -47,7 +49,7 @@ name) reproduces the same IDs. Neither field added in the 20-column schema
 ("Authority Level", "Approval Basis") participates in the hash, so the
 18 -> 20 migration could not and did not change any existing Record ID.
 
-Expected headers (20 columns, read by exact header name)
+Expected headers (20 extraction columns, read by exact header name)
 ---------------------------------------------------------------------------
     Jurisdiction, Jurisdiction Setting, Jurisdiction Role, HSTM Setting,
     HSTM Role, Regulation Type, Oversight / Professional Agency,
@@ -55,6 +57,14 @@ Expected headers (20 columns, read by exact header name)
     Training Topic / Competency Item, Relationship, Purpose,
     Approval Required, Approval Basis, Hours Required, Frequency,
     Source URL, Notes / Research Flags
+
+A 47-column parser batch adds Related Regulatory Provisions, the approval
+family (Scope / Responsibility / Timing / Instructor), prior-training
+credit, provision relationship types, interpretive layers, product routing
+(Product Use Case, Policy Action Relevance, Quality Manager Relevance,
+Operational Domain), and identity/change fields. None of those extra
+columns participates in Record ID. `Change Source path` (parser spelling)
+is accepted interchangeably with `Change Source Path`.
 
 Drift warnings raised (never blocking, never silently rewritten)
 ---------------------------------------------------------------------------
@@ -65,7 +75,7 @@ Drift warnings raised (never blocking, never silently rewritten)
   * Authority Level missing or outside {Federal Floor, State Floor,
     Competency}
   * Approval Required still carrying a rationale clause instead of bare
-    Yes / No -- the rationale belongs in Approval Basis
+    Yes / No / Unknown -- the rationale belongs in Approval Basis
   * Explicit Training disagreeing with Requirement Level (it is derived)
   * Jurisdiction / HSTM Setting / HSTM Role values not seen before
 
@@ -125,28 +135,53 @@ UNIFIED_FIELDS = [
     "Notes / Research Flags",
 ]
 
-# Schema v3 extension. These values are optional enrichment: an absent or
-# blank cell means "no opinion" and is deliberately omitted from the JSON so
-# Pending Review cannot accidentally clear an existing tag.
+# Schema v3 / parser-skill extension. These values are optional enrichment:
+# an absent or blank cell means "no opinion" and is deliberately omitted
+# from the JSON so Pending Review cannot accidentally clear an existing tag.
 OPTIONAL_ENRICHMENT_FIELDS = [
+    "Related Regulatory Provisions",
+    "Approval Scope", "Approval Responsibility", "Approval Timing",
+    "Instructor/SME Qualification Required",
     "Obligation ID",
     "Change Type", "Change Detected Date", "Change Source Path",
     "Applicability Rules", "Impact Types",
     "Impact Basis", "Impact Confidence", "Impact Review",
+    "Provision Relationship Types",
+    "Interpretive Conditions",
+    "Prior Training Credit / Exemption", "Prior Training Qualification",
+    "Interpretive Review Status",
+    "Regulatory Lifecycle Stage",
+    "Product Use Case",
+    "Regulated Competency",
+    "Regulatory Change Summary",
+    "Interpretive Summary",
+    "Policy Action Relevance",
+    "Quality Manager Relevance",
+    "Operational Domain",
+    "Human Interpretation / SME Review",
+    "Source Change Context",
 ]
 
-ARRAY_FIELDS = {"HSTM Role", "Impact Types"}
+ARRAY_FIELDS = {
+    "HSTM Role", "Impact Types",
+    "Provision Relationship Types", "Related Regulatory Provisions",
+}
 BOOLEAN_FIELDS = {"Impact Review"}
 JSON_FIELDS = {"Applicability Rules"}
-INTEGER_FIELDS = {"Hours Required"}
+INTEGER_FIELDS = set()
 PIPE_NULL = {"nan", "NaN", "None", "none", ""}
+
+# Parser workbook spelling vs the earlier live-dataset spelling.
+HEADER_ALIASES = {
+    "Change Source Path": ("Change Source path", "Change Source Path"),
+}
 
 # --- 20-field schema vocabularies -------------------------------------------
 # Requirement Level carries the specificity axis; Authority Level carries the
 # authority axis. See DESIGN.md §2 for why they were split.
 REQUIREMENT_LEVEL_VALUES = {"Explicit Training", "Other Training Reference"}
 AUTHORITY_LEVEL_VALUES = {"Federal Floor", "State Floor", "Competency"}
-APPROVAL_REQUIRED_VALUES = {"Yes", "No"}
+APPROVAL_REQUIRED_VALUES = {"Yes", "No", "Unknown"}
 IMPACT_CONFIDENCE_VALUES = {"High", "Medium", "Low"}
 
 # A Requirement Level of State Floor / Federal Floor / Competency means the
@@ -206,6 +241,9 @@ def strip_stray_asterisk(val):
 def to_array(raw):
     if raw is None:
         return None
+    if isinstance(raw, list):
+        parts = [strip_stray_asterisk(str(p).strip()) for p in raw if str(p).strip() and str(p).strip() not in PIPE_NULL]
+        return parts if parts else None
     s = str(raw).strip()
     if s in PIPE_NULL:
         return None
@@ -263,16 +301,24 @@ def clean_json_array(val, field):
     return parsed if isinstance(parsed, list) else text
 
 
+def raw_for_field(raw_row, field):
+    aliases = HEADER_ALIASES.get(field, (field,))
+    for key in aliases:
+        if key in raw_row and raw_row.get(key) is not None:
+            return raw_row.get(key)
+    return raw_row.get(field)
+
+
 def normalize_row(raw_row, source_dataset):
     record = {"Source Dataset": source_dataset}
     for field in UNIFIED_FIELDS:
-        raw_val = raw_row.get(field)
+        raw_val = raw_for_field(raw_row, field)
         if field in ARRAY_FIELDS:
             record[field] = to_array(raw_val)
         else:
             record[field] = clean_scalar(raw_val, field)
     for field in OPTIONAL_ENRICHMENT_FIELDS:
-        raw_val = raw_row.get(field)
+        raw_val = raw_for_field(raw_row, field)
         if field in JSON_FIELDS:
             value = clean_json_array(raw_val, field)
         elif field in ARRAY_FIELDS:
@@ -396,7 +442,7 @@ def validate(records, known_values):
         elif approval_required not in APPROVAL_REQUIRED_VALUES:
             warnings.append(
                 record_id + ": Approval Required " + repr(approval_required)
-                + " must be bare 'Yes' or 'No'"
+                + " must be bare 'Yes', 'No', or 'Unknown'"
             )
 
         # --- Explicit Training must agree with Requirement Level --------------
@@ -483,7 +529,7 @@ def load_json_array(input_path, cli_source_dataset):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("input", help="Excel workbook (.xlsx) or JSON array (.json) using the 20-column extraction template")
+    parser.add_argument("input", help="Excel workbook (.xlsx) or JSON array (.json) using the 20-column extraction template or the 47-column parser batch")
     parser.add_argument("--source-dataset", choices=["Role", "Care Setting"], default=None,
                          help="Force the Source Dataset lane. If omitted for Excel input, inferred per-sheet from an 'R '/'CS ' tab-name prefix.")
     parser.add_argument("--reference", default="requirements.json",
