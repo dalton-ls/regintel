@@ -56,10 +56,22 @@ secret gating write access for one trusted operator.
 
 ## Public monitoring endpoint
 
-`GET /monitor` (no auth) aggregates the Quality Manager OPML: SNF-focused
-official Federal Register/GovInfo searches, plus a single Context bundle
-(Skilled Nursing News, quality/inspection signals, KFF, and AAPACN). OSHA
-is out of scope. Cache `3600` seconds.
+`GET /monitor` (no auth) returns a versioned Quality Manager payload
+(`schemaVersion: qm-monitor-v1`): normalized items, per-source health,
+cache age, diagnostics, and a SHA-256 `payloadHash`. Official Federal
+Register documents are pulled from the FR JSON API (not RSS) and
+GovInfo search; Context remains RSS. OSHA is out of scope.
+
+Ingestion runs in the Worker (hourly cron plus on-demand if the cache is
+cold or stale). The browser should call only this endpoint — not public
+CORS proxies. `GET /monitor/health` is a short status probe.
+
+Payload fields of note: `generatedAt`, `lastSuccessAt`, `cacheAgeSeconds`,
+`stale`, `overallStatus` (`ok` | `partial` | `failed` | `stale` | `empty`),
+`sources[]`, `items[]`, `excluded[]` (off-topic Official items with
+reasons), `diagnostics`, `timezone` (`America/New_York`),
+`displayWeekLimit` (5). No migration of stored records is required; this
+is a live cache, not a GitHub data file.
 
 ## Using it day to day
 

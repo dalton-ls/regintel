@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -93,6 +93,47 @@
     .panel p { line-height: 1.6; color: #4a5568; margin-bottom: 14px; }
     .muted { color: #6b7a99; font-size: 13px; margin-top: 8px; }
     .note { color: #aab4c8; font-size: 12px; line-height: 1.6; margin-top: 8px; }
+
+    .status-banner {
+      display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline;
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
+      padding: 12px 16px; margin: 20px 0 0; font-size: 13px; color: #4a5568;
+    }
+    .status-banner.warn { border-color: #f6c343; background: #fffbeb; }
+    .status-banner.bad { border-color: #f0a8a8; background: #fef2f2; }
+    .status-k { font-weight: 600; color: #1a2332; margin-right: 4px; }
+    .status-pill {
+      display: inline-flex; align-items: center; border-radius: 99px;
+      padding: 2px 10px; font-size: 11px; font-weight: 700;
+      background: #dcfce7; color: #166534;
+    }
+    .status-pill.partial, .status-pill.stale, .status-pill.empty { background: #fef3c7; color: #92400e; }
+    .status-pill.failed, .status-pill.loading { background: #fee2e2; color: #991b1b; }
+    .health-details { margin-top: 12px; }
+    .health-details > summary {
+      cursor: pointer; font-size: 13px; font-weight: 600; color: #2463eb; list-style: none;
+    }
+    .health-details > summary::-webkit-details-marker { display: none; }
+    .source-table-wrap { overflow-x: auto; margin-top: 10px; }
+    .source-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 640px; }
+    .source-table th, .source-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e2e8f0; vertical-align: top; }
+    .source-table th { color: #6b7a99; font-weight: 600; }
+    .ok-dot { color: #047857; font-weight: 700; }
+    .fail-dot { color: #b91c1c; font-weight: 700; }
+    .rel {
+      display: inline-flex; border-radius: 99px; padding: 2px 8px;
+      font-size: 11px; font-weight: 600; background: #eef3fb; color: #1e4da1;
+    }
+    .rel-direct_snf { background: #dbeafe; color: #1e40af; }
+    .rel-long_term_care { background: #e2e8f0; color: #334155; }
+    .rel-cross_setting { background: #ffedd5; color: #9a3412; }
+    .item-regs {
+      display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 8px;
+      font-size: 11px; color: #6b7a99;
+    }
+    .item-regs strong { color: #4a5568; font-weight: 600; }
+    .item-id { font-family: "JetBrains Mono", ui-monospace, monospace; font-size: 10px; color: #94a3b8; }
+    .warn-inline { color: #92400e; font-size: 13px; margin: 0 0 12px; line-height: 1.5; }
 
     .weeks { display: flex; flex-direction: column; gap: 12px; }
     .week {
@@ -208,12 +249,12 @@
       <span class="header-sep">|</span>
       <span class="header-subtitle">Quality Monitor</span>
     </div>
-    <a class="header-link" href="regintel.html">Open research view →</a>
+    <a class="header-link" href="regintel.html">Open research view â†’</a>
   </header>
   <main>
     <p class="eyebrow">Quality Manager monitoring</p>
     <h1 class="page-title">Skilled Nursing Facility Updates</h1>
-    <p class="lead">Official is the SNF-focused HHS/CMS Federal Register digest, plus GovInfo searches for skilled nursing, nursing homes, and 42 CFR 483. Context is industry reporting and secondary signals — it creates a review item, not a product change. Pages are CMS and related sources with no stable RSS. OSHA is out of this import. This is a notification layer. Weeks run Sunday–Saturday.</p>
+    <p class="lead">Official is the SNF-focused HHS/CMS Federal Register digest, plus GovInfo searches for skilled nursing, nursing homes, and 42 CFR 483. Context is industry reporting and secondary signals â€” it creates a review item, not a product change. Pages are CMS and related sources with no stable RSS. OSHA is out of this import. This is a notification layer. Weeks run Sundayâ€“Saturday.</p>
 
     <div class="controls">
       <div class="tabs" id="monitor-tabs">
@@ -224,7 +265,7 @@
       <div class="tools" id="monitor-tools">
         <div class="search-wrap">
           <svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.4"/><path d="M9.5 9.5l2.5 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-          <input id="feed-search" type="search" placeholder="Filter articles…" autocomplete="off">
+          <input id="feed-search" type="search" placeholder="Filter articlesâ€¦" autocomplete="off">
         </div>
         <select id="feed-sort" aria-label="Sort weeks">
           <option value="desc">Newest first</option>
@@ -232,63 +273,38 @@
         </select>
       </div>
     </div>
-
-    <div class="panel" id="monitor-panel">Loading regulatory feeds…</div>
+    <div id="monitor-status"></div>
+    <div class="panel" id="monitor-panel">Feeds have not yet loaded.</div>
   </main>
   <script>
     if (new URLSearchParams(location.search).get("embed") === "1") {
       document.body.classList.add("embed");
     }
     const WORKER_URL = "https://regintel-admin-proxy.regintel.workers.dev";
+    const SCHEMA_VERSION = "qm-monitor-v1";
     const PAGE_SIZE = 15;
     const MAX_WEEKS = 5;
-    const RSS_FEEDS = [
-      { id: "fr-snf-pps", folder: "official", title: "Federal Register — HHS/CMS — SNF PPS rules", url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Bagencies%5D%5B%5D=health-and-human-services-department&conditions%5Bterm%5D=SNF%20PPS&conditions%5Btype%5D%5B%5D=RULE&conditions%5Btype%5D%5B%5D=PRORULE" },
-      { id: "fr-snf", folder: "official", title: "Federal Register — HHS/CMS — SNF rules", url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Bagencies%5D%5B%5D=health-and-human-services-department&conditions%5Bterm%5D=skilled%20nursing%20facility&conditions%5Btype%5D%5B%5D=RULE&conditions%5Btype%5D%5B%5D=PRORULE" },
-      { id: "govinfo-fr-snf", folder: "official", title: "GovInfo FR — skilled nursing facility" },
-      { id: "govinfo-fr-nh", folder: "official", title: "GovInfo FR — nursing home" },
-      { id: "govinfo-fr-483", folder: "official", title: "GovInfo FR — 42 CFR 483" },
-      { id: "govinfo-fr-ltc", folder: "official", title: "GovInfo FR — long-term care facility" },
-      { id: "govinfo-fr-pps", folder: "official", title: "GovInfo FR — SNF PPS" },
-      { id: "govinfo-fr-qrp", folder: "official", title: "GovInfo FR — quality reporting nursing home" },
-      { id: "snn", folder: "context", title: "Skilled Nursing News", url: "https://skillednursingnews.com/feed/" },
-      { id: "snn-medicare", folder: "context", title: "Skilled Nursing News — Medicare", url: "https://skillednursingnews.com/category/medicare/feed/" },
-      { id: "snn-medicaid", folder: "context", title: "Skilled Nursing News — Medicaid", url: "https://skillednursingnews.com/category/medicaid/feed/" },
-      { id: "snn-compliance", folder: "context", title: "Skilled Nursing News — Compliance", url: "https://skillednursingnews.com/category/compliance/feed/" },
-      { id: "snn-legislation", folder: "context", title: "Skilled Nursing News — Legislation", url: "https://skillednursingnews.com/category/legislation/feed/" },
-      { id: "snn-staffing", folder: "context", title: "Skilled Nursing News — Staffing", url: "https://skillednursingnews.com/category/staffing/feed/" },
-      { id: "snn-ma", folder: "context", title: "Skilled Nursing News — Medicare Advantage", url: "https://skillednursingnews.com/category/medicare-advantage/feed/" },
-      { id: "snn-fraud", folder: "context", title: "Skilled Nursing News — Fraud", url: "https://skillednursingnews.com/category/fraud/feed/" },
-      { id: "snn-litigation", folder: "context", title: "Skilled Nursing News — Litigation", url: "https://skillednursingnews.com/category/litigation/feed/" },
-      { id: "willitcare", folder: "context", title: "Will It Care — national nursing-home changes", url: "https://willitcare.com/changes.xml" },
-      { id: "nhr-sff", folder: "context", title: "NursingHomeRating.org — Special Focus Facilities", url: "https://nursinghomerating.org/xml-sff.xml" },
-      { id: "kff-medicaid", folder: "context", title: "KFF — Medicaid", url: "https://www.kff.org/topic/medicaid/feed/" },
-      { id: "kff-medicare", folder: "context", title: "KFF — Medicare", url: "https://www.kff.org/topic/medicare/feed/" },
-      { id: "kff-private", folder: "context", title: "KFF — Private Insurance", url: "https://www.kff.org/topic/private-insurance/feed/" },
-      { id: "kff-state", folder: "context", title: "KFF — State Health Policy Data", url: "https://www.kff.org/topic/state-health-policy-data/feed/" },
-      { id: "aapacn-don", folder: "context", title: "AAPACN — LTC DON Chat", url: "https://feeds.podcastmirror.com/ltc-don-chat" },
-      { id: "aapacn-nac", folder: "context", title: "AAPACN — LTC NAC Chat", url: "https://feeds.podcastmirror.com/ltc-nac-chat" }
-    ];
+    const TIMEZONE = "America/New_York";
     const PAGE_GROUPS = [
       {
         title: "CMS and SNF quality sources",
         note: "No stable RSS. Review on the weekly cadence. These are not part of the live feed.",
         links: [
-          ["CMS QSO — Policy and Memos to States and CMS Locations", "https://www.cms.gov/medicare/health-safety-standards/quality-safety-oversight-general-information/policy-memos/policy-memos-states-cms-locations"],
+          ["CMS QSO â€” Policy and Memos to States and CMS Locations", "https://www.cms.gov/medicare/health-safety-standards/quality-safety-oversight-general-information/policy-memos/policy-memos-states-cms-locations"],
           ["CMS Quality and Safety Special Alerts", "https://www.cms.gov/medicare/health-safety-standards/quality-safety-oversight-general-information/quality-safety-special-alerts"],
-          ["CMS Nursing Homes — certification, survey, and compliance", "https://www.cms.gov/medicare/health-safety-standards/certification-compliance/nursing-homes"],
+          ["CMS Nursing Homes â€” certification, survey, and compliance", "https://www.cms.gov/medicare/health-safety-standards/certification-compliance/nursing-homes"],
           ["CMS Skilled Nursing Facility PPS", "https://www.cms.gov/medicare/payment/prospective-payment-systems/skilled-nursing-facility-snf"],
           ["CMS List of SNF Federal Regulations", "https://www.cms.gov/medicare/payment/prospective-payment-systems/skilled-nursing-facility-snf/list-federal-regulations"],
           ["CMS SNF Information Center", "https://www.cms.gov/snf-information-center"],
           ["CMS MDS/RAI Manual", "https://www.cms.gov/medicare/quality/nursing-home-improvement/resident-assessment-instrument-manual"],
           ["CMS PBJ policy information", "https://www.cms.gov/medicare/quality/nursing-home-improvement/staffing-data-submission"],
           ["CMS Transmittals", "https://www.cms.gov/medicare/regulations-guidance/transmittals"],
-          ["eCFR — 42 CFR Part 483", "https://www.ecfr.gov/current/title-42/chapter-IV/subchapter-G/part-483"],
-          ["CDC NHSN — Long-Term Care Facilities", "https://www.cdc.gov/nhsn/ltc/index.html"],
-          ["CMS QSEP — Quality, Safety, and Education Portal", "https://qsep.cms.gov/ProvidersAndOthers/loginother.aspx"],
-          ["CMS QCOR — Quality, Certification, and Oversight Reports", "https://qcor.cms.gov/main.jsp"],
-          ["Medicare Care Compare — Inspection Results", "https://www.medicare.gov/care-compare/"],
-          ["ProPublica — Nursing Home Database", "https://projects.propublica.org/nursing-homes/"]
+          ["eCFR â€” 42 CFR Part 483", "https://www.ecfr.gov/current/title-42/chapter-IV/subchapter-G/part-483"],
+          ["CDC NHSN â€” Long-Term Care Facilities", "https://www.cdc.gov/nhsn/ltc/index.html"],
+          ["CMS QSEP â€” Quality, Safety, and Education Portal", "https://qsep.cms.gov/ProvidersAndOthers/loginother.aspx"],
+          ["CMS QCOR â€” Quality, Certification, and Oversight Reports", "https://qcor.cms.gov/main.jsp"],
+          ["Medicare Care Compare â€” Inspection Results", "https://www.medicare.gov/care-compare/"],
+          ["ProPublica â€” Nursing Home Database", "https://projects.propublica.org/nursing-homes/"]
         ]
       },
       {
@@ -331,6 +347,11 @@
       "aapacn-don": "src-practice",
       "aapacn-nac": "src-practice"
     };
+    const REL_LABEL = {
+      direct_snf: "Direct SNF",
+      long_term_care: "Long-term care",
+      cross_setting: "Cross-setting"
+    };
 
     function escapeHtml(s) {
       return String(s || "").replace(/[&<>"']/g, function (ch) {
@@ -338,66 +359,194 @@
       });
     }
 
-    function parseDate(value) {
-      if (!value) return null;
-      const d = new Date(value);
-      return isNaN(d.getTime()) ? null : d;
+    function safeHttpsHref(url) {
+      try {
+        const u = new URL(String(url || ""));
+        return u.protocol === "https:" ? u.href : "";
+      } catch (e) {
+        return "";
+      }
     }
 
-    function formatDate(value) {
-      const d = parseDate(value);
-      if (!d) return value ? escapeHtml(value) : "Date not stated";
-      return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+    function formatCacheAge(seconds) {
+      if (seconds == null || isNaN(seconds)) return "unknown";
+      if (seconds < 60) return seconds + "s";
+      if (seconds < 3600) return Math.round(seconds / 60) + " min";
+      const hours = Math.floor(seconds / 3600);
+      const mins = Math.round((seconds % 3600) / 60);
+      return mins ? hours + "h " + mins + "m" : hours + "h";
     }
 
-    function startOfDay(d) {
-      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    function formatStamp(iso) {
+      if (!iso) return "â€”";
+      const d = new Date(iso);
+      if (isNaN(d.getTime())) return escapeHtml(iso);
+      return d.toLocaleString("en-US", { timeZone: TIMEZONE, dateStyle: "medium", timeStyle: "short" }) + " ET";
     }
 
-    function startOfWeekSunday(d) {
-      const x = startOfDay(d);
-      x.setDate(x.getDate() - x.getDay());
-      return x;
+    function healthViewModel(payload) {
+      if (!payload) {
+        return { state: "loading", title: "Feeds have not yet loaded", warning: "The Worker payload has not arrived yet." };
+      }
+      const failed = (payload.sources || []).filter(function (s) { return !s.ok; });
+      const emptyOk = (payload.sources || []).filter(function (s) { return s.ok && s.status === "empty"; });
+      const labels = { ok: "Fresh", partial: "Partial", failed: "Failed", stale: "Stale", empty: "No items found" };
+      const warnings = [];
+      if (payload.stale) warnings.push("Displayed data is older than the freshness window.");
+      if (payload.overallStatus === "partial" || failed.length) {
+        warnings.push(failed.length + " source" + (failed.length === 1 ? "" : "s") + " failed. Incomplete data is not a full refresh.");
+      }
+      if (payload.overallStatus === "failed") warnings.push("Ingestion is unavailable. Nothing on this tab is a successful load.");
+      if (payload.overallStatus === "empty") warnings.push("Sources responded, but no in-scope items were found.");
+      if (emptyOk.length && payload.overallStatus !== "empty") {
+        warnings.push(emptyOk.length + " source" + (emptyOk.length === 1 ? "" : "s") + " returned no items.");
+      }
+      return { state: payload.overallStatus, title: labels[payload.overallStatus] || payload.overallStatus, warning: warnings.join(" ") };
     }
 
-    function isFutureDate(d) {
-      return startOfDay(d).getTime() > startOfDay(new Date()).getTime();
+    function validatePayload(payload) {
+      if (!payload || typeof payload !== "object") return { ok: false, error: "payload is not an object" };
+      if (payload.schemaVersion !== SCHEMA_VERSION) return { ok: false, error: "unsupported schemaVersion" };
+      if (!payload.generatedAt) return { ok: false, error: "missing generatedAt" };
+      if (!Array.isArray(payload.sources) || !Array.isArray(payload.items)) return { ok: false, error: "malformed payload" };
+      if (typeof payload.stale !== "boolean") return { ok: false, error: "missing stale flag" };
+      if (!payload.payloadHash) return { ok: false, error: "missing payloadHash" };
+      for (let i = 0; i < payload.items.length; i += 1) {
+        const item = payload.items[i];
+        if (!item.title || !item.sourceId) return { ok: false, error: "item missing title or sourceId" };
+        if (item.sourceUrl && String(item.sourceUrl).indexOf("https://") !== 0) return { ok: false, error: "non-https item URL" };
+        if (item.relevance === "excluded") return { ok: false, error: "excluded item leaked into items" };
+      }
+      return { ok: true };
     }
 
-    function weekMeta(d) {
-      const start = startOfWeekSunday(d);
-      const weekEnd = new Date(start);
-      weekEnd.setDate(weekEnd.getDate() + 6);
-      const today = startOfDay(new Date());
-      const thisStart = startOfWeekSunday(today);
-      const lastStart = new Date(thisStart);
-      lastStart.setDate(lastStart.getDate() - 7);
-      const displayEnd = weekEnd.getTime() > today.getTime() ? today : weekEnd;
-      const fmt = function (x) {
-        return x.toLocaleDateString("en-US", { month: "numeric", day: "numeric" });
-      };
-      let badge = "";
-      if (start.getTime() === thisStart.getTime()) badge = "this-week";
-      else if (start.getTime() === lastStart.getTime()) badge = "last-week";
-      const range = displayEnd.getTime() === start.getTime()
-        ? fmt(start)
-        : fmt(start) + "–" + fmt(displayEnd);
-      return {
-        key: start.getFullYear() + "-" + start.getMonth() + "-" + start.getDate(),
-        start: start,
-        badge: badge,
-        label: start.getFullYear() + ": " + range
-      };
+    function parseYmd(ymd) {
+      const m = String(ymd || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return null;
+      return { y: Number(m[1]), month: Number(m[2]), d: Number(m[3]) };
     }
 
-    function fetchWithTimeout(url, ms) {
-      const ctrl = new AbortController();
-      const timer = setTimeout(function () { ctrl.abort(); }, ms);
-      return fetch(url, { signal: ctrl.signal }).finally(function () { clearTimeout(timer); });
+    function sundayOfYmd(ymd) {
+      const p = parseYmd(ymd);
+      if (!p) return "";
+      const utc = new Date(Date.UTC(p.y, p.month - 1, p.d, 12, 0, 0));
+      utc.setUTCDate(utc.getUTCDate() - utc.getUTCDay());
+      return utc.toISOString().slice(0, 10);
+    }
+
+    function addDaysYmd(ymd, days) {
+      const p = parseYmd(ymd);
+      if (!p) return "";
+      const utc = new Date(Date.UTC(p.y, p.month - 1, p.d, 12, 0, 0));
+      utc.setUTCDate(utc.getUTCDate() + days);
+      return utc.toISOString().slice(0, 10);
+    }
+
+    function zonedYmd(date) {
+      const parts = new Intl.DateTimeFormat("en-CA", { timeZone: TIMEZONE, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(date);
+      const get = function (type) { return parts.find(function (p) { return p.type === type; }).value; };
+      return get("year") + "-" + get("month") + "-" + get("day");
+    }
+
+    function formatWeekLabel(startYmd, endYmd) {
+      const a = parseYmd(startYmd);
+      const b = parseYmd(endYmd);
+      if (!a || !b) return startYmd;
+      const left = a.month + "/" + a.d;
+      const right = b.month + "/" + b.d;
+      return a.y + ": " + (left === right ? left : left + "â€“" + right);
+    }
+
+    function sortItems(items, dir) {
+      const mul = dir === "asc" ? 1 : -1;
+      return items.slice().sort(function (a, b) {
+        const da = a.publicationDate || "";
+        const db = b.publicationDate || "";
+        if (da !== db) {
+          if (!da) return 1;
+          if (!db) return -1;
+          return da < db ? -mul : mul;
+        }
+        const sa = (a.source || "").localeCompare(b.source || "");
+        if (sa) return sa;
+        return (a.title || "").localeCompare(b.title || "");
+      });
+    }
+
+    function groupByWeek(items, dir) {
+      const todayYmd = zonedYmd(new Date());
+      const thisSunday = sundayOfYmd(todayYmd);
+      const lastSunday = addDaysYmd(thisSunday, -7);
+      const groups = {};
+      function ensure(key, meta) {
+        if (!groups[key]) groups[key] = { meta: meta, items: [] };
+        return groups[key];
+      }
+      ensure(thisSunday, { key: thisSunday, start: thisSunday, badge: "this-week", label: formatWeekLabel(thisSunday, todayYmd) });
+      const undated = [];
+      items.forEach(function (item) {
+        const ymd = item.publicationDate || "";
+        if (!ymd) { undated.push(item); return; }
+        if (ymd > todayYmd) return;
+        const start = sundayOfYmd(ymd);
+        if (!start || start > thisSunday) return;
+        const weekEnd = addDaysYmd(start, 6);
+        const displayEnd = weekEnd > todayYmd ? todayYmd : weekEnd;
+        const badge = start === thisSunday ? "this-week" : (start === lastSunday ? "last-week" : "");
+        ensure(start, { key: start, start: start, badge: badge, label: formatWeekLabel(start, displayEnd) }).items.push(item);
+      });
+      const datedKeys = Object.keys(groups).sort().reverse();
+      const visible = datedKeys.slice(0, MAX_WEEKS).map(function (k) { return groups[k]; });
+      if (dir === "asc") {
+        const current = visible[0];
+        const rest = visible.slice(1).reverse();
+        visible.length = 0;
+        visible.push(current);
+        rest.forEach(function (w) { visible.push(w); });
+      }
+      visible.forEach(function (week) { week.items = sortItems(week.items, dir); });
+      const hiddenOlder = datedKeys.slice(MAX_WEEKS).reduce(function (n, k) { return n + groups[k].items.length; }, 0);
+      visible.push({ meta: { key: "undated", start: "", badge: "", label: "Date not stated" }, items: sortItems(undated, dir) });
+      return { weeks: visible, hiddenOlder: hiddenOlder };
     }
 
     function sourceClass(id) {
       return SOURCE_CLASS[id] || "src-other";
+    }
+
+    function metaChip(label, value) {
+      if (!value) return "";
+      return "<span><strong>" + escapeHtml(label) + ":</strong> " + escapeHtml(value) + "</span>";
+    }
+
+    function renderFeedItems(items, folder) {
+      return items.map(function (item) {
+        const href = safeHttpsHref(item.sourceUrl);
+        const title = href
+          ? '<a class="feed-title" href="' + escapeHtml(href) + '" target="_blank" rel="noopener">' + escapeHtml(item.title) + "</a>"
+          : '<span class="feed-title">' + escapeHtml(item.title) + "</span>";
+        const snippet = item.snippet ? '<p class="feed-snippet">' + escapeHtml(item.snippet) + "</p>" : "";
+        const rel = item.relevance && REL_LABEL[item.relevance]
+          ? '<span class="rel rel-' + escapeHtml(item.relevance) + '">' + escapeHtml(REL_LABEL[item.relevance]) + "</span>"
+          : "";
+        const regs = folder === "official"
+          ? '<div class="item-regs">' +
+            metaChip("Citation", item.citation || item.documentNumber) +
+            metaChip("Agency", item.agency) +
+            metaChip("Type", item.documentType || item.ruleStatus) +
+            metaChip("Published", item.publicationDate || "Date not stated") +
+            metaChip("Effective", item.effectiveDate || "â€”") +
+            metaChip("Applicability", item.applicability) +
+            metaChip("Query", item.queryLabel) +
+            '<span class="item-id">' + escapeHtml(item.sourceId) + "</span>" +
+            (item.relevanceReason ? metaChip("Why included", item.relevanceReason) : "") +
+            "</div>"
+          : '<div class="item-regs">' + metaChip("Source ID", item.sourceId) + (rel ? "" : "") + "</div>";
+        return '<article class="feed-item"><div class="feed-meta"><span class="feed-source ' +
+          sourceClass(item.sourceId) + '">' + escapeHtml(item.source) + "</span>" + rel +
+          '<time class="feed-date">' + escapeHtml(item.publicationDate || "Date not stated") +
+          "</time></div>" + title + snippet + regs + "</article>";
+      }).join("");
     }
 
     function renderCms() {
@@ -406,58 +555,18 @@
         return '<section class="page-group"><h2>' + escapeHtml(group.title) + '</h2><p class="muted" style="margin-bottom:12px">' +
           escapeHtml(group.note) + '</p><ul class="cms-list">' +
           group.links.map(function (row) {
-            return '<li><a href="' + row[1] + '" target="_blank" rel="noopener">' + arrow + escapeHtml(row[0]) + "</a></li>";
+            const href = safeHttpsHref(row[1]);
+            if (!href) return "";
+            return '<li><a href="' + href + '" target="_blank" rel="noopener">' + arrow + escapeHtml(row[0]) + "</a></li>";
           }).join("") + "</ul></section>";
       }).join("");
-    }
-
-    function renderFeedItems(items) {
-      return items.map(function (item) {
-        const snippet = item.snippet ? '<p class="feed-snippet">' + escapeHtml(item.snippet) + "</p>" : "";
-        return '<article class="feed-item"><div class="feed-meta"><span class="feed-source ' +
-          sourceClass(item.sourceId) + '">' + escapeHtml(item.source) +
-          '</span><time class="feed-date">' + formatDate(item.published) +
-          '</time></div><a class="feed-title" href="' + escapeHtml(item.link) +
-          '" target="_blank" rel="noopener">' + escapeHtml(item.title) + "</a>" + snippet + "</article>";
-      }).join("");
-    }
-
-    function groupByWeek(items, dir) {
-      const thisMeta = weekMeta(new Date());
-      const groups = {};
-      groups[thisMeta.key] = { meta: thisMeta, items: [] };
-      const undated = [];
-      items.forEach(function (item) {
-        const d = parseDate(item.published);
-        if (!d) { undated.push(item); return; }
-        if (isFutureDate(d)) return;
-        const meta = weekMeta(d);
-        if (meta.start.getTime() > thisMeta.start.getTime()) return;
-        if (!groups[meta.key]) groups[meta.key] = { meta: meta, items: [] };
-        groups[meta.key].items.push(item);
-      });
-      const current = groups[thisMeta.key];
-      const rest = Object.keys(groups).filter(function (k) { return k !== thisMeta.key; }).map(function (k) {
-        return groups[k];
-      });
-      rest.sort(function (a, b) { return b.meta.start - a.meta.start; });
-      const visibleRest = rest.slice(0, MAX_WEEKS - 1);
-      if (dir === "asc") visibleRest.reverse();
-      const weeks = [current].concat(visibleRest);
-      if (undated.length && weeks.length < MAX_WEEKS) {
-        weeks.push({
-          meta: { key: "undated", start: new Date(0), badge: "", label: "Date not stated" },
-          items: undated
-        });
-      }
-      return weeks;
     }
 
     function renderPager(weekKey, page, pageCount) {
       if (pageCount <= 1) return "";
       return '<div class="pager"><button type="button" data-week="' + weekKey + '" data-dir="-1"' +
         (page === 0 ? " disabled" : "") + ">Previous</button><span>Page " +
-        (page + 1) + " of " + pageCount + " · " + PAGE_SIZE +
+        (page + 1) + " of " + pageCount + " Â· " + PAGE_SIZE +
         ' articles per page</span><button type="button" data-week="' + weekKey + '" data-dir="1"' +
         (page >= pageCount - 1 ? " disabled" : "") + ">Next</button></div>";
     }
@@ -466,36 +575,84 @@
       return '<svg class="chevron" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
     }
 
+    function sourceStatusLabel(src) {
+      if (!src.ok) return src.status === "timeout" ? "Failed (timeout)" : (src.status === "malformed" ? "Failed (malformed)" : "Failed");
+      if (src.status === "empty") return "No items found";
+      return "Success";
+    }
+
+    function renderStatus(payload) {
+      const el = document.getElementById("monitor-status");
+      const health = healthViewModel(payload);
+      const tone = health.state === "failed" || health.state === "loading" ? "bad" : (health.state === "ok" ? "" : "warn");
+      if (!payload) {
+        el.innerHTML = '<div class="status-banner bad"><span class="status-pill loading">Not loaded</span><span>' +
+          escapeHtml(health.warning) + "</span></div>";
+        return;
+      }
+      const sources = payload.sources || [];
+      const rows = sources.map(function (src) {
+        return "<tr><td>" + escapeHtml(src.title) + '<div class="item-id">' + escapeHtml(src.id) + "</div></td><td>" +
+          (src.ok ? '<span class="ok-dot">â—</span> ' : '<span class="fail-dot">â—</span> ') +
+          escapeHtml(sourceStatusLabel(src)) + "</td><td>" + (src.itemCount || 0) + "</td><td>" +
+          (src.lastSuccessAt ? formatStamp(src.lastSuccessAt) : "â€”") + "</td><td>" +
+          escapeHtml(src.error || "") + "</td></tr>";
+      }).join("");
+      const excluded = payload.excluded || [];
+      const excl = excluded.length
+        ? '<details class="health-details"><summary>Excluded Official items (' + excluded.length + ")</summary><div class=\"source-table-wrap\"><table class=\"source-table\"><thead><tr><th>Title</th><th>Source ID</th><th>Reason</th></tr></thead><tbody>" +
+          excluded.map(function (row) {
+            return "<tr><td>" + escapeHtml(row.title) + "</td><td>" + escapeHtml(row.sourceId) + "</td><td>" +
+              escapeHtml((row.reasons || []).join(" Â· ") || row.exclusionCode || "") + "</td></tr>";
+          }).join("") + "</tbody></table></div></details>"
+        : "";
+      el.innerHTML = '<div class="status-banner ' + tone + '">' +
+        '<span class="status-pill ' + escapeHtml(health.state) + '">' + escapeHtml(health.title) + "</span>" +
+        "<span><span class=\"status-k\">Generated</span>" + formatStamp(payload.generatedAt) + "</span>" +
+        "<span><span class=\"status-k\">Last success</span>" + formatStamp(payload.lastSuccessAt) + "</span>" +
+        "<span><span class=\"status-k\">Cache age</span>" + escapeHtml(formatCacheAge(payload.cacheAgeSeconds)) + "</span>" +
+        (payload.payloadHash ? "<span><span class=\"status-k\">Integrity</span><span class=\"item-id\">" + escapeHtml(payload.payloadHash.slice(0, 12)) + "â€¦</span></span>" : "") +
+        (health.warning ? '<span class="warn-inline" style="margin:0">' + escapeHtml(health.warning) + "</span>" : "") +
+        "</div><details class=\"health-details\"><summary>Source health (" + sources.length + ")</summary>" +
+        '<div class="source-table-wrap"><table class="source-table"><thead><tr><th>Source</th><th>Status</th><th>Items</th><th>Last success</th><th>Error</th></tr></thead><tbody>' +
+        rows + "</tbody></table></div></details>" + excl;
+    }
+
     function renderMonitor(folder, payload) {
       const panel = document.getElementById("monitor-panel");
       const tools = document.getElementById("monitor-tools");
       tools.hidden = folder === "pages";
+      renderStatus(payload);
       if (folder === "pages") {
         panel.innerHTML = renderCms();
         return;
       }
       if (!payload) {
-        panel.innerHTML = '<p class="muted">Loading regulatory feeds…</p>';
+        panel.innerHTML = '<p class="muted">Feeds have not yet loaded.</p>';
         return;
       }
       const q = (uiState.search || "").trim().toLowerCase();
-      let items = (payload.items || []).filter(function (item) {
-        if (item.folder !== folder) return false;
-        const d = parseDate(item.published);
-        return !d || !isFutureDate(d);
-      });
+      let items = (payload.items || []).filter(function (item) { return item.folder === folder; });
+      items = sortItems(items, uiState.sort);
       if (q) {
         items = items.filter(function (item) {
-          return (item.title + " " + item.snippet + " " + item.source).toLowerCase().indexOf(q) !== -1;
+          return (item.title + " " + item.snippet + " " + item.source + " " + (item.citation || "")).toLowerCase().indexOf(q) !== -1;
         });
         if (!items.length) {
           panel.innerHTML = '<p class="muted">No articles match your filter.</p>';
           return;
         }
       }
-      const thisKey = weekMeta(new Date()).key;
-      const weeks = groupByWeek(items, uiState.sort);
-      let html = '<div class="weeks">' + weeks.map(function (week) {
+      const grouped = groupByWeek(items, uiState.sort);
+      const thisKey = sundayOfYmd(zonedYmd(new Date()));
+      let html = "";
+      if (payload.overallStatus === "failed") {
+        html += '<p class="warn-inline">Ingestion failed. Do not treat this panel as a complete feed set.</p>';
+      } else if (payload.overallStatus === "partial" || payload.stale) {
+        html += '<p class="warn-inline">' + (payload.stale ? "Data is stale. " : "") +
+          (payload.overallStatus === "partial" ? "One or more sources failed; this is a partial set." : "") + "</p>";
+      }
+      html += '<div class="weeks">' + grouped.weeks.map(function (week) {
         const open = uiState.open[week.meta.key];
         const defaultOpen = week.meta.key === thisKey;
         const isOpen = open === true || (open !== false && defaultOpen);
@@ -508,195 +665,61 @@
           : week.meta.badge === "last-week"
             ? '<span class="badge last">Last week</span>'
             : "";
-        const body = week.items.length
-          ? renderFeedItems(slice) + renderPager(week.meta.key, safePage, pageCount)
-          : '<p class="muted">Nothing posted this week yet. New items will appear here as feeds update.</p>';
+        let body;
+        if (week.items.length) body = renderFeedItems(slice, folder) + renderPager(week.meta.key, safePage, pageCount);
+        else if (week.meta.key === "undated") body = '<p class="muted">No undated items.</p>';
+        else if (week.meta.badge === "this-week") body = '<p class="muted">Nothing posted this week yet. New items will appear here as feeds update.</p>';
+        else body = '<p class="muted">No items found for this week.</p>';
+        if (week.meta.key === "undated" && !week.items.length) return "";
         return '<details class="week' + (week.meta.badge === "this-week" ? " this-week" : "") +
           '" data-week="' + week.meta.key + '"' + (isOpen ? " open" : "") +
           '><summary><span class="week-label">' + escapeHtml(week.meta.label) + badge +
           '</span><span class="week-meta"><span class="week-count">' + week.items.length +
           "</span>" + chevron() + "</span></summary><div class=\"week-body\">" +
           body + "</div></details>";
-      }).join("") + '</div><p class="note">Notification only. Confirm effective date and applicability in the primary CMS, Federal Register, GovInfo, or eCFR source before changing product logic or policy content.</p>';
+      }).join("") + "</div>";
+      const limit = payload.displayWeekLimit || MAX_WEEKS;
+      html += '<p class="note">Showing up to ' + limit + " Sundayâ€“Saturday weeks in " +
+        escapeHtml(payload.timezone || TIMEZONE) + ". Older dated items are not shown" +
+        (grouped.hiddenOlder ? " (" + grouped.hiddenOlder + " hidden)" : "") +
+        ". Notification only. Confirm citation, effective date, and applicability in the primary source before changing product logic.</p>";
       panel.innerHTML = html;
     }
 
-    function stripHtml(value) {
-      const el = document.createElement("div");
-      el.innerHTML = value || "";
-      return (el.textContent || el.innerText || "").replace(/\s+/g, " ").trim();
-    }
-
-    function xmlText(node, names) {
-      for (let i = 0; i < names.length; i += 1) {
-        const el = node.getElementsByTagName(names[i])[0];
-        if (el && (el.textContent || "").trim()) return el.textContent.trim();
-      }
-      const link = node.getElementsByTagName("link")[0];
-      if (link && link.getAttribute("href")) return link.getAttribute("href");
-      return "";
-    }
-
-    function parseRssXml(xml, feed) {
-      const doc = new DOMParser().parseFromString(xml, "text/xml");
-      if (doc.querySelector("parsererror")) throw new Error(feed.id + " invalid xml");
-      const nodes = doc.querySelectorAll("item, entry");
-      const items = [];
-      nodes.forEach(function (node) {
-        const title = xmlText(node, ["title"]);
-        const link = xmlText(node, ["link", "guid", "id"]);
-        if (!title || !link) return;
-        items.push({
-          title: title,
-          link: link,
-          published: xmlText(node, ["pubDate", "published", "updated", "dc:date"]),
-          snippet: stripHtml(xmlText(node, ["description", "summary", "content"])),
-          source: feed.title,
-          folder: feed.folder,
-          sourceId: feed.id
-        });
-      });
-      return items;
-    }
-
-    function wrapItems(feed, items) {
-      return { feed: feed, items: items };
-    }
-
-    function loadRssJson(feed) {
-      return fetchWithTimeout("https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(feed.url), 10000)
-        .then(function (res) {
-          if (!res.ok) throw new Error(feed.id + " HTTP " + res.status);
-          return res.json();
-        })
-        .then(function (data) {
-          if (data.status && data.status !== "ok") throw new Error(feed.id + " " + (data.message || "rss error"));
-          const items = (data.items || []).map(function (row) {
-            return {
-              title: row.title || "",
-              link: row.link || row.guid || "",
-              published: row.pubDate || row.pubdate || "",
-              snippet: stripHtml(row.description || row.content || ""),
-              source: feed.title,
-              folder: feed.folder,
-              sourceId: feed.id
-            };
-          }).filter(function (item) { return item.title && item.link; });
-          return wrapItems(feed, items);
-        });
-    }
-
-    function loadRssXml(feed, proxyUrl) {
-      return fetchWithTimeout(proxyUrl, 10000).then(function (res) {
-        if (!res.ok) throw new Error(feed.id + " HTTP " + res.status);
-        return res.text();
-      }).then(function (xml) {
-        return wrapItems(feed, parseRssXml(xml, feed));
-      });
-    }
-
-    function loadFeed2Json(feed) {
-      return fetchWithTimeout("https://feed2json.org/convert?url=" + encodeURIComponent(feed.url), 15000)
-        .then(function (res) {
-          if (!res.ok) throw new Error(feed.id + " HTTP " + res.status);
-          return res.json();
-        })
-        .then(function (data) {
-          const items = (data.items || []).map(function (row) {
-            return {
-              title: row.title || "",
-              link: row.url || row.external_url || row.id || "",
-              published: row.date_published || row.date_modified || "",
-              snippet: stripHtml(row.content_text || row.summary || row.content_html || ""),
-              source: feed.title,
-              folder: feed.folder,
-              sourceId: feed.id
-            };
-          }).filter(function (item) { return item.title && item.link; });
-          if (!items.length) throw new Error(feed.id + " empty feed2json");
-          return wrapItems(feed, items);
-        });
-    }
-
-    function loadRssFeed(feed) {
-      const encoded = encodeURIComponent(feed.url);
-      return loadFeed2Json(feed)
-        .catch(function () { return loadRssXml(feed, "https://api.allorigins.win/raw?url=" + encoded); })
-        .catch(function () { return loadRssJson(feed); });
-    }
-
-    function unionPayloads(current, incoming) {
-      const items = ((current && current.items) || []).concat((incoming && incoming.items) || []);
-      const sources = ((current && current.sources) || []).concat((incoming && incoming.sources) || []);
-      const seenItems = {};
-      const deduped = [];
-      items.forEach(function (item) {
-        const key = (item.link || item.title).replace(/\/+$/, "").toLowerCase();
-        if (seenItems[key]) return;
-        seenItems[key] = true;
-        deduped.push(item);
-      });
-      deduped.sort(function (a, b) { return Date.parse(b.published || 0) - Date.parse(a.published || 0); });
-      const seenSrc = {};
-      sources.forEach(function (s) {
-        if (!s || !s.id) return;
-        if (!seenSrc[s.id] || (s.ok && !seenSrc[s.id].ok)) seenSrc[s.id] = s;
-      });
-      return { generatedAt: new Date().toISOString(), sources: Object.keys(seenSrc).map(function (id) { return seenSrc[id]; }), items: deduped };
-    }
-
-    const CLIENT_FEEDS = RSS_FEEDS.filter(function (feed) { return feed.url; });
     let monitorPayload = null;
     let monitorFolder = "official";
-    let pending = CLIENT_FEEDS.length;
     const uiState = { open: {}, page: {}, search: "", sort: "desc" };
 
     function applyPayload(incoming) {
-      if (!incoming) return;
-      incoming = {
-        generatedAt: incoming.generatedAt,
-        items: (incoming.items || []).filter(function (item) {
-          if (item.folder === "topics" || item.folder === "quality" || item.folder === "payer" || item.folder === "practice") item.folder = "context";
-          return item.folder !== "broad" && String(item.sourceId || "").indexOf("osha-") !== 0 && item.sourceId !== "dol-news";
-        }),
-        sources: (incoming.sources || []).filter(function (src) {
-          if (src.folder === "topics" || src.folder === "quality" || src.folder === "payer" || src.folder === "practice") src.folder = "context";
-          return src.folder !== "broad" && String(src.id || "").indexOf("osha-") !== 0 && src.id !== "dol-news";
-        })
-      };
-      monitorPayload = unionPayloads(monitorPayload, incoming);
+      const check = validatePayload(incoming);
+      if (!check.ok) {
+        document.getElementById("monitor-panel").innerHTML =
+          '<p class="warn-inline">Worker payload failed schema validation: ' + escapeHtml(check.error) + "</p>";
+        renderStatus(null);
+        return;
+      }
+      monitorPayload = incoming;
       if (monitorFolder !== "pages") renderMonitor(monitorFolder, monitorPayload);
+      else renderStatus(monitorPayload);
     }
 
-    function markDone() {
-      pending -= 1;
-      if (pending > 0) return;
-      if (monitorPayload && monitorPayload.items && monitorPayload.items.length) return;
-      if (monitorFolder === "pages") return;
+    renderMonitor(monitorFolder, null);
+
+    fetch(WORKER_URL + "/monitor").then(function (res) {
+      return res.json().then(function (payload) {
+        return { res: res, payload: payload };
+      });
+    }).then(function (bundle) {
+      if (!bundle.payload || bundle.payload.error && !bundle.payload.schemaVersion) {
+        throw new Error(bundle.payload && bundle.payload.error || ("monitor " + bundle.res.status));
+      }
+      applyPayload(bundle.payload);
+    }).catch(function (err) {
       document.getElementById("monitor-panel").innerHTML =
-        '<p class="muted">Live feeds could not be loaded. Pages are still available in the last tab.</p>';
-    }
-
-    CLIENT_FEEDS.forEach(function (feed) {
-      loadRssFeed(feed).then(function (value) {
-        applyPayload({
-          items: value.items,
-          sources: [{ id: feed.id, title: feed.title, folder: feed.folder, ok: true, count: value.items.length }]
-        });
-      }).catch(function (err) {
-        applyPayload({
-          items: [],
-          sources: [{ id: feed.id, title: feed.title, folder: feed.folder, ok: false, error: String(err && err.message || err) }]
-        });
-      }).then(markDone);
+        '<p class="warn-inline">Live ingestion could not be loaded (' + escapeHtml(err && err.message || err) +
+        "). Pages are still available in the last tab. The browser is not using public CORS proxies.</p>";
+      renderStatus(null);
     });
-
-    fetchWithTimeout(WORKER_URL + "/monitor", 8000).then(function (res) {
-      if (!res.ok) throw new Error("monitor " + res.status);
-      return res.json();
-    }).then(function (payload) {
-      if (payload && payload.items && payload.items.length) applyPayload(payload);
-    }).catch(function () {});
 
     document.getElementById("monitor-tabs").addEventListener("click", function (e) {
       const btn = e.target.closest("button[data-folder]");
