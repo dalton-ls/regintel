@@ -6,8 +6,11 @@ in-place Edit on `regintel.html`) commit edits directly to
 `requirements.json` (Role + Care Setting output rows) or `wr.json`
 (Workforce Readiness) on GitHub — the live **output-row projection**,
 not the OpenLaws source corpus or any pre-site parsed JSON. `export.html`
-also reads through it (no auth needed for reads) so its snapshot always
-reflects the live committed data.
+Also reads through it (no auth needed for reads) so its snapshot always
+reflects the live committed data. `GET /monitor` is likewise unauthenticated:
+it fetches the Quality Manager RSS bundle (OSHA/DOL/SNN) and GovInfo
+Federal Register search feeds, then returns JSON for the knowledge home page.
+
 Because the committed file is the single source of truth, this lets one
 person work from multiple computers/browsers without losing edits or
 needing to manually re-export/re-commit.
@@ -49,6 +52,15 @@ secret gating write access for one trusted operator.
    the `WORKER_URL` constant near the top of each `<script>` block to the
    URL from step 4.
 
+## Public monitoring endpoint
+
+`GET /monitor` (no auth) aggregates the Quality Manager RSS bundle and
+GovInfo custom Federal Register searches (`skilled nursing facility`,
+`nursing home`, `42 CFR 483`, plus the seasonal SNF PPS / quality-reporting
+queries). OSHA/DOL items are keyword-filtered; GovInfo search results are
+already scoped. Cache `3600` seconds. Redeploy this Worker after pulling
+the `/monitor` route or the homepage panel will show the fallback message.
+
 ## Using it day to day
 
 Each admin screen prompts once per browser session for the `ADMIN_TOKEN`
@@ -72,7 +84,8 @@ will start failing with 401s).
 - No per-user identity — anyone with the `ADMIN_TOKEN` can write.
 - No merge/conflict UI beyond a single retry-on-409 — built for one
   operator, not concurrent multi-user editing.
-- Only writes `requirements.json` and `wr.json` on the configured GitHub
+- `GET /monitor` is a notification layer, not a legal-compliance
+  determination. It does not write classified obligations.
   branch. Redeploy the Worker after changing `ALLOWED_PATHS` so Workforce
   in-place saves are accepted. `wr.json` is still a separate projection
   from the Role/Care Setting unified array.

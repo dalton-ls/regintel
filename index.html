@@ -113,6 +113,37 @@
       text-transform: uppercase; letter-spacing: 0.04em; color: #6b7a99; }
     .rule-arrow { color: #9aaac4; display: flex; align-items: center; justify-content: center; }
     .muted { color: #6b7a99; font-size: 13px; margin-top: 8px; }
+
+    .monitor { margin: 36px 0 8px; }
+    .monitor-head { margin-bottom: 4px; }
+    .monitor h2 { font-size: 16px; font-weight: 700; margin: 8px 0 8px; }
+    .monitor .lead { font-size: 13px; max-width: none; margin-bottom: 0; }
+    .monitor-panel { padding: 8px 20px 16px; }
+    .feed-item {
+      padding: 14px 0;
+      border-bottom: 1px solid #e8ecf0;
+    }
+    .feed-item:last-child { border-bottom: none; }
+    .feed-meta {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+      margin-bottom: 6px; font-size: 11px; color: #6b7a99;
+    }
+    .feed-source {
+      display: inline-block; background: #eef3fb; color: #1e4da1;
+      border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 600;
+    }
+    .feed-item a.feed-title {
+      font-size: 14px; font-weight: 650; color: #1a2332; text-decoration: none;
+      line-height: 1.4; display: block;
+    }
+    .feed-item a.feed-title:hover { color: #2463eb; }
+    .feed-snippet { font-size: 13px; line-height: 1.55; color: #6b7a99; margin-top: 6px; }
+    .cms-list { list-style: none; display: grid; gap: 8px; margin-top: 8px; }
+    .cms-list a {
+      display: block; background: #f7f9fc; border-radius: 10px; padding: 12px 14px;
+      font-size: 13px; font-weight: 600; color: #1a2332; text-decoration: none;
+    }
+    .cms-list a:hover { color: #2463eb; }
     .legend {
       display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: #6b7a99;
     }
@@ -163,6 +194,20 @@
         <span class="experience-cta">Open Workforce Readiness</span>
       </a>
     </div>
+
+    <section class="monitor" id="monitor">
+      <div class="monitor-head">
+        <div class="eyebrow">Quality Manager monitoring</div>
+        <h2>What’s moving in federal SNF sources</h2>
+        <p class="lead">Live RSS from official OSHA / DOL feeds, plus GovInfo Federal Register searches for skilled nursing, nursing homes, and 42 CFR 483. This is a notification layer — open the source before treating anything as a product or policy change.</p>
+      </div>
+      <div class="tabs" id="monitor-tabs">
+        <button class="active" data-folder="official">Official</button>
+        <button data-folder="context">Context</button>
+        <button data-folder="cms">CMS pages</button>
+      </div>
+      <div class="panel monitor-panel" id="monitor-panel">Loading regulatory feeds…</div>
+    </section>
 
     <div class="flow">
       <span class="node">Regulatory source</span><span class="arrow">→</span>
@@ -269,10 +314,105 @@
         '<p class="muted">Open the research view to browse live records. Policy is a first-class left-nav category, not a leftover Regulation Type value.</p>';
     }
 
+    const WORKER_URL = "https://regintel-admin-proxy.regintel.workers.dev";
+    const CMS_PAGES = [
+      ["CMS Policy & Memos to States and CMS Locations", "https://www.cms.gov/medicare/health-safety-standards/quality-safety-oversight-general-information/policy-memos/policy-memos-states-cms-locations"],
+      ["CMS Quality & Safety Special Alerts", "https://www.cms.gov/medicare/health-safety-standards/quality-safety-oversight-general-information/quality-safety-special-alerts"],
+      ["CMS Nursing Homes — certification, survey, and compliance", "https://www.cms.gov/medicare/health-safety-standards/certification-compliance/nursing-homes"],
+      ["CMS Skilled Nursing Facility PPS", "https://www.cms.gov/medicare/payment/prospective-payment-systems/skilled-nursing-facility-snf"],
+      ["CMS List of SNF Federal Regulations", "https://www.cms.gov/medicare/payment/prospective-payment-systems/skilled-nursing-facility-snf/list-federal-regulations"],
+      ["CMS SNF Information Center", "https://www.cms.gov/snf-information-center"],
+      ["CMS MDS/RAI Manual", "https://www.cms.gov/medicare/quality/nursing-home-improvement/resident-assessment-instrument-manual"],
+      ["CMS PBJ policy information", "https://www.cms.gov/medicare/quality/nursing-home-improvement/staffing-data-submission"],
+      ["CMS Transmittals", "https://www.cms.gov/medicare/regulations-guidance/transmittals"],
+      ["eCFR — 42 CFR Part 483", "https://www.ecfr.gov/current/title-42/chapter-IV/subchapter-G/part-483"],
+      ["CDC NHSN Long-term Care Facilities", "https://www.cdc.gov/nhsn/ltc/index.html"]
+    ];
+
+    function escapeHtml(s) {
+      return String(s || "").replace(/[&<>"']/g, function (ch) {
+        return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch];
+      });
+    }
+
+    function formatDate(value) {
+      if (!value) return "Date not stated";
+      const d = new Date(value);
+      if (isNaN(d.getTime())) return escapeHtml(value);
+      return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+    }
+
+    function renderCms() {
+      return '<p>CMS does not publish a stable RSS URL for these pages. Review them on the weekly cadence; they are not in the live feed.</p><ul class="cms-list">' +
+        CMS_PAGES.map(function (row) {
+          return '<li><a href="' + row[1] + '" target="_blank" rel="noopener">' + escapeHtml(row[0]) + "</a></li>";
+        }).join("") + "</ul>";
+    }
+
+    function renderFeedItems(items, emptyText) {
+      if (!items.length) return '<p class="muted">' + escapeHtml(emptyText) + "</p>";
+      return items.slice(0, 12).map(function (item) {
+        const snippet = item.snippet ? '<p class="feed-snippet">' + escapeHtml(item.snippet).slice(0, 280) + (item.snippet.length > 280 ? "…" : "") + "</p>" : "";
+        return '<article class="feed-item"><div class="feed-meta"><span class="feed-source">' +
+          escapeHtml(item.source) + "</span><span>" + formatDate(item.published) +
+          '</span></div><a class="feed-title" href="' + escapeHtml(item.link) +
+          '" target="_blank" rel="noopener">' + escapeHtml(item.title) + "</a>" + snippet + "</article>";
+      }).join("");
+    }
+
+    function renderMonitor(folder, payload) {
+      const panel = document.getElementById("monitor-panel");
+      if (folder === "cms") {
+        panel.innerHTML = renderCms();
+        return;
+      }
+      if (!payload) {
+        panel.innerHTML = '<p class="muted">Loading regulatory feeds…</p>';
+        return;
+      }
+      const items = (payload.items || []).filter(function (item) { return item.folder === folder; });
+      const failed = (payload.sources || []).filter(function (s) { return s.folder === folder && !s.ok; });
+      const empty = folder === "official"
+        ? "No matching official items right now. The Worker may still be warming, or the keyword filter found nothing new."
+        : "No industry-context items right now. Treat this folder as early warning, not the source of record.";
+      let html = renderFeedItems(items, empty);
+      html += '<p class="muted">Notification only. Confirm effective date and applicability in the primary CMS, OSHA, Federal Register, GovInfo, or eCFR source before changing product logic or policy content.</p>';
+      if (failed.length) {
+        html += '<p class="muted">Some sources did not load: ' + failed.map(function (s) { return escapeHtml(s.title); }).join(", ") + ".</p>";
+      }
+      panel.innerHTML = html;
+    }
+
+    let monitorPayload = null;
+    let monitorFolder = "official";
+    renderMonitor("official", null);
+
+    fetch(WORKER_URL + "/monitor").then(function (res) {
+      if (!res.ok) throw new Error("monitor " + res.status);
+      return res.json();
+    }).then(function (payload) {
+      monitorPayload = payload;
+      renderMonitor(monitorFolder, monitorPayload);
+    }).catch(function () {
+      if (monitorFolder === "cms") return;
+      document.getElementById("monitor-panel").innerHTML =
+        '<p class="muted">Live feeds could not be loaded from the monitoring proxy. CMS pages are still available in the third tab. Redeploy <code>worker/regintel-admin-proxy</code> if <code>/monitor</code> is missing.</p>';
+    });
+
+    document.querySelectorAll("#monitor-tabs button").forEach(function (b) {
+      b.onclick = function () {
+        document.querySelectorAll("#monitor-tabs button").forEach(function (x) { x.classList.remove("active"); });
+        b.classList.add("active");
+        monitorFolder = b.dataset.folder;
+        if (monitorFolder === "cms") renderMonitor("cms");
+        else renderMonitor(monitorFolder, monitorPayload);
+      };
+    });
+
     render("facts");
     document.querySelectorAll("button[data-layer]").forEach(function (b) {
       b.onclick = function () {
-        document.querySelectorAll(".tabs button").forEach(function (x) { x.classList.remove("active"); });
+        document.querySelectorAll("button[data-layer]").forEach(function (x) { x.classList.remove("active"); });
         b.classList.add("active");
         render(b.dataset.layer);
       };

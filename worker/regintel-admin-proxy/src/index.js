@@ -9,11 +9,13 @@
  *
  * Endpoints:
  *   GET  /file?path=requirements.json|wr.json  -> { content, sha }
+ *   GET  /monitor                      -> QM RSS + GovInfo search items (public)
  *   POST /commit                       -> { path, message, content } -> commits
  *
  * Auth: Authorization: Bearer <ADMIN_TOKEN>  (checked against the ADMIN_TOKEN
  * secret). This is a shared-secret gate for a single trusted operator, not a
- * multi-user auth system.
+ * multi-user auth system. GET /monitor is unauthenticated; it only fetches
+ * an allowlisted set of public regulatory feeds.
  */
 
 const ALLOWED_PATHS = new Set(["requirements.json", "wr.json"]);
@@ -102,13 +104,300 @@ function checkAuth(request, env) {
   return token && env.ADMIN_TOKEN && token === (env.ADMIN_TOKEN || "").trim();
 }
 
+const MONITOR_KEYWORDS = [
+  "snf", "skilled nursing", "nursing home", "long-term care", "long term care",
+  "42 cfr 483", "42 c.f.r. 483", "part 483", "surveyor", "facility assessment",
+  "quality assurance", "qapi", "mds", "rai manual", "payroll-based journal",
+  "pbj", "qrp", "vbp", "consolidated billing", "infection control",
+  "workplace violence", "respiratory protection", "emergency preparedness",
+  "nursing facility", "ltc ", "staffing",
+];
+
+const MONITOR_FEEDS = [
+  {
+    id: "govinfo-fr-snf",
+    folder: "official",
+    title: "GovInfo FR — skilled nursing facility",
+    kind: "govinfo-search",
+    query: 'collection:fr "skilled nursing facility"',
+    filter: false,
+  },
+  {
+    id: "govinfo-fr-nh",
+    folder: "official",
+    title: "GovInfo FR — nursing home",
+    kind: "govinfo-search",
+    query: 'collection:fr "nursing home"',
+    filter: false,
+  },
+  {
+    id: "govinfo-fr-483",
+    folder: "official",
+    title: "GovInfo FR — 42 CFR 483",
+    kind: "govinfo-search",
+    query: 'collection:fr "42 CFR 483"',
+    filter: false,
+  },
+  {
+    id: "govinfo-fr-ltc",
+    folder: "official",
+    title: "GovInfo FR — long-term care facility",
+    kind: "govinfo-search",
+    query: 'collection:fr "long-term care facility"',
+    filter: false,
+  },
+  {
+    id: "govinfo-fr-pps",
+    folder: "official",
+    title: "GovInfo FR — SNF PPS",
+    kind: "govinfo-search",
+    query: 'collection:fr ("SNF PPS" OR "SNF payment")',
+    filter: false,
+  },
+  {
+    id: "govinfo-fr-qrp",
+    folder: "official",
+    title: "GovInfo FR — quality reporting nursing home",
+    kind: "govinfo-search",
+    query: 'collection:fr "quality reporting" ("nursing home" OR SNF)',
+    filter: false,
+  },
+  {
+    id: "osha-fr",
+    folder: "official",
+    title: "OSHA — Federal Register",
+    kind: "rss",
+    url: "https://www.osha.gov/laws-regs/federalregisters.xml",
+    filter: true,
+  },
+  {
+    id: "osha-directives",
+    folder: "official",
+    title: "OSHA — Directives",
+    kind: "rss",
+    url: "https://www.osha.gov/enforcement/directives.xml",
+    filter: true,
+  },
+  {
+    id: "osha-interps",
+    folder: "official",
+    title: "OSHA — Standard Interpretations",
+    kind: "rss",
+    url: "https://www.osha.gov/laws-regs/standardinterpretations.xml",
+    filter: true,
+  },
+  {
+    id: "osha-news",
+    folder: "official",
+    title: "OSHA — News Releases",
+    kind: "rss",
+    url: "https://www.osha.gov/news/newsreleases.xml",
+    filter: true,
+  },
+  {
+    id: "dol-news",
+    folder: "official",
+    title: "U.S. Department of Labor — News Releases",
+    kind: "rss",
+    url: "https://www.dol.gov/rss/releases.xml",
+    filter: true,
+  },
+  {
+    id: "snn",
+    folder: "context",
+    title: "Skilled Nursing News",
+    kind: "rss",
+    url: "https://skillednursingnews.com/feed/",
+    filter: false,
+  },
+];
+
+const FETCH_HEADERS = {
+  "User-Agent": "RegIntel-monitor/1.0 (Quality Manager regulatory monitoring)",
+  Accept: "application/rss+xml, application/xml, text/xml, application/json, */*",
+};
+
+function decodeXml(value) {
+  return String(value || "")
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x2F;/gi, "/")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function xmlTag(block, name) {
+  const match = block.match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)</${name}>`, "i"));
+  return match ? decodeXml(match[1]) : "";
+}
+
+function xmlAttr(block, name, attr) {
+  const match = block.match(new RegExp(`<${name}[^>]*\\s${attr}=["']([^"']+)["'][^>]*/?>`, "i"));
+  return match ? match[1].trim() : "";
+}
+
+function matchesKeywords(text) {
+  const hay = String(text || "").toLowerCase();
+  return MONITOR_KEYWORDS.some((kw) => hay.includes(kw));
+}
+
+function parseRssItems(xml, source) {
+  const chunks = xml.match(/<item[\s\S]*?<\/item>/gi) || xml.match(/<entry[\s\S]*?<\/entry>/gi) || [];
+  return chunks.slice(0, 25).map((block) => {
+    const link = xmlTag(block, "link") || xmlAttr(block, "link", "href") || xmlTag(block, "guid");
+    const published = xmlTag(block, "pubDate") || xmlTag(block, "published") || xmlTag(block, "updated") || xmlTag(block, "dc:date");
+    return {
+      title: xmlTag(block, "title") || xmlTag(block, "dc:title"),
+      link,
+      published,
+      snippet: xmlTag(block, "description") || xmlTag(block, "summary") || xmlTag(block, "content"),
+      source: source.title,
+      folder: source.folder,
+      sourceId: source.id,
+    };
+  }).filter((item) => item.title && item.link);
+}
+
+function govInfoDetailsUrl(row) {
+  if (row.granuleLink) return row.granuleLink;
+  if (row.packageLink) return row.packageLink;
+  if (row.govcenterlink) return row.govcenterlink;
+  const pkg = row.packageId || row.packageid;
+  const granule = row.granuleId || row.granuleid;
+  if (pkg && granule) return `https://www.govinfo.gov/app/details/${pkg}/${granule}`;
+  if (pkg) return `https://www.govinfo.gov/app/details/${pkg}`;
+  return "";
+}
+
+function normalizeGovInfoRows(payload, source) {
+  const rows = payload.results || payload.resultSet || payload.documents || [];
+  return rows.slice(0, 20).map((row) => ({
+    title: decodeXml(row.title || row.line1 || ""),
+    link: govInfoDetailsUrl(row),
+    published: row.dateIssued || row.publishDate || row.publicationDate || row.date || "",
+    snippet: decodeXml(row.teaser || row.snippet || row.summary || row.line2 || ""),
+    source: source.title,
+    folder: source.folder,
+    sourceId: source.id,
+  })).filter((item) => item.title && item.link);
+}
+
+async function fetchRssFeed(source) {
+  const res = await fetch(source.url, { headers: FETCH_HEADERS });
+  if (!res.ok) throw new Error(`${source.id} HTTP ${res.status}`);
+  return parseRssItems(await res.text(), source);
+}
+
+async function fetchGovInfoSearch(source) {
+  const query = source.query;
+  const rssUrls = [
+    `https://www.govinfo.gov/wssearch/gpo/rss?historical=false&pageSize=20&query=${encodeURIComponent(query)}`,
+    `https://www.govinfo.gov/wssearch/rss?historical=false&query=${encodeURIComponent(query)}`,
+  ];
+  for (const url of rssUrls) {
+    const res = await fetch(url, { headers: FETCH_HEADERS });
+    if (!res.ok) continue;
+    const text = await res.text();
+    if (text.includes("<item") || text.includes("<entry")) {
+      return parseRssItems(text, source);
+    }
+  }
+
+  const body = JSON.stringify({
+    query,
+    offset: 0,
+    pageSize: 20,
+    historical: false,
+    sorts: [{ field: "publishdate", sortOrder: "DESC" }],
+  });
+  const res = await fetch("https://www.govinfo.gov/wssearch/search", {
+    method: "POST",
+    headers: { ...FETCH_HEADERS, "Content-Type": "application/json" },
+    body,
+  });
+  if (!res.ok) throw new Error(`${source.id} search HTTP ${res.status}`);
+  const payload = await res.json();
+  const items = normalizeGovInfoRows(payload, source);
+  if (!items.length) throw new Error(`${source.id} search returned no rows`);
+  return items;
+}
+
+async function loadMonitor() {
+  const settled = await Promise.allSettled(MONITOR_FEEDS.map(async (feed) => {
+    const items = feed.kind === "govinfo-search"
+      ? await fetchGovInfoSearch(feed)
+      : await fetchRssFeed(feed);
+    const kept = feed.filter
+      ? items.filter((item) => matchesKeywords(`${item.title} ${item.snippet}`))
+      : items;
+    return { feed, items: kept };
+  }));
+
+  const items = [];
+  const sources = [];
+  for (let i = 0; i < settled.length; i += 1) {
+    const feed = MONITOR_FEEDS[i];
+    const result = settled[i];
+    if (result.status === "fulfilled") {
+      sources.push({ id: feed.id, title: feed.title, folder: feed.folder, ok: true, count: result.value.items.length });
+      items.push(...result.value.items);
+    } else {
+      sources.push({ id: feed.id, title: feed.title, folder: feed.folder, ok: false, error: String(result.reason && result.reason.message || result.reason) });
+    }
+  }
+
+  const seen = new Set();
+  const deduped = [];
+  for (const item of items) {
+    const key = (item.link || item.title).replace(/\/+$/, "").toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(item);
+  }
+  deduped.sort((a, b) => Date.parse(b.published || 0) - Date.parse(a.published || 0));
+  return { generatedAt: new Date().toISOString(), sources, items: deduped.slice(0, 40) };
+}
+
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const origin = request.headers.get("Origin");
     const url = new URL(request.url);
 
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders(origin) });
+    }
+
+    if (request.method === "GET" && url.pathname === "/monitor") {
+      try {
+        const cache = caches.default;
+        const cacheKey = new Request(new URL("/monitor", url.origin), { method: "GET" });
+        const cached = await cache.match(cacheKey);
+        if (cached) {
+          const headers = new Headers(cached.headers);
+          const cors = corsHeaders(origin);
+          Object.keys(cors).forEach((key) => headers.set(key, cors[key]));
+          return new Response(cached.body, { status: cached.status, headers });
+        }
+        const payload = await loadMonitor();
+        const response = new Response(JSON.stringify(payload), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "public, max-age=3600",
+            ...corsHeaders(origin),
+          },
+        });
+        if (ctx && ctx.waitUntil) ctx.waitUntil(cache.put(cacheKey, response.clone()));
+        return response;
+      } catch (err) {
+        return json({ error: err.message }, 502, origin);
+      }
     }
 
     if (request.method === "GET" && url.pathname === "/file") {
