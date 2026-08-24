@@ -285,10 +285,33 @@
       });
     }
 
+    function loadFeed2Json(feed) {
+      return fetchWithTimeout("https://feed2json.org/convert?url=" + encodeURIComponent(feed.url), 15000)
+        .then(function (res) {
+          if (!res.ok) throw new Error(feed.id + " HTTP " + res.status);
+          return res.json();
+        })
+        .then(function (data) {
+          const items = (data.items || []).map(function (row) {
+            return {
+              title: row.title || "",
+              link: row.url || row.external_url || row.id || "",
+              published: row.date_published || row.date_modified || "",
+              snippet: stripHtml(row.content_text || row.summary || row.content_html || ""),
+              source: feed.title,
+              folder: feed.folder,
+              sourceId: feed.id
+            };
+          }).filter(function (item) { return item.title && item.link; });
+          if (!items.length) throw new Error(feed.id + " empty feed2json");
+          return wrapItems(feed, items);
+        });
+    }
+
     function loadRssFeed(feed) {
       const encoded = encodeURIComponent(feed.url);
-      return loadRssXml(feed, "https://api.allorigins.win/raw?url=" + encoded)
-        .catch(function () { return loadRssXml(feed, "https://corsproxy.io/?" + encoded); })
+      return loadFeed2Json(feed)
+        .catch(function () { return loadRssXml(feed, "https://api.allorigins.win/raw?url=" + encoded); })
         .catch(function () { return loadRssJson(feed); });
     }
 
