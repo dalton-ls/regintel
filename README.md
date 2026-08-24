@@ -16,9 +16,9 @@ folder, not this git repo). Broader ontology:
 
 ## Live site
 
-- **Knowledge home**: `index.html` — Intelligence / Policy / Workforce
-  plus the schema map, and a Quality Manager RSS panel (`GET /monitor`
-  on the admin proxy).
+- **Knowledge home**: `index.html` — Quality Manager RSS monitoring
+  (official OSHA/DOL feeds, GovInfo FR searches when the Worker is
+  deployed, plus the CMS weekly page list).
 
 - **Research view**: `regintel.html` — Roles, Care Settings, **Policy
   Manager**, Workforce Readiness, and Facility/Learner Query (a
@@ -219,7 +219,7 @@ is).
 | `migrate_to_unified.py` | One-time / full regeneration of `requirements.json` |
 | `normalize_batch.py` | Normalize one already-extracted sheet for Pending Review |
 | `impact-types.js` | Phase 4 Impact Type closed taxonomy (shared by admin + research UI) |
-| `index.html` | Knowledge home — Intelligence / Policy / Workforce, 47-column schema map, QM RSS monitor |
+| `index.html` | Quality Manager RSS monitoring home |
 | `DESIGN.md` | Site boundary, projection schema, admin workflow |
 | `worker/regintel-admin-proxy/` | Cloudflare Worker that commits `requirements.json` |
 | `ingest.html` | WR ingest only |

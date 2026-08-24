@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>RegIntel | Knowledge Home</title>
+  <title>RegIntel | Quality Manager monitoring</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
@@ -42,46 +42,6 @@
     h1 { font-size: 36px; font-weight: 700; margin: 8px 0 12px; letter-spacing: -0.4px; line-height: 1.15; }
     .lead { max-width: 760px; line-height: 1.65; color: #6b7a99; font-size: 15px; }
 
-    .experiences {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
-      margin: 32px 0 8px;
-    }
-    .experience {
-      background: #fff;
-      border: 1px solid #e8ecf0;
-      border-radius: 12px;
-      padding: 20px 20px 18px;
-      text-decoration: none;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      transition: border-color 0.15s, box-shadow 0.15s;
-      min-height: 180px;
-    }
-    .experience:hover { border-color: #c7d7f8; box-shadow: 0 4px 16px rgba(26,46,90,0.08); }
-    .experience-kicker {
-      font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
-      text-transform: uppercase; color: #6b7a99;
-    }
-    .experience h2 { font-size: 16px; font-weight: 700; color: #1a2332; }
-    .experience p { font-size: 13px; line-height: 1.55; color: #6b7a99; flex: 1; }
-    .experience-cta { font-size: 12px; font-weight: 600; color: #2463eb; }
-    .experience.policy { border-top: 3px solid #5b21b6; }
-    .experience.intel { border-top: 3px solid #2463eb; }
-    .experience.workforce { border-top: 3px solid #15803d; }
-
-    .flow {
-      display: flex; gap: 8px; align-items: center;
-      margin: 28px 0 8px; flex-wrap: wrap;
-    }
-    .node {
-      padding: 9px 12px; border-radius: 8px; background: #fff;
-      border: 1px solid #e8ecf0; font-weight: 650; font-size: 12px; color: #1a2332;
-    }
-    .arrow { color: #9aaac4; font-size: 14px; }
-
     .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 28px; }
     .tabs button {
       border: 1px solid #dde1ea; background: #fff; border-radius: 99px;
@@ -94,30 +54,9 @@
       background: #fff; border: 1px solid #e8ecf0; border-radius: 12px;
       padding: 24px; margin-top: 14px;
     }
-    .panel h2 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
     .panel p { line-height: 1.6; color: #4a5568; margin-bottom: 14px; }
-    .field {
-      display: inline-block; background: #eef3fb; color: #1e4da1;
-      border-radius: 6px; padding: 4px 8px; margin: 3px; font-size: 12px; font-weight: 500;
-    }
-    .field.additive { background: #f5f3ff; color: #5b21b6; }
-    .rule {
-      display: grid; grid-template-columns: 1fr 36px 1fr; gap: 12px;
-      align-items: stretch; margin: 18px 0 8px;
-    }
-    .box {
-      padding: 14px 16px; background: #f7f9fc; border-radius: 10px;
-      line-height: 1.55; font-size: 13px; color: #1a2332;
-    }
-    .box b { display: block; margin-bottom: 4px; font-size: 11px;
-      text-transform: uppercase; letter-spacing: 0.04em; color: #6b7a99; }
-    .rule-arrow { color: #9aaac4; display: flex; align-items: center; justify-content: center; }
     .muted { color: #6b7a99; font-size: 13px; margin-top: 8px; }
 
-    .monitor { margin: 36px 0 8px; }
-    .monitor-head { margin-bottom: 4px; }
-    .monitor h2 { font-size: 16px; font-weight: 700; margin: 8px 0 8px; }
-    .monitor .lead { font-size: 13px; max-width: none; margin-bottom: 0; }
     .monitor-panel { padding: 8px 20px 16px; }
     .feed-item {
       padding: 14px 0;
@@ -144,19 +83,9 @@
       font-size: 13px; font-weight: 600; color: #1a2332; text-decoration: none;
     }
     .cms-list a:hover { color: #2463eb; }
-    .legend {
-      display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; font-size: 12px; color: #6b7a99;
-    }
-    .legend span { display: inline-flex; align-items: center; gap: 6px; }
-    .swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
-    .swatch.core { background: #eef3fb; border: 1px solid #c7d7f8; }
-    .swatch.add { background: #f5f3ff; border: 1px solid #ddd6fe; }
 
     @media (max-width: 800px) {
       h1 { font-size: 28px; }
-      .experiences { grid-template-columns: 1fr; }
-      .rule { grid-template-columns: 1fr; }
-      .rule-arrow { display: none; }
     }
   </style>
 </head>
@@ -165,42 +94,15 @@
     <div class="header-brand">
       <span class="logo-text">RegIntel</span>
       <span class="header-sep">|</span>
-      <span class="header-subtitle">Regulatory knowledge home</span>
+      <span class="header-subtitle">Quality Manager monitoring</span>
     </div>
     <a class="header-link" href="regintel.html">Open research view →</a>
   </header>
   <main>
-    <div class="eyebrow">Regulatory knowledge model</div>
-    <h1>One obligation, three ways to act on it.</h1>
-    <p class="lead">RegIntel separates what a source requires from how HealthStream organizes it and what kind of organizational response it implies. The parser emits a 47-column batch. This site is the research view and human QA over that projection — not the parser, and not a product catalog.</p>
-
-    <div class="experiences">
-      <a class="experience intel" href="regintel.html">
-        <div class="experience-kicker">Intelligence</div>
-        <h2>What changed, and who does it apply to?</h2>
-        <p>Browse Roles and Care Settings, or query a facility/learner archetype. Impact Types name the kind of response; they do not name a course or policy ID.</p>
-        <span class="experience-cta">Browse Roles &amp; Care Settings</span>
-      </a>
-      <a class="experience policy" href="regintel.html#policy">
-        <div class="experience-kicker">Policy</div>
-        <h2>What written response may be required?</h2>
-        <p>Policy Manager routing, Create/Update vs Review, and operational domain. A policy-only provision is not a training row. Linked training, when the source also requires it, stays a separate obligation.</p>
-        <span class="experience-cta">Open Policy</span>
-      </a>
-      <a class="experience workforce" href="regintel.html#workforce">
-        <div class="experience-kicker">Workforce</div>
-        <h2>Who needs to know or do something differently?</h2>
-        <p>Workforce Readiness is a Domain/KSA framework authored internally — not jurisdiction-driven regulatory content. Training, competency, and credential obligations still live on the Role and Care Setting rows.</p>
-        <span class="experience-cta">Open Workforce Readiness</span>
-      </a>
-    </div>
-
     <section class="monitor" id="monitor">
-      <div class="monitor-head">
-        <div class="eyebrow">Quality Manager monitoring</div>
-        <h2>What’s moving in federal SNF sources</h2>
-        <p class="lead">Live RSS from official OSHA / DOL feeds, plus GovInfo Federal Register searches for skilled nursing, nursing homes, and 42 CFR 483. This is a notification layer — open the source before treating anything as a product or policy change.</p>
-      </div>
+      <div class="eyebrow">Quality Manager monitoring</div>
+      <h1>What’s moving in federal SNF sources</h1>
+      <p class="lead">Live RSS from official OSHA / DOL feeds, plus GovInfo Federal Register searches for skilled nursing, nursing homes, and 42 CFR 483. This is a notification layer — open the source before treating anything as a product or policy change.</p>
       <div class="tabs" id="monitor-tabs">
         <button class="active" data-folder="official">Official</button>
         <button data-folder="context">Context</button>
@@ -208,113 +110,25 @@
       </div>
       <div class="panel monitor-panel" id="monitor-panel">Loading regulatory feeds…</div>
     </section>
-
-    <div class="flow">
-      <span class="node">Regulatory source</span><span class="arrow">→</span>
-      <span class="node">Obligation</span><span class="arrow">→</span>
-      <span class="node">Applicability</span><span class="arrow">→</span>
-      <span class="node">Impact Types</span><span class="arrow">→</span>
-      <span class="node">Product routing</span>
-    </div>
-
-    <div class="tabs">
-      <button class="active" data-layer="facts">1. Regulatory reality</button>
-      <button data-layer="product">2. Product taxonomy</button>
-      <button data-layer="impact">3. Impact</button>
-      <button data-layer="policy">4. Policy &amp; product routing</button>
-      <button data-layer="interp">5. Interpretation</button>
-      <button data-layer="identity">6. Identity &amp; time</button>
-    </div>
-    <section class="panel" id="panel"></section>
   </main>
   <script>
-    const content = {
-      facts: {
-        title: "Regulatory reality — source-backed and auditable",
-        body: "These fields retain the regulator’s language or are mechanically derived from it. Citation is grammatical, not composed. Training Topic is verbatim. Frequency stays in the source’s own words.",
-        fields: [
-          ["Jurisdiction", false], ["Jurisdiction Setting", false], ["Jurisdiction Role", false],
-          ["Oversight / Professional Agency", false], ["Citation", false],
-          ["Related Regulatory Provisions", true], ["Training Topic / Competency Item", false],
-          ["Hours Required", false], ["Frequency", false], ["Source URL", false],
-          ["Authority Level", false], ["Requirement Level", false]
-        ],
-        question: "What does the source require?",
-        rule: "Never paraphrase a topic. Never invent a setting to satisfy the anchor. Federal jurisdiction is US, never Federal."
-      },
-      product: {
-        title: "HealthStream product taxonomy — controlled mappings",
-        body: "These fields are not claims made by the regulation. They are the vocabulary used for navigation and product fit. Jurisdiction Setting is not HSTM Setting.",
-        fields: [
-          ["HSTM Setting", false], ["HSTM Role", false], ["Regulation Type", false],
-          ["Explicit Training", false], ["Regulated Competency", true], ["Relationship (Parent/Child)", false]
-        ],
-        question: "How does HealthStream organize it?",
-        rule: "Regulation Type is a routing field (facility training, individual CE, or organizational policy). It is not the ontology. Impact Type is."
-      },
-      impact: {
-        title: "Organizational implementation — response category, not a catalog",
-        body: "Impact Type names WHAT KIND of organizational response an obligation demands once it applies. The parser assigns a first-pass judgment with evidence, confidence, and a review flag. Human review is QA/override. Downstream products are inferred outside this site.",
-        fields: [
-          ["Applicability Rules", true],
-          ["Impact Types", true], ["Impact Basis", true], ["Impact Confidence", true], ["Impact Review", true]
-        ],
-        question: "What kind of organizational response is implicated?",
-        rule: "Parser assigns Impact Types from source language. Empty array with a basis is a reasoned none. Missing the field is a classification error. Never invent catalog artifacts."
-      },
-      policy: {
-        title: "Policy & product routing — what to do with the obligation",
-        body: "Pass 5b-5 decides which product path is live. Policy Manager cares whether a written policy, plan, or procedure is implicated. Quality Manager is currently SNF-only except PIP/PDSA. Training/Content is the workforce path. Multiple is for a genuine dual hook in the source — most often a policy that also requires training on it.",
-        fields: [
-          ["Product Use Case", true], ["Policy Action Relevance", true],
-          ["Quality Manager Relevance", true], ["Operational Domain", true]
-        ],
-        question: "Which HealthStream path does this obligation activate?",
-        rule: "Do not infer a template ID, an owner, or customer-local policy language. Create/Update vs Review is a regulatory implication, not a catalog assignment. Research-only and Unknown stop product-specific judgment."
-      },
-      interp: {
-        title: "Interpretation layers — keep source, change, and implication apart",
-        body: "Three columns, not one summary. Collapse them and a reader cannot tell which clause is the regulation and which is analysis. Related provisions and approval-family detail sit beside these so a reviewer can audit the call.",
-        fields: [
-          ["Source Change Context", true], ["Regulatory Change Summary", true], ["Interpretive Summary", true],
-          ["Interpretive Conditions", true], ["Interpretive Review Status", true],
-          ["Human Interpretation / SME Review", true],
-          ["Approval Scope", true], ["Approval Responsibility", true], ["Approval Timing", true],
-          ["Instructor/SME Qualification Required", true],
-          ["Prior Training Credit / Exemption", true], ["Prior Training Qualification", true],
-          ["Provision Relationship Types", true]
-        ],
-        question: "What did the source say, what changed, and what does it imply?",
-        rule: "Source Change Context is a verbatim excerpt. Regulatory Change Summary preserves meaning. Interpretive Summary is the only analysis — and it names no course, template, or artifact ID."
-      },
-      identity: {
-        title: "Identity and temporal traceability",
-        body: "Record ID identifies one flattened output row. Obligation ID identifies the underlying requirement before row explosion — that is where shared impacts belong. None of the 27 additive columns participates in the Record ID hash.",
-        fields: [
-          ["Obligation ID", true], ["Record ID", false],
-          ["Change Type", true], ["Change Detected Date", true], ["Change Source path", true],
-          ["Regulatory Lifecycle Stage", true]
-        ],
-        question: "How do we trace and compare it over time?",
-        rule: "Keep provenance and controlled vocabulary distinct. A changed Source Dataset or citation grammar re-mints the corpus; a remapped HSTM Setting does not."
-      }
-    };
-
-    function render(key) {
-      const x = content[key];
-      document.getElementById("panel").innerHTML =
-        "<h2>" + x.title + "</h2><p>" + x.body + "</p>" +
-        "<div>" + x.fields.map(function (f) {
-          return '<span class="field' + (f[1] ? " additive" : "") + '">' + f[0] + "</span>";
-        }).join("") + "</div>" +
-        '<div class="legend"><span><i class="swatch core"></i> Extraction / identity</span><span><i class="swatch add"></i> Additive parser field</span></div>' +
-        '<div class="rule"><div class="box"><b>Question answered</b>' + x.question +
-        '</div><div class="rule-arrow">→</div><div class="box"><b>Rule</b>' + x.rule +
-        "</div></div>" +
-        '<p class="muted">Open the research view to browse live records. Policy is a first-class left-nav category, not a leftover Regulation Type value.</p>';
-    }
-
     const WORKER_URL = "https://regintel-admin-proxy.regintel.workers.dev";
+    const KEYWORDS = [
+      "snf", "skilled nursing", "nursing home", "long-term care", "long term care",
+      "42 cfr 483", "42 c.f.r. 483", "part 483", "surveyor", "facility assessment",
+      "quality assurance", "qapi", "mds", "rai manual", "payroll-based journal",
+      "pbj", "qrp", "vbp", "consolidated billing", "infection control",
+      "workplace violence", "respiratory protection", "emergency preparedness",
+      "nursing facility", "ltc ", "staffing"
+    ];
+    const RSS_FEEDS = [
+      { id: "osha-fr", folder: "official", title: "OSHA — Federal Register", url: "https://www.osha.gov/laws-regs/federalregisters.xml", filter: true },
+      { id: "osha-directives", folder: "official", title: "OSHA — Directives", url: "https://www.osha.gov/enforcement/directives.xml", filter: true },
+      { id: "osha-interps", folder: "official", title: "OSHA — Standard Interpretations", url: "https://www.osha.gov/laws-regs/standardinterpretations.xml", filter: true },
+      { id: "osha-news", folder: "official", title: "OSHA — News Releases", url: "https://www.osha.gov/news/newsreleases.xml", filter: true },
+      { id: "dol-news", folder: "official", title: "U.S. Department of Labor — News Releases", url: "https://www.dol.gov/rss/releases.xml", filter: true },
+      { id: "snn", folder: "context", title: "Skilled Nursing News", url: "https://skillednursingnews.com/feed/", filter: false }
+    ];
     const CMS_PAGES = [
       ["CMS Policy & Memos to States and CMS Locations", "https://www.cms.gov/medicare/health-safety-standards/quality-safety-oversight-general-information/policy-memos/policy-memos-states-cms-locations"],
       ["CMS Quality & Safety Special Alerts", "https://www.cms.gov/medicare/health-safety-standards/quality-safety-oversight-general-information/quality-safety-special-alerts"],
@@ -340,6 +154,17 @@
       const d = new Date(value);
       if (isNaN(d.getTime())) return escapeHtml(value);
       return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+    }
+
+    function matchesKeywords(text) {
+      const hay = String(text || "").toLowerCase();
+      return KEYWORDS.some(function (kw) { return hay.indexOf(kw) !== -1; });
+    }
+
+    function fetchWithTimeout(url, ms) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(function () { ctrl.abort(); }, ms);
+      return fetch(url, { signal: ctrl.signal }).finally(function () { clearTimeout(timer); });
     }
 
     function renderCms() {
@@ -373,7 +198,7 @@
       const items = (payload.items || []).filter(function (item) { return item.folder === folder; });
       const failed = (payload.sources || []).filter(function (s) { return s.folder === folder && !s.ok; });
       const empty = folder === "official"
-        ? "No matching official items right now. The Worker may still be warming, or the keyword filter found nothing new."
+        ? "No matching official items right now."
         : "No industry-context items right now. Treat this folder as early warning, not the source of record.";
       let html = renderFeedItems(items, empty);
       html += '<p class="muted">Notification only. Confirm effective date and applicability in the primary CMS, OSHA, Federal Register, GovInfo, or eCFR source before changing product logic or policy content.</p>';
@@ -383,21 +208,151 @@
       panel.innerHTML = html;
     }
 
+    function stripHtml(value) {
+      const el = document.createElement("div");
+      el.innerHTML = value || "";
+      return (el.textContent || el.innerText || "").replace(/\s+/g, " ").trim();
+    }
+
+    function xmlText(node, names) {
+      for (let i = 0; i < names.length; i += 1) {
+        const el = node.getElementsByTagName(names[i])[0];
+        if (el && (el.textContent || "").trim()) return el.textContent.trim();
+      }
+      const link = node.getElementsByTagName("link")[0];
+      if (link && link.getAttribute("href")) return link.getAttribute("href");
+      return "";
+    }
+
+    function parseRssXml(xml, feed) {
+      const doc = new DOMParser().parseFromString(xml, "text/xml");
+      if (doc.querySelector("parsererror")) throw new Error(feed.id + " invalid xml");
+      const nodes = doc.querySelectorAll("item, entry");
+      const items = [];
+      nodes.forEach(function (node) {
+        const title = xmlText(node, ["title"]);
+        const link = xmlText(node, ["link", "guid", "id"]);
+        if (!title || !link) return;
+        items.push({
+          title: title,
+          link: link,
+          published: xmlText(node, ["pubDate", "published", "updated", "dc:date"]),
+          snippet: stripHtml(xmlText(node, ["description", "summary", "content"])),
+          source: feed.title,
+          folder: feed.folder,
+          sourceId: feed.id
+        });
+      });
+      return items;
+    }
+
+    function wrapItems(feed, items) {
+      const kept = feed.filter
+        ? items.filter(function (item) { return matchesKeywords(item.title + " " + item.snippet); })
+        : items;
+      return { feed: feed, items: kept };
+    }
+
+    function loadRssJson(feed) {
+      return fetchWithTimeout("https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(feed.url), 10000)
+        .then(function (res) {
+          if (!res.ok) throw new Error(feed.id + " HTTP " + res.status);
+          return res.json();
+        })
+        .then(function (data) {
+          if (data.status && data.status !== "ok") throw new Error(feed.id + " " + (data.message || "rss error"));
+          const items = (data.items || []).map(function (row) {
+            return {
+              title: row.title || "",
+              link: row.link || row.guid || "",
+              published: row.pubDate || row.pubdate || "",
+              snippet: stripHtml(row.description || row.content || ""),
+              source: feed.title,
+              folder: feed.folder,
+              sourceId: feed.id
+            };
+          }).filter(function (item) { return item.title && item.link; });
+          return wrapItems(feed, items);
+        });
+    }
+
+    function loadRssXml(feed, proxyUrl) {
+      return fetchWithTimeout(proxyUrl, 10000).then(function (res) {
+        if (!res.ok) throw new Error(feed.id + " HTTP " + res.status);
+        return res.text();
+      }).then(function (xml) {
+        return wrapItems(feed, parseRssXml(xml, feed));
+      });
+    }
+
+    function loadRssFeed(feed) {
+      const encoded = encodeURIComponent(feed.url);
+      return loadRssXml(feed, "https://api.allorigins.win/raw?url=" + encoded)
+        .catch(function () { return loadRssXml(feed, "https://corsproxy.io/?" + encoded); })
+        .catch(function () { return loadRssJson(feed); });
+    }
+
+    function mergePayloads(parts) {
+      const items = [];
+      const sources = [];
+      parts.forEach(function (part) {
+        if (part.status === "fulfilled") {
+          sources.push({ id: part.value.feed.id, title: part.value.feed.title, folder: part.value.feed.folder, ok: true, count: part.value.items.length });
+          items.push.apply(items, part.value.items);
+        } else {
+          const feed = part.feed;
+          sources.push({ id: feed.id, title: feed.title, folder: feed.folder, ok: false, error: String(part.reason && part.reason.message || part.reason) });
+        }
+      });
+      const seen = {};
+      const deduped = [];
+      items.forEach(function (item) {
+        const key = (item.link || item.title).replace(/\/+$/, "").toLowerCase();
+        if (seen[key]) return;
+        seen[key] = true;
+        deduped.push(item);
+      });
+      deduped.sort(function (a, b) { return Date.parse(b.published || 0) - Date.parse(a.published || 0); });
+      return { generatedAt: new Date().toISOString(), sources: sources, items: deduped.slice(0, 40) };
+    }
+
+    function loadFromWorker() {
+      return fetchWithTimeout(WORKER_URL + "/monitor", 8000).then(function (res) {
+        if (!res.ok) throw new Error("monitor " + res.status);
+        return res.json();
+      }).then(function (payload) {
+        if (!payload || !payload.items || !payload.items.length) throw new Error("empty monitor");
+        return payload;
+      });
+    }
+
+    function loadFromRss() {
+      return Promise.all(RSS_FEEDS.map(function (feed) {
+        return loadRssFeed(feed).then(
+          function (value) { return { status: "fulfilled", value: value, feed: feed }; },
+          function (reason) { return { status: "rejected", reason: reason, feed: feed }; }
+        );
+      })).then(mergePayloads);
+    }
+
     let monitorPayload = null;
     let monitorFolder = "official";
-    renderMonitor("official", null);
 
-    fetch(WORKER_URL + "/monitor").then(function (res) {
-      if (!res.ok) throw new Error("monitor " + res.status);
-      return res.json();
-    }).then(function (payload) {
+    function applyPayload(payload) {
+      if (!payload || !payload.items) return;
       monitorPayload = payload;
       renderMonitor(monitorFolder, monitorPayload);
+    }
+
+    loadFromRss().then(applyPayload).catch(function () {
+      return loadFromWorker().then(applyPayload);
     }).catch(function () {
       if (monitorFolder === "cms") return;
+      if (monitorPayload) return;
       document.getElementById("monitor-panel").innerHTML =
-        '<p class="muted">Live feeds could not be loaded from the monitoring proxy. CMS pages are still available in the third tab. Redeploy <code>worker/regintel-admin-proxy</code> if <code>/monitor</code> is missing.</p>';
+        '<p class="muted">Live feeds could not be loaded. CMS pages are still available in the third tab.</p>';
     });
+    loadFromWorker().then(applyPayload).catch(function () {});
 
     document.querySelectorAll("#monitor-tabs button").forEach(function (b) {
       b.onclick = function () {
@@ -406,15 +361,6 @@
         monitorFolder = b.dataset.folder;
         if (monitorFolder === "cms") renderMonitor("cms");
         else renderMonitor(monitorFolder, monitorPayload);
-      };
-    });
-
-    render("facts");
-    document.querySelectorAll("button[data-layer]").forEach(function (b) {
-      b.onclick = function () {
-        document.querySelectorAll("button[data-layer]").forEach(function (x) { x.classList.remove("active"); });
-        b.classList.add("active");
-        render(b.dataset.layer);
       };
     });
   </script>
