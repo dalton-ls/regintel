@@ -264,28 +264,38 @@ function parseRssItems(xml, source) {
   }).filter((item) => item.title && item.link);
 }
 
-function govInfoDetailsUrl(row) {
+function govInfoDetailsUrl(row, fields) {
+  const pkg = fields.packageid || fields.packageId || row.packageId || row.packageid;
+  const granule = fields.granuleid || fields.granuleId || row.granuleId || row.granuleid;
+  if (pkg && granule) return `https://www.govinfo.gov/app/details/${pkg}/${granule}`;
+  if (fields.url) return fields.url;
   if (row.granuleLink) return row.granuleLink;
   if (row.packageLink) return row.packageLink;
   if (row.govcenterlink) return row.govcenterlink;
-  const pkg = row.packageId || row.packageid;
-  const granule = row.granuleId || row.granuleid;
-  if (pkg && granule) return `https://www.govinfo.gov/app/details/${pkg}/${granule}`;
   if (pkg) return `https://www.govinfo.gov/app/details/${pkg}`;
   return "";
 }
 
+function govInfoPublished(row, fields) {
+  return fields.dateIssued || fields.publishdate || fields.publicationDate
+    || row.dateIssued || row.publishDate || row.publicationDate || row.date
+    || row.line2 || "";
+}
+
 function normalizeGovInfoRows(payload, source) {
   const rows = payload.results || payload.resultSet || payload.documents || [];
-  return rows.slice(0, 20).map((row) => ({
-    title: decodeXml(row.title || row.line1 || ""),
-    link: govInfoDetailsUrl(row),
-    published: row.dateIssued || row.publishDate || row.publicationDate || row.date || "",
-    snippet: decodeXml(row.teaser || row.snippet || row.summary || row.line2 || ""),
-    source: source.title,
-    folder: source.folder,
-    sourceId: source.id,
-  })).filter((item) => item.title && item.link);
+  return rows.slice(0, 20).map((row) => {
+    const fields = row.fieldMap || {};
+    return {
+      title: decodeXml(fields.title || row.title || row.line1 || ""),
+      link: govInfoDetailsUrl(row, fields),
+      published: govInfoPublished(row, fields),
+      snippet: decodeXml(fields.teaser || row.teaser || row.snippet || row.summary || row.line2 || ""),
+      source: source.title,
+      folder: source.folder,
+      sourceId: source.id,
+    };
+  }).filter((item) => item.title && item.link);
 }
 
 async function fetchRssFeed(source) {
@@ -295,26 +305,11 @@ async function fetchRssFeed(source) {
 }
 
 async function fetchGovInfoSearch(source) {
-  const query = source.query;
-  const rssUrls = [
-    `https://www.govinfo.gov/wssearch/gpo/rss?historical=false&pageSize=20&query=${encodeURIComponent(query)}`,
-    `https://www.govinfo.gov/wssearch/rss?historical=false&query=${encodeURIComponent(query)}`,
-  ];
-  for (const url of rssUrls) {
-    const res = await fetch(url, { headers: FETCH_HEADERS });
-    if (!res.ok) continue;
-    const text = await res.text();
-    if (text.includes("<item") || text.includes("<entry")) {
-      return parseRssItems(text, source);
-    }
-  }
-
   const body = JSON.stringify({
-    query,
+    query: source.query,
     offset: 0,
     pageSize: 20,
     historical: false,
-    sorts: [{ field: "publishdate", sortOrder: "DESC" }],
   });
   const res = await fetch("https://www.govinfo.gov/wssearch/search", {
     method: "POST",
