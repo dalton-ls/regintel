@@ -8,8 +8,9 @@ in-place Edit on `regintel.html`) commit edits directly to
 not the OpenLaws source corpus or any pre-site parsed JSON. `export.html`
 Also reads through it (no auth needed for reads) so its snapshot always
 reflects the live committed data. `GET /monitor` is likewise unauthenticated:
-it fetches the Quality Manager RSS bundle (OSHA/DOL/SNN) and GovInfo
-Federal Register search feeds, then returns JSON for the knowledge home page.
+it fetches the Quality Manager RSS bundle (SNF-focused Federal Register
+feeds, GovInfo FR searches, keyword-filtered OSHA/DOL, and SNN) and
+returns JSON for the knowledge home page.
 
 Because the committed file is the single source of truth, this lets one
 person work from multiple computers/browsers without losing edits or
@@ -54,12 +55,11 @@ secret gating write access for one trusted operator.
 
 ## Public monitoring endpoint
 
-`GET /monitor` (no auth) aggregates the Quality Manager RSS bundle and
-GovInfo custom Federal Register searches (`skilled nursing facility`,
-`nursing home`, `42 CFR 483`, plus the seasonal SNF PPS / quality-reporting
-queries). OSHA/DOL items are keyword-filtered; GovInfo search results are
-already scoped. Cache `3600` seconds. Redeploy this Worker after pulling
-the `/monitor` route or the homepage panel will show the fallback message.
+`GET /monitor` (no auth) aggregates the Quality Manager OPML folders:
+SNF-focused official (HHS/CMS Federal Register RSS plus GovInfo searches
+for skilled nursing facility, nursing home, 42 CFR 483, and seasonal SNF
+PPS / quality-reporting queries), broad official (OSHA/DOL/QuickTakes with
+keyword filters), and context (Skilled Nursing News). Cache `3600` seconds.
 
 ## Using it day to day
 

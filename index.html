@@ -6,7 +6,7 @@
   <title>RegIntel | Quality Manager monitoring</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
@@ -43,10 +43,13 @@
       color: #2463eb; font-weight: 700; text-transform: uppercase;
       letter-spacing: 0.08em; font-size: 11px; margin-bottom: 8px;
     }
-    h1 {
-      font-family: "DM Serif Display", Georgia, serif;
-      font-size: 38px; font-weight: 400; margin: 0 0 12px;
-      letter-spacing: -0.5px; line-height: 1.12; max-width: 36rem;
+    h1, .page-title {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0 0 4px;
+      letter-spacing: 0;
+      line-height: 1.25;
     }
     .lead { max-width: 680px; line-height: 1.65; color: #6b7a99; font-size: 15px; }
 
@@ -141,10 +144,19 @@
       font-family: "JetBrains Mono", ui-monospace, monospace;
       font-size: 11px; color: #6b7a99; letter-spacing: 0.02em;
     }
+    .src-fr-snf-pps { background: #e0e7ff; color: #3730a3; }
+    .src-fr-snf { background: #dbeafe; color: #1e40af; }
+    .src-govinfo-fr-snf { background: #ccfbf1; color: #115e59; }
+    .src-govinfo-fr-nh { background: #cffafe; color: #155e75; }
+    .src-govinfo-fr-483 { background: #d1fae5; color: #065f46; }
+    .src-govinfo-fr-ltc { background: #e2e8f0; color: #334155; }
+    .src-govinfo-fr-pps { background: #ede9fe; color: #5b21b6; }
+    .src-govinfo-fr-qrp { background: #ecfccb; color: #3f6212; }
     .src-osha-fr { background: #e0e7ff; color: #3730a3; }
     .src-osha-directives { background: #fce7f3; color: #9d174d; }
     .src-osha-interps { background: #ecfdf5; color: #065f46; }
     .src-osha-news { background: #fff7ed; color: #9a3412; }
+    .src-osha-quicktakes { background: #fef3c7; color: #92400e; }
     .src-dol-news { background: #f0f9ff; color: #0c4a6e; }
     .src-snn { background: #fdf4ff; color: #7e22ce; }
     .src-other { background: #f1f5f9; color: #475569; }
@@ -200,7 +212,7 @@
     .cms-list svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 2px; color: #6b7a99; }
 
     @media (max-width: 800px) {
-      h1 { font-size: 28px; }
+      .page-title { font-size: 22px; }
       .cms-list { grid-template-columns: 1fr; }
     }
   </style>
@@ -216,12 +228,13 @@
   </header>
   <main>
     <p class="eyebrow">Quality Manager monitoring</p>
-    <h1>Skilled Nursing Facility Updates</h1>
-    <p class="lead">Live RSS from official OSHA / DOL feeds, plus GovInfo Federal Register searches for skilled nursing, nursing homes, and 42 CFR 483. This is a notification layer — open the source before treating anything as a product or policy change. Weeks run Sunday–Saturday.</p>
+    <h1 class="page-title">Skilled Nursing Facility Updates</h1>
+    <p class="lead">Official is the SNF-focused Federal Register digest (HHS/CMS rule feeds plus GovInfo searches for skilled nursing, nursing homes, and 42 CFR 483). Broad official is OSHA/DOL backstop review with keyword filters — not the daily SNF digest. Context is industry reporting. CMS pages have no stable RSS; review them weekly. This is a notification layer — open the source before treating anything as a product or policy change. Weeks run Sunday–Saturday.</p>
 
     <div class="controls">
       <div class="tabs" id="monitor-tabs">
         <button class="active" data-folder="official">Official</button>
+        <button data-folder="broad">Broad</button>
         <button data-folder="context">Context</button>
         <button data-folder="cms">CMS pages</button>
       </div>
@@ -243,20 +256,27 @@
   <script>
     const WORKER_URL = "https://regintel-admin-proxy.regintel.workers.dev";
     const PAGE_SIZE = 15;
-    const KEYWORDS = [
-      "snf", "skilled nursing", "nursing home", "long-term care", "long term care",
-      "42 cfr 483", "42 c.f.r. 483", "part 483", "surveyor", "facility assessment",
-      "quality assurance", "qapi", "mds", "rai manual", "payroll-based journal",
-      "pbj", "qrp", "vbp", "consolidated billing", "infection control",
-      "workplace violence", "respiratory protection", "emergency preparedness",
-      "nursing facility", "ltc ", "staffing"
+    const MAX_WEEKS = 5;
+    const BROAD_KEYWORDS = [
+      "nursing home", "health care", "healthcare", "safe patient handling",
+      "workplace violence", "bloodborne pathogens", "respiratory protection",
+      "ergonomics", "skilled nursing", "snf", "long-term care", "long term care"
     ];
     const RSS_FEEDS = [
-      { id: "osha-fr", folder: "official", title: "OSHA — Federal Register", url: "https://www.osha.gov/laws-regs/federalregisters.xml", filter: false },
-      { id: "osha-directives", folder: "official", title: "OSHA — Directives", url: "https://www.osha.gov/enforcement/directives.xml", filter: false },
-      { id: "osha-interps", folder: "official", title: "OSHA — Standard Interpretations", url: "https://www.osha.gov/laws-regs/standardinterpretations.xml", filter: false },
-      { id: "osha-news", folder: "official", title: "OSHA — News Releases", url: "https://www.osha.gov/news/newsreleases.xml", filter: true },
-      { id: "dol-news", folder: "official", title: "U.S. Department of Labor — News Releases", url: "https://www.dol.gov/rss/releases.xml", filter: true },
+      { id: "fr-snf-pps", folder: "official", title: "Federal Register — HHS/CMS — SNF PPS rules", url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Bagencies%5D%5B%5D=health-and-human-services-department&conditions%5Bterm%5D=SNF%20PPS&conditions%5Btype%5D%5B%5D=RULE&conditions%5Btype%5D%5B%5D=PRORULE", filter: false },
+      { id: "fr-snf", folder: "official", title: "Federal Register — HHS/CMS — SNF rules", url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Bagencies%5D%5B%5D=health-and-human-services-department&conditions%5Bterm%5D=skilled%20nursing%20facility&conditions%5Btype%5D%5B%5D=RULE&conditions%5Btype%5D%5B%5D=PRORULE", filter: false },
+      { id: "govinfo-fr-snf", folder: "official", title: "GovInfo FR — skilled nursing facility" },
+      { id: "govinfo-fr-nh", folder: "official", title: "GovInfo FR — nursing home" },
+      { id: "govinfo-fr-483", folder: "official", title: "GovInfo FR — 42 CFR 483" },
+      { id: "govinfo-fr-ltc", folder: "official", title: "GovInfo FR — long-term care facility" },
+      { id: "govinfo-fr-pps", folder: "official", title: "GovInfo FR — SNF PPS" },
+      { id: "govinfo-fr-qrp", folder: "official", title: "GovInfo FR — quality reporting nursing home" },
+      { id: "osha-fr", folder: "broad", title: "OSHA — Federal Register", url: "https://www.osha.gov/laws-regs/federalregisters.xml", filter: true },
+      { id: "osha-directives", folder: "broad", title: "OSHA — Directives", url: "https://www.osha.gov/enforcement/directives.xml", filter: true },
+      { id: "osha-interps", folder: "broad", title: "OSHA — Standard Interpretations", url: "https://www.osha.gov/laws-regs/standardinterpretations.xml", filter: true },
+      { id: "osha-news", folder: "broad", title: "OSHA — News Releases", url: "https://www.osha.gov/news/newsreleases.xml", filter: true },
+      { id: "dol-news", folder: "broad", title: "U.S. Department of Labor — News Releases", url: "https://www.dol.gov/rss/releases.xml", filter: true },
+      { id: "osha-quicktakes", folder: "broad", title: "OSHA — QuickTakes", url: "https://www.osha.gov/sites/default/files/quicktakes.xml", filter: true },
       { id: "snn", folder: "context", title: "Skilled Nursing News", url: "https://skillednursingnews.com/feed/", filter: false }
     ];
     const CMS_PAGES = [
@@ -273,12 +293,26 @@
       ["CDC NHSN Long-term Care Facilities", "https://www.cdc.gov/nhsn/ltc/index.html"]
     ];
     const SOURCE_CLASS = {
+      "fr-snf-pps": "src-fr-snf-pps",
+      "fr-snf": "src-fr-snf",
+      "govinfo-fr-snf": "src-govinfo-fr-snf",
+      "govinfo-fr-nh": "src-govinfo-fr-nh",
+      "govinfo-fr-483": "src-govinfo-fr-483",
+      "govinfo-fr-ltc": "src-govinfo-fr-ltc",
+      "govinfo-fr-pps": "src-govinfo-fr-pps",
+      "govinfo-fr-qrp": "src-govinfo-fr-qrp",
       "osha-fr": "src-osha-fr",
       "osha-directives": "src-osha-directives",
       "osha-interps": "src-osha-interps",
       "osha-news": "src-osha-news",
+      "osha-quicktakes": "src-osha-quicktakes",
       "dol-news": "src-dol-news",
       "snn": "src-snn"
+    };
+    const FOLDER_LEGEND = {
+      official: "SNF-focused official",
+      broad: "Broad official",
+      context: "Context sources"
     };
 
     function escapeHtml(s) {
@@ -299,36 +333,49 @@
       return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
     }
 
+    function startOfDay(d) {
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+
     function startOfWeekSunday(d) {
-      const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const x = startOfDay(d);
       x.setDate(x.getDate() - x.getDay());
       return x;
     }
 
+    function isFutureDate(d) {
+      return startOfDay(d).getTime() > startOfDay(new Date()).getTime();
+    }
+
     function weekMeta(d) {
       const start = startOfWeekSunday(d);
-      const end = new Date(start);
-      end.setDate(end.getDate() + 6);
-      const thisStart = startOfWeekSunday(new Date());
+      const weekEnd = new Date(start);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      const today = startOfDay(new Date());
+      const thisStart = startOfWeekSunday(today);
       const lastStart = new Date(thisStart);
       lastStart.setDate(lastStart.getDate() - 7);
+      const displayEnd = weekEnd.getTime() > today.getTime() ? today : weekEnd;
       const fmt = function (x) {
         return x.toLocaleDateString("en-US", { month: "numeric", day: "numeric" });
       };
       let badge = "";
       if (start.getTime() === thisStart.getTime()) badge = "this-week";
       else if (start.getTime() === lastStart.getTime()) badge = "last-week";
+      const range = displayEnd.getTime() === start.getTime()
+        ? fmt(start)
+        : fmt(start) + "–" + fmt(displayEnd);
       return {
         key: start.getFullYear() + "-" + start.getMonth() + "-" + start.getDate(),
         start: start,
         badge: badge,
-        label: start.getFullYear() + ": " + fmt(start) + "–" + fmt(end)
+        label: start.getFullYear() + ": " + range
       };
     }
 
     function matchesKeywords(text) {
       const hay = String(text || "").toLowerCase();
-      return KEYWORDS.some(function (kw) { return hay.indexOf(kw) !== -1; });
+      return BROAD_KEYWORDS.some(function (kw) { return hay.indexOf(kw) !== -1; });
     }
 
     function fetchWithTimeout(url, ms) {
@@ -389,25 +436,33 @@
         return '<span class="feed-source ' + sourceClass(src.id) + '">' + escapeHtml(src.title) + "</span>";
       }).join("");
       el.hidden = false;
-      el.innerHTML = '<p class="eyebrow">' + (folder === "official" ? "Official sources" : "Context sources") +
+      el.innerHTML = '<p class="eyebrow">' + escapeHtml(FOLDER_LEGEND[folder] || "Sources") +
         '</p><div class="legend-pills">' + pills + "</div>";
     }
 
     function groupByWeek(items, dir) {
+      const thisMeta = weekMeta(new Date());
       const groups = {};
+      groups[thisMeta.key] = { meta: thisMeta, items: [] };
       const undated = [];
       items.forEach(function (item) {
         const d = parseDate(item.published);
         if (!d) { undated.push(item); return; }
+        if (isFutureDate(d)) return;
         const meta = weekMeta(d);
+        if (meta.start.getTime() > thisMeta.start.getTime()) return;
         if (!groups[meta.key]) groups[meta.key] = { meta: meta, items: [] };
         groups[meta.key].items.push(item);
       });
-      const weeks = Object.keys(groups).map(function (k) { return groups[k]; });
-      weeks.sort(function (a, b) {
-        return dir === "asc" ? a.meta.start - b.meta.start : b.meta.start - a.meta.start;
+      const current = groups[thisMeta.key];
+      const rest = Object.keys(groups).filter(function (k) { return k !== thisMeta.key; }).map(function (k) {
+        return groups[k];
       });
-      if (undated.length) {
+      rest.sort(function (a, b) { return b.meta.start - a.meta.start; });
+      const visibleRest = rest.slice(0, MAX_WEEKS - 1);
+      if (dir === "asc") visibleRest.reverse();
+      const weeks = [current].concat(visibleRest);
+      if (undated.length && weeks.length < MAX_WEEKS) {
         weeks.push({
           meta: { key: "undated", start: new Date(0), badge: "", label: "Date not stated" },
           items: undated
@@ -443,42 +498,45 @@
         return;
       }
       const q = (uiState.search || "").trim().toLowerCase();
-      let items = (payload.items || []).filter(function (item) { return item.folder === folder; });
+      let items = (payload.items || []).filter(function (item) {
+        if (item.folder !== folder) return false;
+        const d = parseDate(item.published);
+        return !d || !isFutureDate(d);
+      });
       if (q) {
         items = items.filter(function (item) {
           return (item.title + " " + item.snippet + " " + item.source).toLowerCase().indexOf(q) !== -1;
         });
-      }
-      if (!items.length) {
-        panel.innerHTML = '<p class="muted">' + (q ? "No articles match your filter." : "No items available for this tab.") + "</p>";
-        return;
+        if (!items.length) {
+          panel.innerHTML = '<p class="muted">No articles match your filter.</p>';
+          return;
+        }
       }
       const thisKey = weekMeta(new Date()).key;
       const weeks = groupByWeek(items, uiState.sort);
-      let html = '<div class="weeks">' + weeks.map(function (week, index) {
+      let html = '<div class="weeks">' + weeks.map(function (week) {
         const open = uiState.open[week.meta.key];
-        const defaultOpen = uiState.sort === "desc"
-          ? (week.meta.key === thisKey || index === 0)
-          : index === 0;
+        const defaultOpen = week.meta.key === thisKey;
         const isOpen = open === true || (open !== false && defaultOpen);
         const page = uiState.page[week.meta.key] || 0;
         const pageCount = Math.max(1, Math.ceil(week.items.length / PAGE_SIZE));
-        const safePage = Math.min(page, pageCount - 1);
+        const safePage = week.items.length ? Math.min(page, pageCount - 1) : 0;
         const slice = week.items.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
         const badge = week.meta.badge === "this-week"
           ? '<span class="badge this">This week</span>'
           : week.meta.badge === "last-week"
             ? '<span class="badge last">Last week</span>'
             : "";
+        const body = week.items.length
+          ? renderFeedItems(slice) + renderPager(week.meta.key, safePage, pageCount) + renderSourcesCard(slice, folder)
+          : '<p class="muted">Nothing posted this week yet. New items will appear here as feeds update.</p>' +
+            renderSourcesCard([], folder);
         return '<details class="week' + (week.meta.badge === "this-week" ? " this-week" : "") +
           '" data-week="' + week.meta.key + '"' + (isOpen ? " open" : "") +
           '><summary><span class="week-label">' + escapeHtml(week.meta.label) + badge +
           '</span><span class="week-meta"><span class="week-count">' + week.items.length +
           "</span>" + chevron() + "</span></summary><div class=\"week-body\">" +
-          renderFeedItems(slice) +
-          renderPager(week.meta.key, safePage, pageCount) +
-          renderSourcesCard(slice, folder) +
-          "</div></details>";
+          body + "</div></details>";
       }).join("") + '</div><p class="note">Notification only. Confirm effective date and applicability in the primary CMS, OSHA, Federal Register, GovInfo, or eCFR source before changing product logic or policy content.</p>';
       panel.innerHTML = html;
     }
@@ -610,9 +668,10 @@
       return { generatedAt: new Date().toISOString(), sources: Object.keys(seenSrc).map(function (id) { return seenSrc[id]; }), items: deduped };
     }
 
+    const CLIENT_FEEDS = RSS_FEEDS.filter(function (feed) { return feed.url; });
     let monitorPayload = null;
     let monitorFolder = "official";
-    let pending = RSS_FEEDS.length;
+    let pending = CLIENT_FEEDS.length;
     const uiState = { open: {}, page: {}, search: "", sort: "desc" };
 
     function applyPayload(incoming) {
@@ -627,10 +686,10 @@
       if (monitorPayload && monitorPayload.items && monitorPayload.items.length) return;
       if (monitorFolder === "cms") return;
       document.getElementById("monitor-panel").innerHTML =
-        '<p class="muted">Live feeds could not be loaded. CMS pages are still available in the third tab.</p>';
+        '<p class="muted">Live feeds could not be loaded. CMS pages are still available in the last tab.</p>';
     }
 
-    RSS_FEEDS.forEach(function (feed) {
+    CLIENT_FEEDS.forEach(function (feed) {
       loadRssFeed(feed).then(function (value) {
         applyPayload({
           items: value.items,

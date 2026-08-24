@@ -104,16 +104,29 @@ function checkAuth(request, env) {
   return token && env.ADMIN_TOKEN && token === (env.ADMIN_TOKEN || "").trim();
 }
 
-const MONITOR_KEYWORDS = [
-  "snf", "skilled nursing", "nursing home", "long-term care", "long term care",
-  "42 cfr 483", "42 c.f.r. 483", "part 483", "surveyor", "facility assessment",
-  "quality assurance", "qapi", "mds", "rai manual", "payroll-based journal",
-  "pbj", "qrp", "vbp", "consolidated billing", "infection control",
-  "workplace violence", "respiratory protection", "emergency preparedness",
-  "nursing facility", "ltc ", "staffing",
+const BROAD_KEYWORDS = [
+  "nursing home", "health care", "healthcare", "safe patient handling",
+  "workplace violence", "bloodborne pathogens", "respiratory protection",
+  "ergonomics", "skilled nursing", "snf", "long-term care", "long term care",
 ];
 
 const MONITOR_FEEDS = [
+  {
+    id: "fr-snf-pps",
+    folder: "official",
+    title: "Federal Register — HHS/CMS — SNF PPS rules",
+    kind: "rss",
+    url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Bagencies%5D%5B%5D=health-and-human-services-department&conditions%5Bterm%5D=SNF%20PPS&conditions%5Btype%5D%5B%5D=RULE&conditions%5Btype%5D%5B%5D=PRORULE",
+    filter: false,
+  },
+  {
+    id: "fr-snf",
+    folder: "official",
+    title: "Federal Register — HHS/CMS — SNF rules",
+    kind: "rss",
+    url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Bagencies%5D%5B%5D=health-and-human-services-department&conditions%5Bterm%5D=skilled%20nursing%20facility&conditions%5Btype%5D%5B%5D=RULE&conditions%5Btype%5D%5B%5D=PRORULE",
+    filter: false,
+  },
   {
     id: "govinfo-fr-snf",
     folder: "official",
@@ -164,7 +177,7 @@ const MONITOR_FEEDS = [
   },
   {
     id: "osha-fr",
-    folder: "official",
+    folder: "broad",
     title: "OSHA — Federal Register",
     kind: "rss",
     url: "https://www.osha.gov/laws-regs/federalregisters.xml",
@@ -172,7 +185,7 @@ const MONITOR_FEEDS = [
   },
   {
     id: "osha-directives",
-    folder: "official",
+    folder: "broad",
     title: "OSHA — Directives",
     kind: "rss",
     url: "https://www.osha.gov/enforcement/directives.xml",
@@ -180,7 +193,7 @@ const MONITOR_FEEDS = [
   },
   {
     id: "osha-interps",
-    folder: "official",
+    folder: "broad",
     title: "OSHA — Standard Interpretations",
     kind: "rss",
     url: "https://www.osha.gov/laws-regs/standardinterpretations.xml",
@@ -188,7 +201,7 @@ const MONITOR_FEEDS = [
   },
   {
     id: "osha-news",
-    folder: "official",
+    folder: "broad",
     title: "OSHA — News Releases",
     kind: "rss",
     url: "https://www.osha.gov/news/newsreleases.xml",
@@ -196,10 +209,18 @@ const MONITOR_FEEDS = [
   },
   {
     id: "dol-news",
-    folder: "official",
+    folder: "broad",
     title: "U.S. Department of Labor — News Releases",
     kind: "rss",
     url: "https://www.dol.gov/rss/releases.xml",
+    filter: true,
+  },
+  {
+    id: "osha-quicktakes",
+    folder: "broad",
+    title: "OSHA — QuickTakes",
+    kind: "rss",
+    url: "https://www.osha.gov/sites/default/files/quicktakes.xml",
     filter: true,
   },
   {
@@ -244,7 +265,7 @@ function xmlAttr(block, name, attr) {
 
 function matchesKeywords(text) {
   const hay = String(text || "").toLowerCase();
-  return MONITOR_KEYWORDS.some((kw) => hay.includes(kw));
+  return BROAD_KEYWORDS.some((kw) => hay.includes(kw));
 }
 
 function parseRssItems(xml, source) {
@@ -356,7 +377,7 @@ async function loadMonitor() {
     deduped.push(item);
   }
   deduped.sort((a, b) => Date.parse(b.published || 0) - Date.parse(a.published || 0));
-  return { generatedAt: new Date().toISOString(), sources, items: deduped.slice(0, 40) };
+  return { generatedAt: new Date().toISOString(), sources, items: deduped.slice(0, 150) };
 }
 
 export default {
