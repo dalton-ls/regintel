@@ -1,26 +1,37 @@
+import { sanitizeFeedText, sanitizeUrlText } from "./text.js";
+
 export function decodeXml(value) {
-  return String(value || "")
+  const stripped = String(value || "")
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&#x2F;/gi, "/")
-    .replace(/\s+/g, " ")
-    .trim();
+    .replace(/<[^>]+>/g, " ");
+  return sanitizeFeedText(stripped);
+}
+
+function decodeXmlUrl(value) {
+  const stripped = String(value || "")
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
+    .replace(/<[^>]+>/g, " ");
+  return sanitizeUrlText(stripped);
+}
+
+function xmlInner(block, name) {
+  const match = block.match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)</${name}>`, "i"));
+  return match ? match[1] : "";
 }
 
 function xmlTag(block, name) {
-  const match = block.match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)</${name}>`, "i"));
-  return match ? decodeXml(match[1]) : "";
+  const inner = xmlInner(block, name);
+  return inner ? decodeXml(inner) : "";
+}
+
+function xmlTagUrl(block, name) {
+  const inner = xmlInner(block, name);
+  return inner ? decodeXmlUrl(inner) : "";
 }
 
 function xmlAttr(block, name, attr) {
   const match = block.match(new RegExp(`<${name}[^>]*\\s${attr}=["']([^"']+)["'][^>]*/?>`, "i"));
-  return match ? match[1].trim() : "";
+  return match ? sanitizeUrlText(match[1]) : "";
 }
 
 export function looksLikeXmlFeed(xml) {
@@ -35,7 +46,7 @@ export function parseRssItems(xml, source) {
   }
   const chunks = xml.match(/<item[\s\S]*?<\/item>/gi) || xml.match(/<entry[\s\S]*?<\/entry>/gi) || [];
   return chunks.map((block) => {
-    const link = xmlTag(block, "link") || xmlAttr(block, "link", "href") || xmlTag(block, "guid");
+    const link = xmlTagUrl(block, "link") || xmlAttr(block, "link", "href") || xmlTagUrl(block, "guid");
     const published = xmlTag(block, "pubDate") || xmlTag(block, "published") || xmlTag(block, "updated") || xmlTag(block, "dc:date");
     const updated = xmlTag(block, "updated") || xmlTag(block, "dc:modified") || "";
     return {
@@ -62,14 +73,14 @@ export function parseFrApi(payload, source) {
       ? row.agencies.map((a) => a.name || a.raw_name || "").filter(Boolean).join("; ")
       : (source.agency || "");
     return {
-      title: row.title || "",
-      link: row.html_url || row.pdf_url || "",
+      title: sanitizeFeedText(row.title || ""),
+      link: sanitizeUrlText(row.html_url || row.pdf_url || ""),
       published: row.publication_date || "",
       lastModified: row.signing_date || "",
-      snippet: row.abstract || row.excerpts || "",
-      agency: agencies || source.agency || "",
-      documentType: row.type || "",
-      citation: row.citation || "",
+      snippet: sanitizeFeedText(row.abstract || row.excerpts || ""),
+      agency: sanitizeFeedText(agencies || source.agency || ""),
+      documentType: sanitizeFeedText(row.type || ""),
+      citation: sanitizeFeedText(row.citation || ""),
       documentNumber: row.document_number || "",
       effectiveDate: row.effective_on || "",
     };

@@ -1,5 +1,6 @@
 import { MAX_ITEMS_PER_SOURCE } from "./config.js";
 import { classifyRelevance } from "./relevance.js";
+import { sanitizeFeedRecord, sanitizeFeedText } from "./text.js";
 
 export function canonicalizeUrl(url) {
   if (!url) return null;
@@ -95,7 +96,8 @@ export async function normalizeRawItems(rawItems, source, retrievedAt) {
   const invalidDates = [];
   const slice = rawItems.slice(0, MAX_ITEMS_PER_SOURCE);
 
-  for (const raw of slice) {
+  for (const incoming of slice) {
+    const raw = sanitizeFeedRecord(incoming);
     const sourceUrl = canonicalizeUrl(raw.link);
     if (raw.link && !sourceUrl) {
       unsafe.push({
@@ -121,14 +123,14 @@ export async function normalizeRawItems(rawItems, source, retrievedAt) {
       pub.isoDate,
     ].join("|"));
     const item = {
-      title: String(raw.title || "").trim(),
-      source: source.title,
+      title: sanitizeFeedText(raw.title || "").trim(),
+      source: sanitizeFeedText(source.title),
       sourceId: source.id,
       sourceUrl: sourceUrl || "",
-      queryLabel: source.queryLabel || source.title,
+      queryLabel: sanitizeFeedText(source.queryLabel || source.title),
       citation: cites.citation,
       documentNumber: cites.documentNumber,
-      agency: raw.agency || source.agency || "",
+      agency: sanitizeFeedText(raw.agency || source.agency || ""),
       documentType: types.documentType,
       ruleStatus: types.ruleStatus,
       publicationDate: pub.valid ? pub.isoDate : "",
@@ -137,11 +139,11 @@ export async function normalizeRawItems(rawItems, source, retrievedAt) {
       retrievedAt,
       lastModified: lastMod.valid ? lastMod.isoDate : "",
       relevance: relevance.classification,
-      relevanceReason: relevance.reasons.join(" · "),
+      relevanceReason: sanitizeFeedText(relevance.reasons.join(" | ")),
       relevanceScore: relevance.score,
       contentHash,
       folder: source.folder,
-      snippet: String(raw.snippet || "").trim().slice(0, 400),
+      snippet: sanitizeFeedText(String(raw.snippet || "")).slice(0, 400),
     };
     item.dedupeKey = dedupeKeyFor(item);
     if (!item.title) continue;
@@ -149,11 +151,11 @@ export async function normalizeRawItems(rawItems, source, retrievedAt) {
       excluded.push({
         title: item.title,
         sourceId: source.id,
-        source: source.title,
+        source: sanitizeFeedText(source.title),
         queryLabel: item.queryLabel,
         sourceUrl: item.sourceUrl,
         classification: item.relevance,
-        reasons: relevance.reasons,
+        reasons: relevance.reasons.map((reason) => sanitizeFeedText(reason)),
         exclusionCode: relevance.exclusionCode || "excluded",
       });
       continue;

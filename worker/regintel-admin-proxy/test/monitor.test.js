@@ -412,3 +412,30 @@ test("dedupe prefers document number over URL", async () => {
   assert.equal(items.length, 1);
   assert.equal(duplicates.length, 1);
 });
+
+test("repairs RSS mojibake and ASCII-folds punctuation for future feed items", async () => {
+  const { sanitizeFeedText } = await import("../src/monitor/text.js");
+  const mojiEm = "\u00E2\u20AC\u201D";
+  assert.equal(sanitizeFeedText("SNF " + mojiEm + " PPS"), "SNF - PPS");
+  assert.equal(sanitizeFeedText("Sunday\u2013Saturday"), "Sunday-Saturday");
+  assert.equal(sanitizeFeedText("Read more\u2026"), "Read more...");
+  assert.equal(sanitizeFeedText("SNF &#8212; staffing"), "SNF - staffing");
+
+  const xml = `<?xml version="1.0"?><rss version="2.0"><channel>
+    <item>
+      <title>SNF ${mojiEm} staffing &#8212; update</title>
+      <link>https://skillednursingnews.com/mojibake</link>
+      <pubDate>Sat, 01 Aug 2026 12:00:00 GMT</pubDate>
+      <description>Sunday&ndash;Saturday coverage for skilled nursing facilities.</description>
+    </item>
+  </channel></rss>`;
+  const payload = await ingestMonitor({
+    feeds: [RSS],
+    fetchImpl: fetchMap({ "skillednursingnews.com/feed": textRes(xml) }),
+    now: () => new Date("2026-08-24T15:00:00Z"),
+  });
+  assert.equal(payload.items[0].title.includes("â"), false);
+  assert.equal(payload.items[0].title.includes("\u2014"), false);
+  assert.match(payload.items[0].title, /SNF - staffing - update/);
+  assert.match(payload.items[0].snippet, /Sunday-Saturday/);
+});

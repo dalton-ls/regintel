@@ -249,12 +249,12 @@
       <span class="header-sep">|</span>
       <span class="header-subtitle">Quality Monitor</span>
     </div>
-    <a class="header-link" href="regintel.html">Open research view â†’</a>
+    <a class="header-link" href="regintel.html">Open research view -></a>
   </header>
   <main>
     <p class="eyebrow">Quality Manager monitoring</p>
     <h1 class="page-title">Skilled Nursing Facility Updates</h1>
-    <p class="lead">Official is the SNF-focused HHS/CMS Federal Register digest, plus GovInfo searches for skilled nursing, nursing homes, and 42 CFR 483. Context is industry reporting and secondary signals â€” it creates a review item, not a product change. Pages are CMS and related sources with no stable RSS. OSHA is out of this import. This is a notification layer. Weeks run Sundayâ€“Saturday.</p>
+    <p class="lead">Official is the SNF-focused HHS/CMS Federal Register digest, plus GovInfo searches for skilled nursing, nursing homes, and 42 CFR 483. Context is industry reporting and secondary signals - it creates a review item, not a product change. Pages are CMS and related sources with no stable RSS. OSHA is out of this import. This is a notification layer. Weeks run Sunday-Saturday.</p>
 
     <div class="controls">
       <div class="tabs" id="monitor-tabs">
@@ -265,7 +265,7 @@
       <div class="tools" id="monitor-tools">
         <div class="search-wrap">
           <svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.4"/><path d="M9.5 9.5l2.5 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
-          <input id="feed-search" type="search" placeholder="Filter articlesâ€¦" autocomplete="off">
+          <input id="feed-search" type="search" placeholder="Filter articles..." autocomplete="off">
         </div>
         <select id="feed-sort" aria-label="Sort weeks">
           <option value="desc">Newest first</option>
@@ -290,21 +290,21 @@
         title: "CMS and SNF quality sources",
         note: "No stable RSS. Review on the weekly cadence. These are not part of the live feed.",
         links: [
-          ["CMS QSO â€” Policy and Memos to States and CMS Locations", "https://www.cms.gov/medicare/health-safety-standards/quality-safety-oversight-general-information/policy-memos/policy-memos-states-cms-locations"],
+          ["CMS QSO - Policy and Memos to States and CMS Locations", "https://www.cms.gov/medicare/health-safety-standards/quality-safety-oversight-general-information/policy-memos/policy-memos-states-cms-locations"],
           ["CMS Quality and Safety Special Alerts", "https://www.cms.gov/medicare/health-safety-standards/quality-safety-oversight-general-information/quality-safety-special-alerts"],
-          ["CMS Nursing Homes â€” certification, survey, and compliance", "https://www.cms.gov/medicare/health-safety-standards/certification-compliance/nursing-homes"],
+          ["CMS Nursing Homes - certification, survey, and compliance", "https://www.cms.gov/medicare/health-safety-standards/certification-compliance/nursing-homes"],
           ["CMS Skilled Nursing Facility PPS", "https://www.cms.gov/medicare/payment/prospective-payment-systems/skilled-nursing-facility-snf"],
           ["CMS List of SNF Federal Regulations", "https://www.cms.gov/medicare/payment/prospective-payment-systems/skilled-nursing-facility-snf/list-federal-regulations"],
           ["CMS SNF Information Center", "https://www.cms.gov/snf-information-center"],
           ["CMS MDS/RAI Manual", "https://www.cms.gov/medicare/quality/nursing-home-improvement/resident-assessment-instrument-manual"],
           ["CMS PBJ policy information", "https://www.cms.gov/medicare/quality/nursing-home-improvement/staffing-data-submission"],
           ["CMS Transmittals", "https://www.cms.gov/medicare/regulations-guidance/transmittals"],
-          ["eCFR â€” 42 CFR Part 483", "https://www.ecfr.gov/current/title-42/chapter-IV/subchapter-G/part-483"],
-          ["CDC NHSN â€” Long-Term Care Facilities", "https://www.cdc.gov/nhsn/ltc/index.html"],
-          ["CMS QSEP â€” Quality, Safety, and Education Portal", "https://qsep.cms.gov/ProvidersAndOthers/loginother.aspx"],
-          ["CMS QCOR â€” Quality, Certification, and Oversight Reports", "https://qcor.cms.gov/main.jsp"],
-          ["Medicare Care Compare â€” Inspection Results", "https://www.medicare.gov/care-compare/"],
-          ["ProPublica â€” Nursing Home Database", "https://projects.propublica.org/nursing-homes/"]
+          ["eCFR - 42 CFR Part 483", "https://www.ecfr.gov/current/title-42/chapter-IV/subchapter-G/part-483"],
+          ["CDC NHSN - Long-Term Care Facilities", "https://www.cdc.gov/nhsn/ltc/index.html"],
+          ["CMS QSEP - Quality, Safety, and Education Portal", "https://qsep.cms.gov/ProvidersAndOthers/loginother.aspx"],
+          ["CMS QCOR - Quality, Certification, and Oversight Reports", "https://qcor.cms.gov/main.jsp"],
+          ["Medicare Care Compare - Inspection Results", "https://www.medicare.gov/care-compare/"],
+          ["ProPublica - Nursing Home Database", "https://projects.propublica.org/nursing-homes/"]
         ]
       },
       {
@@ -353,8 +353,47 @@
       cross_setting: "Cross-setting"
     };
 
+    function sanitizeDisplayText(value) {
+      var s = String(value == null ? "" : value);
+      var i, j, bytes, decoded, ok, c, b;
+      var cp = { 0x20AC: 0x80, 0x201A: 0x82, 0x201E: 0x84, 0x2026: 0x85, 0x2018: 0x91, 0x2019: 0x92, 0x201C: 0x93, 0x201D: 0x94, 0x2013: 0x96, 0x2014: 0x97 };
+      for (i = 0; i < 3; i += 1) {
+        s = s
+          .replace(/\u00E2\u20AC[\u201C\u201D\u2013\u2014]/g, "-")
+          .replace(/\u00E2\u20AC[\u00A6\u2026]/g, "...")
+          .replace(/\u00E2\u20AC[\u2018\u2019]/g, "'")
+          .replace(/\u00C2\u00A0/g, " ");
+        if (!/\u00E2.|\u00C3.|\u00C2.|\u00F0\u009F/.test(s)) break;
+        bytes = [];
+        ok = true;
+        for (j = 0; j < s.length; j += 1) {
+          c = s.charCodeAt(j);
+          if (c < 128 || (c >= 160 && c <= 255)) b = c;
+          else if (cp[c] != null) b = cp[c];
+          else { ok = false; break; }
+          bytes.push(b);
+        }
+        if (!ok || typeof TextDecoder === "undefined") break;
+        try {
+          decoded = new TextDecoder("utf-8").decode(new Uint8Array(bytes));
+        } catch (e) { break; }
+        if (!decoded || decoded === s) break;
+        s = decoded;
+      }
+      return s
+        .replace(/[\u2010-\u2015\u2212\uFE58\uFF0D]/g, "-")
+        .replace(/\u00A0/g, " ")
+        .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
+        .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
+        .replace(/[\u2026]/g, "...")
+        .replace(/[\u2022\u25CF]/g, "*")
+        .replace(/[\u00B7]/g, " | ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
     function escapeHtml(s) {
-      return String(s || "").replace(/[&<>"']/g, function (ch) {
+      return sanitizeDisplayText(s).replace(/[&<>"']/g, function (ch) {
         return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch];
       });
     }
@@ -378,7 +417,7 @@
     }
 
     function formatStamp(iso) {
-      if (!iso) return "â€”";
+      if (!iso) return "-";
       const d = new Date(iso);
       if (isNaN(d.getTime())) return escapeHtml(iso);
       return d.toLocaleString("en-US", { timeZone: TIMEZONE, dateStyle: "medium", timeStyle: "short" }) + " ET";
@@ -454,7 +493,7 @@
       if (!a || !b) return startYmd;
       const left = a.month + "/" + a.d;
       const right = b.month + "/" + b.d;
-      return a.y + ": " + (left === right ? left : left + "â€“" + right);
+      return a.y + ": " + (left === right ? left : left + "-" + right);
     }
 
     function sortItems(items, dir) {
@@ -535,7 +574,7 @@
             metaChip("Agency", item.agency) +
             metaChip("Type", item.documentType || item.ruleStatus) +
             metaChip("Published", item.publicationDate || "Date not stated") +
-            metaChip("Effective", item.effectiveDate || "â€”") +
+            metaChip("Effective", item.effectiveDate || "-") +
             metaChip("Applicability", item.applicability) +
             metaChip("Query", item.queryLabel) +
             '<span class="item-id">' + escapeHtml(item.sourceId) + "</span>" +
@@ -566,7 +605,7 @@
       if (pageCount <= 1) return "";
       return '<div class="pager"><button type="button" data-week="' + weekKey + '" data-dir="-1"' +
         (page === 0 ? " disabled" : "") + ">Previous</button><span>Page " +
-        (page + 1) + " of " + pageCount + " Â· " + PAGE_SIZE +
+        (page + 1) + " of " + pageCount + " | " + PAGE_SIZE +
         ' articles per page</span><button type="button" data-week="' + weekKey + '" data-dir="1"' +
         (page >= pageCount - 1 ? " disabled" : "") + ">Next</button></div>";
     }
@@ -593,9 +632,9 @@
       const sources = payload.sources || [];
       const rows = sources.map(function (src) {
         return "<tr><td>" + escapeHtml(src.title) + '<div class="item-id">' + escapeHtml(src.id) + "</div></td><td>" +
-          (src.ok ? '<span class="ok-dot">â—</span> ' : '<span class="fail-dot">â—</span> ') +
+          (src.ok ? '<span class="ok-dot">*</span> ' : '<span class="fail-dot">*</span> ') +
           escapeHtml(sourceStatusLabel(src)) + "</td><td>" + (src.itemCount || 0) + "</td><td>" +
-          (src.lastSuccessAt ? formatStamp(src.lastSuccessAt) : "â€”") + "</td><td>" +
+          (src.lastSuccessAt ? formatStamp(src.lastSuccessAt) : "-") + "</td><td>" +
           escapeHtml(src.error || "") + "</td></tr>";
       }).join("");
       const excluded = payload.excluded || [];
@@ -603,7 +642,7 @@
         ? '<details class="health-details"><summary>Excluded Official items (' + excluded.length + ")</summary><div class=\"source-table-wrap\"><table class=\"source-table\"><thead><tr><th>Title</th><th>Source ID</th><th>Reason</th></tr></thead><tbody>" +
           excluded.map(function (row) {
             return "<tr><td>" + escapeHtml(row.title) + "</td><td>" + escapeHtml(row.sourceId) + "</td><td>" +
-              escapeHtml((row.reasons || []).join(" Â· ") || row.exclusionCode || "") + "</td></tr>";
+              escapeHtml((row.reasons || []).join(" | ") || row.exclusionCode || "") + "</td></tr>";
           }).join("") + "</tbody></table></div></details>"
         : "";
       el.innerHTML = '<div class="status-banner ' + tone + '">' +
@@ -611,7 +650,7 @@
         "<span><span class=\"status-k\">Generated</span>" + formatStamp(payload.generatedAt) + "</span>" +
         "<span><span class=\"status-k\">Last success</span>" + formatStamp(payload.lastSuccessAt) + "</span>" +
         "<span><span class=\"status-k\">Cache age</span>" + escapeHtml(formatCacheAge(payload.cacheAgeSeconds)) + "</span>" +
-        (payload.payloadHash ? "<span><span class=\"status-k\">Integrity</span><span class=\"item-id\">" + escapeHtml(payload.payloadHash.slice(0, 12)) + "â€¦</span></span>" : "") +
+        (payload.payloadHash ? "<span><span class=\"status-k\">Integrity</span><span class=\"item-id\">" + escapeHtml(payload.payloadHash.slice(0, 12)) + "...</span></span>" : "") +
         (health.warning ? '<span class="warn-inline" style="margin:0">' + escapeHtml(health.warning) + "</span>" : "") +
         "</div><details class=\"health-details\"><summary>Source health (" + sources.length + ")</summary>" +
         '<div class="source-table-wrap"><table class="source-table"><thead><tr><th>Source</th><th>Status</th><th>Items</th><th>Last success</th><th>Error</th></tr></thead><tbody>' +
@@ -679,7 +718,7 @@
           body + "</div></details>";
       }).join("") + "</div>";
       const limit = payload.displayWeekLimit || MAX_WEEKS;
-      html += '<p class="note">Showing up to ' + limit + " Sundayâ€“Saturday weeks in " +
+      html += '<p class="note">Showing up to ' + limit + " Sunday-Saturday weeks in " +
         escapeHtml(payload.timezone || TIMEZONE) + ". Older dated items are not shown" +
         (grouped.hiddenOlder ? " (" + grouped.hiddenOlder + " hidden)" : "") +
         ". Notification only. Confirm citation, effective date, and applicability in the primary source before changing product logic.</p>";

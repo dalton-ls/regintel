@@ -40,7 +40,7 @@ export function formatWeekLabel(startYmd, endYmd) {
   if (!a || !b) return startYmd;
   const left = `${a.month}/${a.d}`;
   const right = `${b.month}/${b.d}`;
-  return `${a.y}: ${left === right ? left : `${left}–${right}`}`;
+  return `${a.y}: ${left === right ? left : `${left}-${right}`}`;
 }
 
 export function groupItemsByWeek(items, now = new Date(), timeZone = TIMEZONE, limit = DISPLAY_WEEK_LIMIT) {

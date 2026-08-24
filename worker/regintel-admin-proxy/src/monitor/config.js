@@ -19,7 +19,7 @@ export const MONITOR_FEEDS = [
   {
     id: "fr-snf-pps",
     folder: "official",
-    title: "Federal Register — HHS/CMS — SNF PPS rules",
+    title: "Federal Register - HHS/CMS - SNF PPS rules",
     queryLabel: "HHS/CMS · term SNF PPS · proposed/final rules",
     agency: "HHS / CMS",
     kind: "fr-api",
@@ -28,7 +28,7 @@ export const MONITOR_FEEDS = [
   {
     id: "fr-snf",
     folder: "official",
-    title: "Federal Register — HHS/CMS — SNF rules",
+    title: "Federal Register - HHS/CMS - SNF rules",
     queryLabel: "HHS/CMS · term skilled nursing facility · proposed/final rules",
     agency: "HHS / CMS",
     kind: "fr-api",
@@ -37,7 +37,7 @@ export const MONITOR_FEEDS = [
   {
     id: "govinfo-fr-snf",
     folder: "official",
-    title: "GovInfo FR — skilled nursing facility",
+    title: "GovInfo FR - skilled nursing facility",
     queryLabel: 'Federal Register collection · "skilled nursing facility"',
     agency: "Federal Register / GovInfo",
     kind: "govinfo-search",
@@ -46,7 +46,7 @@ export const MONITOR_FEEDS = [
   {
     id: "govinfo-fr-nh",
     folder: "official",
-    title: "GovInfo FR — nursing home",
+    title: "GovInfo FR - nursing home",
     queryLabel: 'Federal Register collection · "nursing home"',
     agency: "Federal Register / GovInfo",
     kind: "govinfo-search",
@@ -55,7 +55,7 @@ export const MONITOR_FEEDS = [
   {
     id: "govinfo-fr-483",
     folder: "official",
-    title: "GovInfo FR — 42 CFR 483",
+    title: "GovInfo FR - 42 CFR 483",
     queryLabel: 'Federal Register collection · "42 CFR 483"',
     agency: "Federal Register / GovInfo",
     kind: "govinfo-search",
@@ -64,7 +64,7 @@ export const MONITOR_FEEDS = [
   {
     id: "govinfo-fr-ltc",
     folder: "official",
-    title: "GovInfo FR — long-term care facility",
+    title: "GovInfo FR - long-term care facility",
     queryLabel: 'Federal Register collection · "long-term care facility"',
     agency: "Federal Register / GovInfo",
     kind: "govinfo-search",
@@ -73,7 +73,7 @@ export const MONITOR_FEEDS = [
   {
     id: "govinfo-fr-pps",
     folder: "official",
-    title: "GovInfo FR — SNF PPS",
+    title: "GovInfo FR - SNF PPS",
     queryLabel: 'Federal Register collection · "SNF PPS" OR "skilled nursing facility" PPS',
     agency: "Federal Register / GovInfo",
     kind: "govinfo-search",
@@ -82,7 +82,7 @@ export const MONITOR_FEEDS = [
   {
     id: "govinfo-fr-qrp",
     folder: "official",
-    title: "GovInfo FR — quality reporting nursing home",
+    title: "GovInfo FR - quality reporting nursing home",
     queryLabel: 'Federal Register collection · quality reporting AND (nursing home OR SNF)',
     agency: "Federal Register / GovInfo",
     kind: "govinfo-search",
@@ -99,7 +99,7 @@ export const MONITOR_FEEDS = [
   {
     id: "snn-medicare",
     folder: "context",
-    title: "Skilled Nursing News — Medicare",
+    title: "Skilled Nursing News - Medicare",
     queryLabel: "SNN category Medicare",
     kind: "rss",
     url: "https://skillednursingnews.com/category/medicare/feed/",
@@ -107,7 +107,7 @@ export const MONITOR_FEEDS = [
   {
     id: "snn-medicaid",
     folder: "context",
-    title: "Skilled Nursing News — Medicaid",
+    title: "Skilled Nursing News - Medicaid",
     queryLabel: "SNN category Medicaid",
     kind: "rss",
     url: "https://skillednursingnews.com/category/medicaid/feed/",
@@ -115,7 +115,7 @@ export const MONITOR_FEEDS = [
   {
     id: "snn-compliance",
     folder: "context",
-    title: "Skilled Nursing News — Compliance",
+    title: "Skilled Nursing News - Compliance",
     queryLabel: "SNN category Compliance",
     kind: "rss",
     url: "https://skillednursingnews.com/category/compliance/feed/",
@@ -123,7 +123,7 @@ export const MONITOR_FEEDS = [
   {
     id: "snn-legislation",
     folder: "context",
-    title: "Skilled Nursing News — Legislation",
+    title: "Skilled Nursing News - Legislation",
     queryLabel: "SNN category Legislation",
     kind: "rss",
     url: "https://skillednursingnews.com/category/legislation/feed/",
@@ -131,7 +131,7 @@ export const MONITOR_FEEDS = [
   {
     id: "snn-staffing",
     folder: "context",
-    title: "Skilled Nursing News — Staffing",
+    title: "Skilled Nursing News - Staffing",
     queryLabel: "SNN category Staffing",
     kind: "rss",
     url: "https://skillednursingnews.com/category/staffing/feed/",
@@ -139,7 +139,7 @@ export const MONITOR_FEEDS = [
   {
     id: "snn-ma",
     folder: "context",
-    title: "Skilled Nursing News — Medicare Advantage",
+    title: "Skilled Nursing News - Medicare Advantage",
     queryLabel: "SNN category Medicare Advantage",
     kind: "rss",
     url: "https://skillednursingnews.com/category/medicare-advantage/feed/",
@@ -147,7 +147,7 @@ export const MONITOR_FEEDS = [
   {
     id: "snn-fraud",
     folder: "context",
-    title: "Skilled Nursing News — Fraud",
+    title: "Skilled Nursing News - Fraud",
     queryLabel: "SNN category Fraud",
     kind: "rss",
     url: "https://skillednursingnews.com/category/fraud/feed/",
@@ -155,7 +155,7 @@ export const MONITOR_FEEDS = [
   {
     id: "snn-litigation",
     folder: "context",
-    title: "Skilled Nursing News — Litigation",
+    title: "Skilled Nursing News - Litigation",
     queryLabel: "SNN category Litigation",
     kind: "rss",
     url: "https://skillednursingnews.com/category/litigation/feed/",
@@ -163,7 +163,7 @@ export const MONITOR_FEEDS = [
   {
     id: "willitcare",
     folder: "context",
-    title: "Will It Care — national nursing-home changes",
+    title: "Will It Care - national nursing-home changes",
     queryLabel: "Will It Care changes.xml",
     kind: "rss",
     url: "https://willitcare.com/changes.xml",
@@ -171,7 +171,7 @@ export const MONITOR_FEEDS = [
   {
     id: "nhr-sff",
     folder: "context",
-    title: "NursingHomeRating.org — Special Focus Facilities",
+    title: "NursingHomeRating.org - Special Focus Facilities",
     queryLabel: "NursingHomeRating SFF XML",
     kind: "rss",
     url: "https://nursinghomerating.org/xml-sff.xml",
@@ -179,7 +179,7 @@ export const MONITOR_FEEDS = [
   {
     id: "kff-medicaid",
     folder: "context",
-    title: "KFF — Medicaid",
+    title: "KFF - Medicaid",
     queryLabel: "KFF Medicaid topic feed",
     kind: "rss",
     url: "https://www.kff.org/topic/medicaid/feed/",
@@ -187,7 +187,7 @@ export const MONITOR_FEEDS = [
   {
     id: "kff-medicare",
     folder: "context",
-    title: "KFF — Medicare",
+    title: "KFF - Medicare",
     queryLabel: "KFF Medicare topic feed",
     kind: "rss",
     url: "https://www.kff.org/topic/medicare/feed/",
@@ -195,7 +195,7 @@ export const MONITOR_FEEDS = [
   {
     id: "kff-private",
     folder: "context",
-    title: "KFF — Private Insurance",
+    title: "KFF - Private Insurance",
     queryLabel: "KFF private insurance topic feed",
     kind: "rss",
     url: "https://www.kff.org/topic/private-insurance/feed/",
@@ -203,7 +203,7 @@ export const MONITOR_FEEDS = [
   {
     id: "kff-state",
     folder: "context",
-    title: "KFF — State Health Policy Data",
+    title: "KFF - State Health Policy Data",
     queryLabel: "KFF state health policy topic feed",
     kind: "rss",
     url: "https://www.kff.org/topic/state-health-policy-data/feed/",
@@ -211,7 +211,7 @@ export const MONITOR_FEEDS = [
   {
     id: "aapacn-don",
     folder: "context",
-    title: "AAPACN — LTC DON Chat",
+    title: "AAPACN - LTC DON Chat",
     queryLabel: "AAPACN LTC DON Chat podcast",
     kind: "rss",
     url: "https://feeds.podcastmirror.com/ltc-don-chat",
@@ -219,7 +219,7 @@ export const MONITOR_FEEDS = [
   {
     id: "aapacn-nac",
     folder: "context",
-    title: "AAPACN — LTC NAC Chat",
+    title: "AAPACN - LTC NAC Chat",
     queryLabel: "AAPACN LTC NAC Chat podcast",
     kind: "rss",
     url: "https://feeds.podcastmirror.com/ltc-nac-chat",

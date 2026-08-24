@@ -12,6 +12,7 @@ import { parseFrApi, parseGovInfo, parseRssItems } from "./parse.js";
 import { dedupeItems, normalizeRawItems, sha256Hex } from "./normalize.js";
 import { sortItems } from "./weeks.js";
 import { emptyFailedPayload, validatePayload } from "./schema.js";
+import { sanitizePayloadStrings } from "./text.js";
 
 export { MONITOR_FEEDS, SCHEMA_VERSION, STALE_AFTER_SECONDS, TIMEZONE, DISPLAY_WEEK_LIMIT };
 export { validatePayload, emptyFailedPayload };
@@ -169,7 +170,7 @@ export async function ingestMonitor({
   else if (failed.length) overallStatus = "partial";
   else if (!items.length) overallStatus = "empty";
 
-  const payload = {
+  const payload = sanitizePayloadStrings({
     schemaVersion: SCHEMA_VERSION,
     generatedAt: retrievedAt,
     refreshedAt: retrievedAt,
@@ -195,16 +196,17 @@ export async function ingestMonitor({
       unsafe: unsafe.slice(0, 40),
       invalidDateSamples: invalidDates.slice(0, 20),
     },
-  };
-  payload.payloadHash = await sha256Hex(JSON.stringify({
-    schemaVersion: payload.schemaVersion,
-    generatedAt: payload.generatedAt,
-    items: payload.items,
-    sources: payload.sources.map((s) => ({ id: s.id, status: s.status, itemCount: s.itemCount, ok: s.ok })),
+  });
+  const cleaned = sanitizePayloadStrings(payload);
+  cleaned.payloadHash = await sha256Hex(JSON.stringify({
+    schemaVersion: cleaned.schemaVersion,
+    generatedAt: cleaned.generatedAt,
+    items: cleaned.items,
+    sources: cleaned.sources.map((s) => ({ id: s.id, status: s.status, itemCount: s.itemCount, ok: s.ok })),
     excludedCount: excluded.length,
   }));
 
-  const check = validatePayload(payload);
+  const check = validatePayload(cleaned);
   if (!check.ok) {
     logEvent(log, "error", "payload_invalid", { error: check.error });
     throw new Error(`payload failed schema validation: ${check.error}`);
@@ -214,7 +216,7 @@ export async function ingestMonitor({
     items: items.length,
     failedSources: failed.length,
   });
-  return payload;
+  return cleaned;
 }
 
 export function agePayload(payload, now = new Date()) {
@@ -244,7 +246,7 @@ export async function readCachedPayload(cache, origin) {
 
 export function jsonResponse(payload, origin, extraHeaders = {}) {
   const headers = {
-    "Content-Type": "application/json",
+    "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": CACHE_CONTROL,
     "X-QM-Schema": SCHEMA_VERSION,
     "X-QM-Generated-At": payload.generatedAt || "",
