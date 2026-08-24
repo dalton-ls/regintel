@@ -152,13 +152,11 @@
     .src-govinfo-fr-ltc { background: #e2e8f0; color: #334155; }
     .src-govinfo-fr-pps { background: #ede9fe; color: #5b21b6; }
     .src-govinfo-fr-qrp { background: #ecfccb; color: #3f6212; }
-    .src-osha-fr { background: #e0e7ff; color: #3730a3; }
-    .src-osha-directives { background: #fce7f3; color: #9d174d; }
-    .src-osha-interps { background: #ecfdf5; color: #065f46; }
-    .src-osha-news { background: #fff7ed; color: #9a3412; }
-    .src-osha-quicktakes { background: #fef3c7; color: #92400e; }
-    .src-dol-news { background: #f0f9ff; color: #0c4a6e; }
     .src-snn { background: #fdf4ff; color: #7e22ce; }
+    .src-snn-topic { background: #fae8ff; color: #86198f; }
+    .src-quality { background: #ffedd5; color: #9a3412; }
+    .src-kff { background: #e0f2fe; color: #075985; }
+    .src-practice { background: #fce7f3; color: #9d174d; }
     .src-other { background: #f1f5f9; color: #475569; }
     .feed-item a.feed-title {
       font-size: 14px; font-weight: 600; color: #1a2332; text-decoration: none;
@@ -179,28 +177,12 @@
       font-size: 12px; font-weight: 600; color: #4a5568;
     }
     .pager button:disabled { opacity: 0.4; cursor: default; }
-    .sources-card {
-      margin-top: 14px;
-      padding: 14px 16px;
-      background: #f7f9fc;
-      border-radius: 10px;
+    .page-group { margin-bottom: 28px; }
+    .page-group:last-child { margin-bottom: 0; }
+    .page-group h2 {
+      font-size: 12px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.04em; color: #6b7a99; margin: 0 0 10px;
     }
-    .sources-card b {
-      display: block; margin-bottom: 8px; font-size: 11px;
-      text-transform: uppercase; letter-spacing: 0.04em; color: #6b7a99;
-    }
-    .sources-card ul { list-style: none; display: grid; gap: 6px; }
-    .sources-card li {
-      display: flex; justify-content: space-between; gap: 12px;
-      font-size: 13px; color: #1a2332;
-    }
-    .sources-card .idle { color: #6b7a99; }
-    .legend-card {
-      margin-top: 24px; border: 1px solid #e2e8f0; background: #fff;
-      border-radius: 12px; padding: 20px;
-    }
-    .legend-card .eyebrow { color: #6b7a99; margin-bottom: 12px; }
-    .legend-pills { display: flex; flex-wrap: wrap; gap: 8px; }
     .cms-list { list-style: none; display: grid; gap: 8px; grid-template-columns: 1fr 1fr; }
     .cms-list a {
       display: flex; align-items: flex-start; gap: 10px;
@@ -229,14 +211,13 @@
   <main>
     <p class="eyebrow">Quality Manager monitoring</p>
     <h1 class="page-title">Skilled Nursing Facility Updates</h1>
-    <p class="lead">Official is the SNF-focused Federal Register digest (HHS/CMS rule feeds plus GovInfo searches for skilled nursing, nursing homes, and 42 CFR 483). Broad official is OSHA/DOL backstop review with keyword filters — not the daily SNF digest. Context is industry reporting. CMS pages have no stable RSS; review them weekly. This is a notification layer — open the source before treating anything as a product or policy change. Weeks run Sunday–Saturday.</p>
+    <p class="lead">Official is the SNF-focused HHS/CMS Federal Register digest, plus GovInfo searches for skilled nursing, nursing homes, and 42 CFR 483. Context is industry reporting and secondary signals — it creates a review item, not a product change. Pages are CMS and related sources with no stable RSS. OSHA is out of this import. This is a notification layer. Weeks run Sunday–Saturday.</p>
 
     <div class="controls">
       <div class="tabs" id="monitor-tabs">
         <button class="active" data-folder="official">Official</button>
-        <button data-folder="broad">Broad</button>
         <button data-folder="context">Context</button>
-        <button data-folder="cms">CMS pages</button>
+        <button data-folder="pages">Pages</button>
       </div>
       <div class="tools" id="monitor-tools">
         <div class="search-wrap">
@@ -251,46 +232,72 @@
     </div>
 
     <div class="panel" id="monitor-panel">Loading regulatory feeds…</div>
-    <div class="legend-card" id="source-legend" hidden></div>
   </main>
   <script>
     const WORKER_URL = "https://regintel-admin-proxy.regintel.workers.dev";
     const PAGE_SIZE = 15;
     const MAX_WEEKS = 5;
-    const BROAD_KEYWORDS = [
-      "nursing home", "health care", "healthcare", "safe patient handling",
-      "workplace violence", "bloodborne pathogens", "respiratory protection",
-      "ergonomics", "skilled nursing", "snf", "long-term care", "long term care"
-    ];
     const RSS_FEEDS = [
-      { id: "fr-snf-pps", folder: "official", title: "Federal Register — HHS/CMS — SNF PPS rules", url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Bagencies%5D%5B%5D=health-and-human-services-department&conditions%5Bterm%5D=SNF%20PPS&conditions%5Btype%5D%5B%5D=RULE&conditions%5Btype%5D%5B%5D=PRORULE", filter: false },
-      { id: "fr-snf", folder: "official", title: "Federal Register — HHS/CMS — SNF rules", url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Bagencies%5D%5B%5D=health-and-human-services-department&conditions%5Bterm%5D=skilled%20nursing%20facility&conditions%5Btype%5D%5B%5D=RULE&conditions%5Btype%5D%5B%5D=PRORULE", filter: false },
+      { id: "fr-snf-pps", folder: "official", title: "Federal Register — HHS/CMS — SNF PPS rules", url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Bagencies%5D%5B%5D=health-and-human-services-department&conditions%5Bterm%5D=SNF%20PPS&conditions%5Btype%5D%5B%5D=RULE&conditions%5Btype%5D%5B%5D=PRORULE" },
+      { id: "fr-snf", folder: "official", title: "Federal Register — HHS/CMS — SNF rules", url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Bagencies%5D%5B%5D=health-and-human-services-department&conditions%5Bterm%5D=skilled%20nursing%20facility&conditions%5Btype%5D%5B%5D=RULE&conditions%5Btype%5D%5B%5D=PRORULE" },
       { id: "govinfo-fr-snf", folder: "official", title: "GovInfo FR — skilled nursing facility" },
       { id: "govinfo-fr-nh", folder: "official", title: "GovInfo FR — nursing home" },
       { id: "govinfo-fr-483", folder: "official", title: "GovInfo FR — 42 CFR 483" },
       { id: "govinfo-fr-ltc", folder: "official", title: "GovInfo FR — long-term care facility" },
       { id: "govinfo-fr-pps", folder: "official", title: "GovInfo FR — SNF PPS" },
       { id: "govinfo-fr-qrp", folder: "official", title: "GovInfo FR — quality reporting nursing home" },
-      { id: "osha-fr", folder: "broad", title: "OSHA — Federal Register", url: "https://www.osha.gov/laws-regs/federalregisters.xml", filter: true },
-      { id: "osha-directives", folder: "broad", title: "OSHA — Directives", url: "https://www.osha.gov/enforcement/directives.xml", filter: true },
-      { id: "osha-interps", folder: "broad", title: "OSHA — Standard Interpretations", url: "https://www.osha.gov/laws-regs/standardinterpretations.xml", filter: true },
-      { id: "osha-news", folder: "broad", title: "OSHA — News Releases", url: "https://www.osha.gov/news/newsreleases.xml", filter: true },
-      { id: "dol-news", folder: "broad", title: "U.S. Department of Labor — News Releases", url: "https://www.dol.gov/rss/releases.xml", filter: true },
-      { id: "osha-quicktakes", folder: "broad", title: "OSHA — QuickTakes", url: "https://www.osha.gov/sites/default/files/quicktakes.xml", filter: true },
-      { id: "snn", folder: "context", title: "Skilled Nursing News", url: "https://skillednursingnews.com/feed/", filter: false }
+      { id: "snn", folder: "context", title: "Skilled Nursing News", url: "https://skillednursingnews.com/feed/" },
+      { id: "snn-medicare", folder: "context", title: "Skilled Nursing News — Medicare", url: "https://skillednursingnews.com/category/medicare/feed/" },
+      { id: "snn-medicaid", folder: "context", title: "Skilled Nursing News — Medicaid", url: "https://skillednursingnews.com/category/medicaid/feed/" },
+      { id: "snn-compliance", folder: "context", title: "Skilled Nursing News — Compliance", url: "https://skillednursingnews.com/category/compliance/feed/" },
+      { id: "snn-legislation", folder: "context", title: "Skilled Nursing News — Legislation", url: "https://skillednursingnews.com/category/legislation/feed/" },
+      { id: "snn-staffing", folder: "context", title: "Skilled Nursing News — Staffing", url: "https://skillednursingnews.com/category/staffing/feed/" },
+      { id: "snn-ma", folder: "context", title: "Skilled Nursing News — Medicare Advantage", url: "https://skillednursingnews.com/category/medicare-advantage/feed/" },
+      { id: "snn-fraud", folder: "context", title: "Skilled Nursing News — Fraud", url: "https://skillednursingnews.com/category/fraud/feed/" },
+      { id: "snn-litigation", folder: "context", title: "Skilled Nursing News — Litigation", url: "https://skillednursingnews.com/category/litigation/feed/" },
+      { id: "willitcare", folder: "context", title: "Will It Care — national nursing-home changes", url: "https://willitcare.com/changes.xml" },
+      { id: "nhr-sff", folder: "context", title: "NursingHomeRating.org — Special Focus Facilities", url: "https://nursinghomerating.org/xml-sff.xml" },
+      { id: "kff-medicaid", folder: "context", title: "KFF — Medicaid", url: "https://www.kff.org/topic/medicaid/feed/" },
+      { id: "kff-medicare", folder: "context", title: "KFF — Medicare", url: "https://www.kff.org/topic/medicare/feed/" },
+      { id: "kff-private", folder: "context", title: "KFF — Private Insurance", url: "https://www.kff.org/topic/private-insurance/feed/" },
+      { id: "kff-state", folder: "context", title: "KFF — State Health Policy Data", url: "https://www.kff.org/topic/state-health-policy-data/feed/" },
+      { id: "aapacn-don", folder: "context", title: "AAPACN — LTC DON Chat", url: "https://feeds.podcastmirror.com/ltc-don-chat" },
+      { id: "aapacn-nac", folder: "context", title: "AAPACN — LTC NAC Chat", url: "https://feeds.podcastmirror.com/ltc-nac-chat" }
     ];
-    const CMS_PAGES = [
-      ["CMS Policy & Memos to States and CMS Locations", "https://www.cms.gov/medicare/health-safety-standards/quality-safety-oversight-general-information/policy-memos/policy-memos-states-cms-locations"],
-      ["CMS Quality & Safety Special Alerts", "https://www.cms.gov/medicare/health-safety-standards/quality-safety-oversight-general-information/quality-safety-special-alerts"],
-      ["CMS Nursing Homes — certification, survey, and compliance", "https://www.cms.gov/medicare/health-safety-standards/certification-compliance/nursing-homes"],
-      ["CMS Skilled Nursing Facility PPS", "https://www.cms.gov/medicare/payment/prospective-payment-systems/skilled-nursing-facility-snf"],
-      ["CMS List of SNF Federal Regulations", "https://www.cms.gov/medicare/payment/prospective-payment-systems/skilled-nursing-facility-snf/list-federal-regulations"],
-      ["CMS SNF Information Center", "https://www.cms.gov/snf-information-center"],
-      ["CMS MDS/RAI Manual", "https://www.cms.gov/medicare/quality/nursing-home-improvement/resident-assessment-instrument-manual"],
-      ["CMS PBJ policy information", "https://www.cms.gov/medicare/quality/nursing-home-improvement/staffing-data-submission"],
-      ["CMS Transmittals", "https://www.cms.gov/medicare/regulations-guidance/transmittals"],
-      ["eCFR — 42 CFR Part 483", "https://www.ecfr.gov/current/title-42/chapter-IV/subchapter-G/part-483"],
-      ["CDC NHSN Long-term Care Facilities", "https://www.cdc.gov/nhsn/ltc/index.html"]
+    const PAGE_GROUPS = [
+      {
+        title: "CMS and SNF quality sources",
+        note: "No stable RSS. Review on the weekly cadence. These are not part of the live feed.",
+        links: [
+          ["CMS QSO — Policy and Memos to States and CMS Locations", "https://www.cms.gov/medicare/health-safety-standards/quality-safety-oversight-general-information/policy-memos/policy-memos-states-cms-locations"],
+          ["CMS Quality and Safety Special Alerts", "https://www.cms.gov/medicare/health-safety-standards/quality-safety-oversight-general-information/quality-safety-special-alerts"],
+          ["CMS Nursing Homes — certification, survey, and compliance", "https://www.cms.gov/medicare/health-safety-standards/certification-compliance/nursing-homes"],
+          ["CMS Skilled Nursing Facility PPS", "https://www.cms.gov/medicare/payment/prospective-payment-systems/skilled-nursing-facility-snf"],
+          ["CMS List of SNF Federal Regulations", "https://www.cms.gov/medicare/payment/prospective-payment-systems/skilled-nursing-facility-snf/list-federal-regulations"],
+          ["CMS SNF Information Center", "https://www.cms.gov/snf-information-center"],
+          ["CMS MDS/RAI Manual", "https://www.cms.gov/medicare/quality/nursing-home-improvement/resident-assessment-instrument-manual"],
+          ["CMS PBJ policy information", "https://www.cms.gov/medicare/quality/nursing-home-improvement/staffing-data-submission"],
+          ["CMS Transmittals", "https://www.cms.gov/medicare/regulations-guidance/transmittals"],
+          ["eCFR — 42 CFR Part 483", "https://www.ecfr.gov/current/title-42/chapter-IV/subchapter-G/part-483"],
+          ["CDC NHSN — Long-Term Care Facilities", "https://www.cdc.gov/nhsn/ltc/index.html"],
+          ["CMS QSEP — Quality, Safety, and Education Portal", "https://qsep.cms.gov/ProvidersAndOthers/loginother.aspx"],
+          ["CMS QCOR — Quality, Certification, and Oversight Reports", "https://qcor.cms.gov/main.jsp"],
+          ["Medicare Care Compare — Inspection Results", "https://www.medicare.gov/care-compare/"],
+          ["ProPublica — Nursing Home Database", "https://projects.propublica.org/nursing-homes/"]
+        ]
+      },
+      {
+        title: "Review when no stable RSS is confirmed",
+        note: "Keep on the weekly web or email list. Do not treat these as live feeds.",
+        links: [
+          ["AHCA/NCAL Communications and News", "https://publish.ahcancal.org/News-and-Communications/Pages/default.aspx"],
+          ["PALTmed News & Media", "https://paltmed.org/news-media"],
+          ["Provider Magazine", "https://www.providermagazine.com/Pages/default.aspx"],
+          ["Consumer Voice Updates", "https://theconsumervoice.org/news/"],
+          ["CMS MLN Connects", "https://www.cms.gov/training-education/medicare-learning-network/newsletter"],
+          ["McKnight's Long-Term Care News", "https://www.mcknights.com/"]
+        ]
+      }
     ];
     const SOURCE_CLASS = {
       "fr-snf-pps": "src-fr-snf-pps",
@@ -301,18 +308,23 @@
       "govinfo-fr-ltc": "src-govinfo-fr-ltc",
       "govinfo-fr-pps": "src-govinfo-fr-pps",
       "govinfo-fr-qrp": "src-govinfo-fr-qrp",
-      "osha-fr": "src-osha-fr",
-      "osha-directives": "src-osha-directives",
-      "osha-interps": "src-osha-interps",
-      "osha-news": "src-osha-news",
-      "osha-quicktakes": "src-osha-quicktakes",
-      "dol-news": "src-dol-news",
-      "snn": "src-snn"
-    };
-    const FOLDER_LEGEND = {
-      official: "SNF-focused official",
-      broad: "Broad official",
-      context: "Context sources"
+      "snn": "src-snn",
+      "snn-medicare": "src-snn-topic",
+      "snn-medicaid": "src-snn-topic",
+      "snn-compliance": "src-snn-topic",
+      "snn-legislation": "src-snn-topic",
+      "snn-staffing": "src-snn-topic",
+      "snn-ma": "src-snn-topic",
+      "snn-fraud": "src-snn-topic",
+      "snn-litigation": "src-snn-topic",
+      "willitcare": "src-quality",
+      "nhr-sff": "src-quality",
+      "kff-medicaid": "src-kff",
+      "kff-medicare": "src-kff",
+      "kff-private": "src-kff",
+      "kff-state": "src-kff",
+      "aapacn-don": "src-practice",
+      "aapacn-nac": "src-practice"
     };
 
     function escapeHtml(s) {
@@ -373,11 +385,6 @@
       };
     }
 
-    function matchesKeywords(text) {
-      const hay = String(text || "").toLowerCase();
-      return BROAD_KEYWORDS.some(function (kw) { return hay.indexOf(kw) !== -1; });
-    }
-
     function fetchWithTimeout(url, ms) {
       const ctrl = new AbortController();
       const timer = setTimeout(function () { ctrl.abort(); }, ms);
@@ -390,10 +397,13 @@
 
     function renderCms() {
       const arrow = '<svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-      return '<p class="muted" style="margin-bottom:20px">CMS does not publish stable RSS feeds for these pages. Review them on your weekly cadence — they are not part of the live feed.</p><ul class="cms-list">' +
-        CMS_PAGES.map(function (row) {
-          return '<li><a href="' + row[1] + '" target="_blank" rel="noopener">' + arrow + escapeHtml(row[0]) + "</a></li>";
-        }).join("") + "</ul>";
+      return PAGE_GROUPS.map(function (group) {
+        return '<section class="page-group"><h2>' + escapeHtml(group.title) + '</h2><p class="muted" style="margin-bottom:12px">' +
+          escapeHtml(group.note) + '</p><ul class="cms-list">' +
+          group.links.map(function (row) {
+            return '<li><a href="' + row[1] + '" target="_blank" rel="noopener">' + arrow + escapeHtml(row[0]) + "</a></li>";
+          }).join("") + "</ul></section>";
+      }).join("");
     }
 
     function renderFeedItems(items) {
@@ -405,39 +415,6 @@
           '</time></div><a class="feed-title" href="' + escapeHtml(item.link) +
           '" target="_blank" rel="noopener">' + escapeHtml(item.title) + "</a>" + snippet + "</article>";
       }).join("");
-    }
-
-    function tabSources(folder) {
-      const fromConfig = RSS_FEEDS.filter(function (f) { return f.folder === folder; });
-      const extra = ((monitorPayload && monitorPayload.sources) || []).filter(function (s) {
-        return s.folder === folder && !fromConfig.some(function (c) { return c.id === s.id; });
-      });
-      return fromConfig.concat(extra);
-    }
-
-    function renderSourcesCard(pageItems, folder) {
-      const counts = {};
-      pageItems.forEach(function (item) {
-        counts[item.sourceId || item.source] = (counts[item.sourceId || item.source] || 0) + 1;
-      });
-      const rows = tabSources(folder).map(function (src) {
-        const n = counts[src.id] || 0;
-        const status = ((monitorPayload && monitorPayload.sources) || []).find(function (s) { return s.id === src.id; });
-        const note = n ? n + (n === 1 ? " item" : " items") : (status && status.ok === false ? "did not load" : "no items on this page");
-        return '<li class="' + (n ? "" : "idle") + '"><span>' + escapeHtml(src.title) + "</span><span>" + note + "</span></li>";
-      }).join("");
-      return '<div class="sources-card"><b>Sources on this page</b><ul>' + rows + "</ul></div>";
-    }
-
-    function renderLegend(folder) {
-      const el = document.getElementById("source-legend");
-      if (folder === "cms") { el.hidden = true; el.innerHTML = ""; return; }
-      const pills = tabSources(folder).map(function (src) {
-        return '<span class="feed-source ' + sourceClass(src.id) + '">' + escapeHtml(src.title) + "</span>";
-      }).join("");
-      el.hidden = false;
-      el.innerHTML = '<p class="eyebrow">' + escapeHtml(FOLDER_LEGEND[folder] || "Sources") +
-        '</p><div class="legend-pills">' + pills + "</div>";
     }
 
     function groupByWeek(items, dir) {
@@ -487,9 +464,8 @@
     function renderMonitor(folder, payload) {
       const panel = document.getElementById("monitor-panel");
       const tools = document.getElementById("monitor-tools");
-      tools.hidden = folder === "cms";
-      renderLegend(folder);
-      if (folder === "cms") {
+      tools.hidden = folder === "pages";
+      if (folder === "pages") {
         panel.innerHTML = renderCms();
         return;
       }
@@ -528,16 +504,15 @@
             ? '<span class="badge last">Last week</span>'
             : "";
         const body = week.items.length
-          ? renderFeedItems(slice) + renderPager(week.meta.key, safePage, pageCount) + renderSourcesCard(slice, folder)
-          : '<p class="muted">Nothing posted this week yet. New items will appear here as feeds update.</p>' +
-            renderSourcesCard([], folder);
+          ? renderFeedItems(slice) + renderPager(week.meta.key, safePage, pageCount)
+          : '<p class="muted">Nothing posted this week yet. New items will appear here as feeds update.</p>';
         return '<details class="week' + (week.meta.badge === "this-week" ? " this-week" : "") +
           '" data-week="' + week.meta.key + '"' + (isOpen ? " open" : "") +
           '><summary><span class="week-label">' + escapeHtml(week.meta.label) + badge +
           '</span><span class="week-meta"><span class="week-count">' + week.items.length +
           "</span>" + chevron() + "</span></summary><div class=\"week-body\">" +
           body + "</div></details>";
-      }).join("") + '</div><p class="note">Notification only. Confirm effective date and applicability in the primary CMS, OSHA, Federal Register, GovInfo, or eCFR source before changing product logic or policy content.</p>';
+      }).join("") + '</div><p class="note">Notification only. Confirm effective date and applicability in the primary CMS, Federal Register, GovInfo, or eCFR source before changing product logic or policy content.</p>';
       panel.innerHTML = html;
     }
 
@@ -580,10 +555,7 @@
     }
 
     function wrapItems(feed, items) {
-      const kept = feed.filter
-        ? items.filter(function (item) { return matchesKeywords(item.title + " " + item.snippet); })
-        : items;
-      return { feed: feed, items: kept };
+      return { feed: feed, items: items };
     }
 
     function loadRssJson(feed) {
@@ -676,17 +648,28 @@
 
     function applyPayload(incoming) {
       if (!incoming) return;
+      incoming = {
+        generatedAt: incoming.generatedAt,
+        items: (incoming.items || []).filter(function (item) {
+          if (item.folder === "topics" || item.folder === "quality" || item.folder === "payer" || item.folder === "practice") item.folder = "context";
+          return item.folder !== "broad" && String(item.sourceId || "").indexOf("osha-") !== 0 && item.sourceId !== "dol-news";
+        }),
+        sources: (incoming.sources || []).filter(function (src) {
+          if (src.folder === "topics" || src.folder === "quality" || src.folder === "payer" || src.folder === "practice") src.folder = "context";
+          return src.folder !== "broad" && String(src.id || "").indexOf("osha-") !== 0 && src.id !== "dol-news";
+        })
+      };
       monitorPayload = unionPayloads(monitorPayload, incoming);
-      if (monitorFolder !== "cms") renderMonitor(monitorFolder, monitorPayload);
+      if (monitorFolder !== "pages") renderMonitor(monitorFolder, monitorPayload);
     }
 
     function markDone() {
       pending -= 1;
       if (pending > 0) return;
       if (monitorPayload && monitorPayload.items && monitorPayload.items.length) return;
-      if (monitorFolder === "cms") return;
+      if (monitorFolder === "pages") return;
       document.getElementById("monitor-panel").innerHTML =
-        '<p class="muted">Live feeds could not be loaded. CMS pages are still available in the last tab.</p>';
+        '<p class="muted">Live feeds could not be loaded. Pages are still available in the last tab.</p>';
     }
 
     CLIENT_FEEDS.forEach(function (feed) {

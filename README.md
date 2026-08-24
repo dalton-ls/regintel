@@ -17,8 +17,8 @@ folder, not this git repo). Broader ontology:
 ## Live site
 
 - **Knowledge home**: `index.html` — Quality Manager RSS monitoring
-  (SNF-focused Federal Register feeds, GovInfo FR searches when the Worker
-  is deployed, keyword-filtered OSHA/DOL in Broad, plus the CMS weekly page list).
+  (Official Federal Register/GovInfo, a single Context tab for secondary
+  SNF/industry feeds, plus the CMS and related Pages list). OSHA is out of this import.
 
 - **Research view**: `regintel.html` — Roles, Care Settings, **Policy
   Manager**, Workforce Readiness, and Facility/Learner Query (a

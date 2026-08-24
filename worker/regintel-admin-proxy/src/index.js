@@ -104,12 +104,6 @@ function checkAuth(request, env) {
   return token && env.ADMIN_TOKEN && token === (env.ADMIN_TOKEN || "").trim();
 }
 
-const BROAD_KEYWORDS = [
-  "nursing home", "health care", "healthcare", "safe patient handling",
-  "workplace violence", "bloodborne pathogens", "respiratory protection",
-  "ergonomics", "skilled nursing", "snf", "long-term care", "long term care",
-];
-
 const MONITOR_FEEDS = [
   {
     id: "fr-snf-pps",
@@ -176,59 +170,139 @@ const MONITOR_FEEDS = [
     filter: false,
   },
   {
-    id: "osha-fr",
-    folder: "broad",
-    title: "OSHA — Federal Register",
-    kind: "rss",
-    url: "https://www.osha.gov/laws-regs/federalregisters.xml",
-    filter: true,
-  },
-  {
-    id: "osha-directives",
-    folder: "broad",
-    title: "OSHA — Directives",
-    kind: "rss",
-    url: "https://www.osha.gov/enforcement/directives.xml",
-    filter: true,
-  },
-  {
-    id: "osha-interps",
-    folder: "broad",
-    title: "OSHA — Standard Interpretations",
-    kind: "rss",
-    url: "https://www.osha.gov/laws-regs/standardinterpretations.xml",
-    filter: true,
-  },
-  {
-    id: "osha-news",
-    folder: "broad",
-    title: "OSHA — News Releases",
-    kind: "rss",
-    url: "https://www.osha.gov/news/newsreleases.xml",
-    filter: true,
-  },
-  {
-    id: "dol-news",
-    folder: "broad",
-    title: "U.S. Department of Labor — News Releases",
-    kind: "rss",
-    url: "https://www.dol.gov/rss/releases.xml",
-    filter: true,
-  },
-  {
-    id: "osha-quicktakes",
-    folder: "broad",
-    title: "OSHA — QuickTakes",
-    kind: "rss",
-    url: "https://www.osha.gov/sites/default/files/quicktakes.xml",
-    filter: true,
-  },
-  {
     id: "snn",
     folder: "context",
     title: "Skilled Nursing News",
     kind: "rss",
     url: "https://skillednursingnews.com/feed/",
+    filter: false,
+  },
+  {
+    id: "snn-medicare",
+    folder: "context",
+    title: "Skilled Nursing News — Medicare",
+    kind: "rss",
+    url: "https://skillednursingnews.com/category/medicare/feed/",
+    filter: false,
+  },
+  {
+    id: "snn-medicaid",
+    folder: "context",
+    title: "Skilled Nursing News — Medicaid",
+    kind: "rss",
+    url: "https://skillednursingnews.com/category/medicaid/feed/",
+    filter: false,
+  },
+  {
+    id: "snn-compliance",
+    folder: "context",
+    title: "Skilled Nursing News — Compliance",
+    kind: "rss",
+    url: "https://skillednursingnews.com/category/compliance/feed/",
+    filter: false,
+  },
+  {
+    id: "snn-legislation",
+    folder: "context",
+    title: "Skilled Nursing News — Legislation",
+    kind: "rss",
+    url: "https://skillednursingnews.com/category/legislation/feed/",
+    filter: false,
+  },
+  {
+    id: "snn-staffing",
+    folder: "context",
+    title: "Skilled Nursing News — Staffing",
+    kind: "rss",
+    url: "https://skillednursingnews.com/category/staffing/feed/",
+    filter: false,
+  },
+  {
+    id: "snn-ma",
+    folder: "context",
+    title: "Skilled Nursing News — Medicare Advantage",
+    kind: "rss",
+    url: "https://skillednursingnews.com/category/medicare-advantage/feed/",
+    filter: false,
+  },
+  {
+    id: "snn-fraud",
+    folder: "context",
+    title: "Skilled Nursing News — Fraud",
+    kind: "rss",
+    url: "https://skillednursingnews.com/category/fraud/feed/",
+    filter: false,
+  },
+  {
+    id: "snn-litigation",
+    folder: "context",
+    title: "Skilled Nursing News — Litigation",
+    kind: "rss",
+    url: "https://skillednursingnews.com/category/litigation/feed/",
+    filter: false,
+  },
+  {
+    id: "willitcare",
+    folder: "context",
+    title: "Will It Care — national nursing-home changes",
+    kind: "rss",
+    url: "https://willitcare.com/changes.xml",
+    filter: false,
+  },
+  {
+    id: "nhr-sff",
+    folder: "context",
+    title: "NursingHomeRating.org — Special Focus Facilities",
+    kind: "rss",
+    url: "https://nursinghomerating.org/xml-sff.xml",
+    filter: false,
+  },
+  {
+    id: "kff-medicaid",
+    folder: "context",
+    title: "KFF — Medicaid",
+    kind: "rss",
+    url: "https://www.kff.org/topic/medicaid/feed/",
+    filter: false,
+  },
+  {
+    id: "kff-medicare",
+    folder: "context",
+    title: "KFF — Medicare",
+    kind: "rss",
+    url: "https://www.kff.org/topic/medicare/feed/",
+    filter: false,
+  },
+  {
+    id: "kff-private",
+    folder: "context",
+    title: "KFF — Private Insurance",
+    kind: "rss",
+    url: "https://www.kff.org/topic/private-insurance/feed/",
+    filter: false,
+  },
+  {
+    id: "kff-state",
+    folder: "context",
+    title: "KFF — State Health Policy Data",
+    kind: "rss",
+    url: "https://www.kff.org/topic/state-health-policy-data/feed/",
+    filter: false,
+  },
+  {
+    id: "aapacn-don",
+    folder: "context",
+    title: "AAPACN — LTC DON Chat",
+    kind: "rss",
+    url: "https://feeds.podcastmirror.com/ltc-don-chat",
+    filter: false,
+  },
+  {
+    id: "aapacn-nac",
+    folder: "context",
+    title: "AAPACN — LTC NAC Chat",
+    kind: "rss",
+    url: "https://feeds.podcastmirror.com/ltc-nac-chat",
     filter: false,
   },
 ];
@@ -261,11 +335,6 @@ function xmlTag(block, name) {
 function xmlAttr(block, name, attr) {
   const match = block.match(new RegExp(`<${name}[^>]*\\s${attr}=["']([^"']+)["'][^>]*/?>`, "i"));
   return match ? match[1].trim() : "";
-}
-
-function matchesKeywords(text) {
-  const hay = String(text || "").toLowerCase();
-  return BROAD_KEYWORDS.some((kw) => hay.includes(kw));
 }
 
 function parseRssItems(xml, source) {
@@ -349,10 +418,7 @@ async function loadMonitor() {
     const items = feed.kind === "govinfo-search"
       ? await fetchGovInfoSearch(feed)
       : await fetchRssFeed(feed);
-    const kept = feed.filter
-      ? items.filter((item) => matchesKeywords(`${item.title} ${item.snippet}`))
-      : items;
-    return { feed, items: kept };
+    return { feed, items };
   }));
 
   const items = [];

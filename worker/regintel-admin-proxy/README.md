@@ -9,7 +9,8 @@ not the OpenLaws source corpus or any pre-site parsed JSON. `export.html`
 Also reads through it (no auth needed for reads) so its snapshot always
 reflects the live committed data. `GET /monitor` is likewise unauthenticated:
 it fetches the Quality Manager RSS bundle (SNF-focused Federal Register
-feeds, GovInfo FR searches, keyword-filtered OSHA/DOL, and SNN) and
+feeds, GovInfo FR searches, Skilled Nursing News topic feeds, quality
+signals, KFF payer context, and AAPACN practice podcasts) and
 returns JSON for the knowledge home page.
 
 Because the committed file is the single source of truth, this lets one
@@ -55,11 +56,10 @@ secret gating write access for one trusted operator.
 
 ## Public monitoring endpoint
 
-`GET /monitor` (no auth) aggregates the Quality Manager OPML folders:
-SNF-focused official (HHS/CMS Federal Register RSS plus GovInfo searches
-for skilled nursing facility, nursing home, 42 CFR 483, and seasonal SNF
-PPS / quality-reporting queries), broad official (OSHA/DOL/QuickTakes with
-keyword filters), and context (Skilled Nursing News). Cache `3600` seconds.
+`GET /monitor` (no auth) aggregates the Quality Manager OPML: SNF-focused
+official Federal Register/GovInfo searches, plus a single Context bundle
+(Skilled Nursing News, quality/inspection signals, KFF, and AAPACN). OSHA
+is out of scope. Cache `3600` seconds.
 
 ## Using it day to day
 
