@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>RegIntel | Quality Monitor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      min-height: 100%;
+      font-family: Inter, system-ui, sans-serif;
+      font-size: 14px;
+      color: #1a2332;
+      background: #f0f2f5;
+    }
+    body.embed .app-header { display: none; }
+    body.embed main { padding-top: 24px; }
+    a { color: inherit; }
+    .app-header {
+      height: 60px;
+      background: #0f1f45;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+      position: sticky; top: 0; z-index: 20;
+    }
+    .header-brand { display: flex; align-items: center; gap: 12px; }
+    .logo-text { font-size: 17px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+    .header-sep { color: rgba(255,255,255,0.2); font-size: 20px; font-weight: 200; }
+    .header-subtitle { font-size: 12px; font-weight: 400; color: rgba(255,255,255,0.55); }
+    .header-link {
+      font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.65);
+      text-decoration: none; padding: 6px 12px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .header-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
+
+    main { max-width: 1100px; margin: 0 auto; padding: 48px 24px 80px; }
+    .eyebrow {
+      color: #2463eb; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.08em; font-size: 11px; margin-bottom: 8px;
+    }
+    h1, .page-title {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0 0 4px;
+      letter-spacing: 0;
+      line-height: 1.25;
+    }
+    .lead { max-width: 680px; line-height: 1.65; color: #6b7a99; font-size: 15px; }
+
+    .controls {
+      display: flex; flex-wrap: wrap; align-items: center;
+      justify-content: space-between; gap: 16px; margin: 32px 0 16px;
+    }
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tabs button {
+      border: 1px solid #dde1ea; background: #fff; border-radius: 99px;
+      padding: 8px 16px; cursor: pointer; font-family: inherit;
+      font-size: 13px; font-weight: 500; color: #4a5568;
+    }
+    .tabs button:hover { border-color: rgba(36,99,235,0.4); color: #2463eb; }
+    .tabs button.active { background: #2463eb; color: #fff; border-color: #2463eb; }
+    .tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .tools[hidden] { display: none !important; }
+    .search-wrap { position: relative; }
+    .search-wrap svg {
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      width: 14px; height: 14px; color: #6b7a99;
+    }
+    .search-wrap input {
+      font-family: inherit; font-size: 13px; color: #1a2332;
+      border: 1px solid #dde1ea; background: #fff; border-radius: 8px;
+      padding: 8px 12px 8px 32px; width: 200px;
+    }
+    .search-wrap input:focus { outline: none; border-color: rgba(36,99,235,0.5); box-shadow: 0 0 0 2px rgba(36,99,235,0.25); }
+    .tools select {
+      font-family: inherit; font-size: 13px; color: #4a5568;
+      border: 1px solid #dde1ea; background: #fff; border-radius: 8px;
+      padding: 8px 12px; cursor: pointer;
+    }
+
+    .panel {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+      padding: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+    }
+    .panel p { line-height: 1.6; color: #4a5568; margin-bottom: 14px; }
+    .muted { color: #6b7a99; font-size: 13px; margin-top: 8px; }
+    .note { color: #aab4c8; font-size: 12px; line-height: 1.6; margin-top: 8px; }
+
+    .weeks { display: flex; flex-direction: column; gap: 12px; }
+    .week {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      overflow: hidden;
+      background: #fff;
+    }
+    .week.this-week { border-color: rgba(36,99,235,0.3); box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .week > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .week > summary::-webkit-details-marker { display: none; }
+    .week-label {
+      display: flex; align-items: center; gap: 12px; min-width: 0;
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 13px; font-weight: 600; color: #1a2332;
+    }
+    .badge {
+      display: inline-flex; align-items: center; border-radius: 99px;
+      padding: 2px 10px; font-family: Inter, sans-serif; font-size: 11px; font-weight: 600;
+    }
+    .badge.this { background: #2463eb; color: #fff; }
+    .badge.last { background: #e2e8f0; color: #6b7a99; font-weight: 500; }
+    .week-meta { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    .week-count {
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 11px; font-weight: 600; color: #1e4da1;
+      background: #eef3fb; border-radius: 99px; padding: 2px 10px;
+    }
+    .chevron { width: 16px; height: 16px; color: #6b7a99; transition: transform 0.2s; }
+    .week[open] .chevron { transform: rotate(180deg); }
+    .week-body { padding: 0 20px 20px; border-top: 1px solid #e2e8f0; }
+    .feed-item { padding: 16px 0; border-bottom: 1px solid #e2e8f0; }
+    .feed-item:last-of-type { border-bottom: none; }
+    .feed-meta {
+      display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center;
+      margin-bottom: 8px;
+    }
+    .feed-source {
+      display: inline-block; border-radius: 6px; padding: 2px 8px;
+      font-size: 11px; font-weight: 600; line-height: 20px;
+    }
+    .feed-date {
+      font-family: "JetBrains Mono", ui-monospace, monospace;
+      font-size: 11px; color: #6b7a99; letter-spacing: 0.02em;
+    }
+    .src-fr-snf-pps { background: #e0e7ff; color: #3730a3; }
+    .src-fr-snf { background: #dbeafe; color: #1e40af; }
+    .src-govinfo-fr-snf { background: #ccfbf1; color: #115e59; }
+    .src-govinfo-fr-nh { background: #cffafe; color: #155e75; }
+    .src-govinfo-fr-483 { background: #d1fae5; color: #065f46; }
+    .src-govinfo-fr-ltc { background: #e2e8f0; color: #334155; }
+    .src-govinfo-fr-pps { background: #ede9fe; color: #5b21b6; }
+    .src-govinfo-fr-qrp { background: #ecfccb; color: #3f6212; }
+    .src-snn { background: #fdf4ff; color: #7e22ce; }
+    .src-snn-topic { background: #fae8ff; color: #86198f; }
+    .src-quality { background: #ffedd5; color: #9a3412; }
+    .src-kff { background: #e0f2fe; color: #075985; }
+    .src-practice { background: #fce7f3; color: #9d174d; }
+    .src-other { background: #f1f5f9; color: #475569; }
+    .feed-item a.feed-title {
+      font-size: 14px; font-weight: 600; color: #1a2332; text-decoration: none;
+      line-height: 1.35; display: block;
+    }
+    .feed-item a.feed-title:hover { color: #2463eb; }
+    .feed-snippet {
+      font-size: 13px; line-height: 1.6; color: #6b7a99; margin-top: 6px;
+      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .pager {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+      margin: 12px 0 4px; font-size: 12px; color: #6b7a99;
+    }
+    .pager button {
+      border: 1px solid #dde1ea; background: #fff; border-radius: 8px;
+      padding: 6px 10px; cursor: pointer; font-family: inherit;
+      font-size: 12px; font-weight: 600; color: #4a5568;
+    }
+    .pager button:disabled { opacity: 0.4; cursor: default; }
+    .page-group { margin-bottom: 28px; }
+    .page-group:last-child { margin-bottom: 0; }
+    .page-group h2 {
+      font-size: 12px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.04em; color: #6b7a99; margin: 0 0 10px;
+    }
+    .cms-list { list-style: none; display: grid; gap: 8px; grid-template-columns: 1fr 1fr; }
+    .cms-list a {
+      display: flex; align-items: flex-start; gap: 10px;
+      background: #f7f9fc; border: 1px solid #e2e8f0; border-radius: 8px;
+      padding: 12px 16px; font-size: 13px; font-weight: 500; color: #1a2332;
+      text-decoration: none;
+    }
+    .cms-list a:hover { background: #eef3fb; color: #2463eb; }
+    .cms-list svg { width: 14px; height: 14px; flex-shrink: 0; margin-top: 2px; color: #6b7a99; }
+
+    @media (max-width: 800px) {
+      .page-title { font-size: 22px; }
+      .cms-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-brand">
+      <span class="logo-text">RegIntel</span>
+      <span class="header-sep">|</span>
+      <span class="header-subtitle">Quality Monitor</span>
+    </div>
+    <a class="header-link" href="regintel.html">Open research view →</a>
+  </header>
+  <main>
+    <p class="eyebrow">Quality Manager monitoring</p>
+    <h1 class="page-title">Skilled Nursing Facility Updates</h1>
+    <p class="lead">Official is the SNF-focused HHS/CMS Federal Register digest, plus GovInfo searches for skilled nursing, nursing homes, and 42 CFR 483. Context is industry reporting and secondary signals — it creates a review item, not a product change. Pages are CMS and related sources with no stable RSS. OSHA is out of this import. This is a notification layer. Weeks run Sunday–Saturday.</p>
+
+    <div class="controls">
+      <div class="tabs" id="monitor-tabs">
+        <button class="active" data-folder="official">Official</button>
+        <button data-folder="context">Context</button>
+        <button data-folder="pages">Pages</button>
+      </div>
+      <div class="tools" id="monitor-tools">
+        <div class="search-wrap">
+          <svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.4"/><path d="M9.5 9.5l2.5 2.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+          <input id="feed-search" type="search" placeholder="Filter articles…" autocomplete="off">
+        </div>
+        <select id="feed-sort" aria-label="Sort weeks">
+          <option value="desc">Newest first</option>
+          <option value="asc">Oldest first</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="panel" id="monitor-panel">Loading regulatory feeds…</div>
+  </main>
+  <script>
+    if (new URLSearchParams(location.search).get("embed") === "1") {
+      document.body.classList.add("embed");
+    }
+    const WORKER_URL = "https://regintel-admin-proxy.regintel.workers.dev";
+    const PAGE_SIZE = 15;
+    const MAX_WEEKS = 5;
+    const RSS_FEEDS = [
+      { id: "fr-snf-pps", folder: "official", title: "Federal Register — HHS/CMS — SNF PPS rules", url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Bagencies%5D%5B%5D=health-and-human-services-department&conditions%5Bterm%5D=SNF%20PPS&conditions%5Btype%5D%5B%5D=RULE&conditions%5Btype%5D%5B%5D=PRORULE" },
+      { id: "fr-snf", folder: "official", title: "Federal Register — HHS/CMS — SNF rules", url: "https://www.federalregister.gov/api/v1/documents.rss?conditions%5Bagencies%5D%5B%5D=health-and-human-services-department&conditions%5Bterm%5D=skilled%20nursing%20facility&conditions%5Btype%5D%5B%5D=RULE&conditions%5Btype%5D%5B%5D=PRORULE" },
+      { id: "govinfo-fr-snf", folder: "official", title: "GovInfo FR — skilled nursing facility" },
+      { id: "govinfo-fr-nh", folder: "official", title: "GovInfo FR — nursing home" },
+      { id: "govinfo-fr-483", folder: "official", title: "GovInfo FR — 42 CFR 483" },
+      { id: "govinfo-fr-ltc", folder: "official", title: "GovInfo FR — long-term care facility" },
+      { id: "govinfo-fr-pps", folder: "official", title: "GovInfo FR — SNF PPS" },
+      { id: "govinfo-fr-qrp", folder: "official", title: "GovInfo FR — quality reporting nursing home" },
+      { id: "snn", folder: "context", title: "Skilled Nursing News", url: "https://skillednursingnews.com/feed/" },
+      { id: "snn-medicare", folder: "context", title: "Skilled Nursing News — Medicare", url: "https://skillednursingnews.com/category/medicare/feed/" },
+      { id: "snn-medicaid", folder: "context", title: "Skilled Nursing News — Medicaid", url: "https://skillednursingnews.com/category/medicaid/feed/" },
+      { id: "snn-compliance", folder: "context", title: "Skilled Nursing News — Compliance", url: "https://skillednursingnews.com/category/compliance/feed/" },
+      { id: "snn-legislation", folder: "context", title: "Skilled Nursing News — Legislation", url: "https://skillednursingnews.com/category/legislation/feed/" },
+      { id: "snn-staffing", folder: "context", title: "Skilled Nursing News — Staffing", url: "https://skillednursingnews.com/category/staffing/feed/" },
+      { id: "snn-ma", folder: "context", title: "Skilled Nursing News — Medicare Advantage", url: "https://skillednursingnews.com/category/medicare-advantage/feed/" },
+      { id: "snn-fraud", folder: "context", title: "Skilled Nursing News — Fraud", url: "https://skillednursingnews.com/category/fraud/feed/" },
+      { id: "snn-litigation", folder: "context", title: "Skilled Nursing News — Litigation", url: "https://skillednursingnews.com/category/litigation/feed/" },
+      { id: "willitcare", folder: "context", title: "Will It Care — national nursing-home changes", url: "https://willitcare.com/changes.xml" },
+      { id: "nhr-sff", folder: "context", title: "NursingHomeRating.org — Special Focus Facilities", url: "https://nursinghomerating.org/xml-sff.xml" },
+      { id: "kff-medicaid", folder: "context", title: "KFF — Medicaid", url: "https://www.kff.org/topic/medicaid/feed/" },
+      { id: "kff-medicare", folder: "context", title: "KFF — Medicare", url: "https://www.kff.org/topic/medicare/feed/" },
+      { id: "kff-private", folder: "context", title: "KFF — Private Insurance", url: "https://www.kff.org/topic/private-insurance/feed/" },
+      { id: "kff-state", folder: "context", title: "KFF — State Health Policy Data", url: "https://www.kff.org/topic/state-health-policy-data/feed/" },
+      { id: "aapacn-don", folder: "context", title: "AAPACN — LTC DON Chat", url: "https://feeds.podcastmirror.com/ltc-don-chat" },
+      { id: "aapacn-nac", folder: "context", title: "AAPACN — LTC NAC Chat", url: "https://feeds.podcastmirror.com/ltc-nac-chat" }
+    ];
+    const PAGE_GROUPS = [
+      {
+        title: "CMS and SNF quality sources",
+        note: "No stable RSS. Review on the weekly cadence. These are not part of the live feed.",
+        links: [
+          ["CMS QSO — Policy and Memos to States and CMS Locations", "https://www.cms.gov/medicare/health-safety-standards/quality-safety-oversight-general-information/policy-memos/policy-memos-states-cms-locations"],
+          ["CMS Quality and Safety Special Alerts", "https://www.cms.gov/medicare/health-safety-standards/quality-safety-oversight-general-information/quality-safety-special-alerts"],
+          ["CMS Nursing Homes — certification, survey, and compliance", "https://www.cms.gov/medicare/health-safety-standards/certification-compliance/nursing-homes"],
+          ["CMS Skilled Nursing Facility PPS", "https://www.cms.gov/medicare/payment/prospective-payment-systems/skilled-nursing-facility-snf"],
+          ["CMS List of SNF Federal Regulations", "https://www.cms.gov/medicare/payment/prospective-payment-systems/skilled-nursing-facility-snf/list-federal-regulations"],
+          ["CMS SNF Information Center", "https://www.cms.gov/snf-information-center"],
+          ["CMS MDS/RAI Manual", "https://www.cms.gov/medicare/quality/nursing-home-improvement/resident-assessment-instrument-manual"],
+          ["CMS PBJ policy information", "https://www.cms.gov/medicare/quality/nursing-home-improvement/staffing-data-submission"],
+          ["CMS Transmittals", "https://www.cms.gov/medicare/regulations-guidance/transmittals"],
+          ["eCFR — 42 CFR Part 483", "https://www.ecfr.gov/current/title-42/chapter-IV/subchapter-G/part-483"],
+          ["CDC NHSN — Long-Term Care Facilities", "https://www.cdc.gov/nhsn/ltc/index.html"],
+          ["CMS QSEP — Quality, Safety, and Education Portal", "https://qsep.cms.gov/ProvidersAndOthers/loginother.aspx"],
+          ["CMS QCOR — Quality, Certification, and Oversight Reports", "https://qcor.cms.gov/main.jsp"],
+          ["Medicare Care Compare — Inspection Results", "https://www.medicare.gov/care-compare/"],
+          ["ProPublica — Nursing Home Database", "https://projects.propublica.org/nursing-homes/"]
+        ]
+      },
+      {
+        title: "Review when no stable RSS is confirmed",
+        note: "Keep on the weekly web or email list. Do not treat these as live feeds.",
+        links: [
+          ["AHCA/NCAL Communications and News", "https://publish.ahcancal.org/News-and-Communications/Pages/default.aspx"],
+          ["PALTmed News & Media", "https://paltmed.org/news-media"],
+          ["Provider Magazine", "https://www.providermagazine.com/Pages/default.aspx"],
+          ["Consumer Voice Updates", "https://theconsumervoice.org/news/"],
+          ["CMS MLN Connects", "https://www.cms.gov/training-education/medicare-learning-network/newsletter"],
+          ["McKnight's Long-Term Care News", "https://www.mcknights.com/"]
+        ]
+      }
+    ];
+    const SOURCE_CLASS = {
+      "fr-snf-pps": "src-fr-snf-pps",
+      "fr-snf": "src-fr-snf",
+      "govinfo-fr-snf": "src-govinfo-fr-snf",
+      "govinfo-fr-nh": "src-govinfo-fr-nh",
+      "govinfo-fr-483": "src-govinfo-fr-483",
+      "govinfo-fr-ltc": "src-govinfo-fr-ltc",
+      "govinfo-fr-pps": "src-govinfo-fr-pps",
+      "govinfo-fr-qrp": "src-govinfo-fr-qrp",
+      "snn": "src-snn",
+      "snn-medicare": "src-snn-topic",
+      "snn-medicaid": "src-snn-topic",
+      "snn-compliance": "src-snn-topic",
+      "snn-legislation": "src-snn-topic",
+      "snn-staffing": "src-snn-topic",
+      "snn-ma": "src-snn-topic",
+      "snn-fraud": "src-snn-topic",
+      "snn-litigation": "src-snn-topic",
+      "willitcare": "src-quality",
+      "nhr-sff": "src-quality",
+      "kff-medicaid": "src-kff",
+      "kff-medicare": "src-kff",
+      "kff-private": "src-kff",
+      "kff-state": "src-kff",
+      "aapacn-don": "src-practice",
+      "aapacn-nac": "src-practice"
+    };
+
+    function escapeHtml(s) {
+      return String(s || "").replace(/[&<>"']/g, function (ch) {
+        return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[ch];
+      });
+    }
+
+    function parseDate(value) {
+      if (!value) return null;
+      const d = new Date(value);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    function formatDate(value) {
+      const d = parseDate(value);
+      if (!d) return value ? escapeHtml(value) : "Date not stated";
+      return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+    }
+
+    function startOfDay(d) {
+      return new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+
+    function startOfWeekSunday(d) {
+      const x = startOfDay(d);
+      x.setDate(x.getDate() - x.getDay());
+      return x;
+    }
+
+    function isFutureDate(d) {
+      return startOfDay(d).getTime() > startOfDay(new Date()).getTime();
+    }
+
+    function weekMeta(d) {
+      const start = startOfWeekSunday(d);
+      const weekEnd = new Date(start);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      const today = startOfDay(new Date());
+      const thisStart = startOfWeekSunday(today);
+      const lastStart = new Date(thisStart);
+      lastStart.setDate(lastStart.getDate() - 7);
+      const displayEnd = weekEnd.getTime() > today.getTime() ? today : weekEnd;
+      const fmt = function (x) {
+        return x.toLocaleDateString("en-US", { month: "numeric", day: "numeric" });
+      };
+      let badge = "";
+      if (start.getTime() === thisStart.getTime()) badge = "this-week";
+      else if (start.getTime() === lastStart.getTime()) badge = "last-week";
+      const range = displayEnd.getTime() === start.getTime()
+        ? fmt(start)
+        : fmt(start) + "–" + fmt(displayEnd);
+      return {
+        key: start.getFullYear() + "-" + start.getMonth() + "-" + start.getDate(),
+        start: start,
+        badge: badge,
+        label: start.getFullYear() + ": " + range
+      };
+    }
+
+    function fetchWithTimeout(url, ms) {
+      const ctrl = new AbortController();
+      const timer = setTimeout(function () { ctrl.abort(); }, ms);
+      return fetch(url, { signal: ctrl.signal }).finally(function () { clearTimeout(timer); });
+    }
+
+    function sourceClass(id) {
+      return SOURCE_CLASS[id] || "src-other";
+    }
+
+    function renderCms() {
+      const arrow = '<svg viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M2 7h10M7 2l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+      return PAGE_GROUPS.map(function (group) {
+        return '<section class="page-group"><h2>' + escapeHtml(group.title) + '</h2><p class="muted" style="margin-bottom:12px">' +
+          escapeHtml(group.note) + '</p><ul class="cms-list">' +
+          group.links.map(function (row) {
+            return '<li><a href="' + row[1] + '" target="_blank" rel="noopener">' + arrow + escapeHtml(row[0]) + "</a></li>";
+          }).join("") + "</ul></section>";
+      }).join("");
+    }
+
+    function renderFeedItems(items) {
+      return items.map(function (item) {
+        const snippet = item.snippet ? '<p class="feed-snippet">' + escapeHtml(item.snippet) + "</p>" : "";
+        return '<article class="feed-item"><div class="feed-meta"><span class="feed-source ' +
+          sourceClass(item.sourceId) + '">' + escapeHtml(item.source) +
+          '</span><time class="feed-date">' + formatDate(item.published) +
+          '</time></div><a class="feed-title" href="' + escapeHtml(item.link) +
+          '" target="_blank" rel="noopener">' + escapeHtml(item.title) + "</a>" + snippet + "</article>";
+      }).join("");
+    }
+
+    function groupByWeek(items, dir) {
+      const thisMeta = weekMeta(new Date());
+      const groups = {};
+      groups[thisMeta.key] = { meta: thisMeta, items: [] };
+      const undated = [];
+      items.forEach(function (item) {
+        const d = parseDate(item.published);
+        if (!d) { undated.push(item); return; }
+        if (isFutureDate(d)) return;
+        const meta = weekMeta(d);
+        if (meta.start.getTime() > thisMeta.start.getTime()) return;
+        if (!groups[meta.key]) groups[meta.key] = { meta: meta, items: [] };
+        groups[meta.key].items.push(item);
+      });
+      const current = groups[thisMeta.key];
+      const rest = Object.keys(groups).filter(function (k) { return k !== thisMeta.key; }).map(function (k) {
+        return groups[k];
+      });
+      rest.sort(function (a, b) { return b.meta.start - a.meta.start; });
+      const visibleRest = rest.slice(0, MAX_WEEKS - 1);
+      if (dir === "asc") visibleRest.reverse();
+      const weeks = [current].concat(visibleRest);
+      if (undated.length && weeks.length < MAX_WEEKS) {
+        weeks.push({
+          meta: { key: "undated", start: new Date(0), badge: "", label: "Date not stated" },
+          items: undated
+        });
+      }
+      return weeks;
+    }
+
+    function renderPager(weekKey, page, pageCount) {
+      if (pageCount <= 1) return "";
+      return '<div class="pager"><button type="button" data-week="' + weekKey + '" data-dir="-1"' +
+        (page === 0 ? " disabled" : "") + ">Previous</button><span>Page " +
+        (page + 1) + " of " + pageCount + " · " + PAGE_SIZE +
+        ' articles per page</span><button type="button" data-week="' + weekKey + '" data-dir="1"' +
+        (page >= pageCount - 1 ? " disabled" : "") + ">Next</button></div>";
+    }
+
+    function chevron() {
+      return '<svg class="chevron" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    }
+
+    function renderMonitor(folder, payload) {
+      const panel = document.getElementById("monitor-panel");
+      const tools = document.getElementById("monitor-tools");
+      tools.hidden = folder === "pages";
+      if (folder === "pages") {
+        panel.innerHTML = renderCms();
+        return;
+      }
+      if (!payload) {
+        panel.innerHTML = '<p class="muted">Loading regulatory feeds…</p>';
+        return;
+      }
+      const q = (uiState.search || "").trim().toLowerCase();
+      let items = (payload.items || []).filter(function (item) {
+        if (item.folder !== folder) return false;
+        const d = parseDate(item.published);
+        return !d || !isFutureDate(d);
+      });
+      if (q) {
+        items = items.filter(function (item) {
+          return (item.title + " " + item.snippet + " " + item.source).toLowerCase().indexOf(q) !== -1;
+        });
+        if (!items.length) {
+          panel.innerHTML = '<p class="muted">No articles match your filter.</p>';
+          return;
+        }
+      }
+      const thisKey = weekMeta(new Date()).key;
+      const weeks = groupByWeek(items, uiState.sort);
+      let html = '<div class="weeks">' + weeks.map(function (week) {
+        const open = uiState.open[week.meta.key];
+        const defaultOpen = week.meta.key === thisKey;
+        const isOpen = open === true || (open !== false && defaultOpen);
+        const page = uiState.page[week.meta.key] || 0;
+        const pageCount = Math.max(1, Math.ceil(week.items.length / PAGE_SIZE));
+        const safePage = week.items.length ? Math.min(page, pageCount - 1) : 0;
+        const slice = week.items.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
+        const badge = week.meta.badge === "this-week"
+          ? '<span class="badge this">This week</span>'
+          : week.meta.badge === "last-week"
+            ? '<span class="badge last">Last week</span>'
+            : "";
+        const body = week.items.length
+          ? renderFeedItems(slice) + renderPager(week.meta.key, safePage, pageCount)
+          : '<p class="muted">Nothing posted this week yet. New items will appear here as feeds update.</p>';
+        return '<details class="week' + (week.meta.badge === "this-week" ? " this-week" : "") +
+          '" data-week="' + week.meta.key + '"' + (isOpen ? " open" : "") +
+          '><summary><span class="week-label">' + escapeHtml(week.meta.label) + badge +
+          '</span><span class="week-meta"><span class="week-count">' + week.items.length +
+          "</span>" + chevron() + "</span></summary><div class=\"week-body\">" +
+          body + "</div></details>";
+      }).join("") + '</div><p class="note">Notification only. Confirm effective date and applicability in the primary CMS, Federal Register, GovInfo, or eCFR source before changing product logic or policy content.</p>';
+      panel.innerHTML = html;
+    }
+
+    function stripHtml(value) {
+      const el = document.createElement("div");
+      el.innerHTML = value || "";
+      return (el.textContent || el.innerText || "").replace(/\s+/g, " ").trim();
+    }
+
+    function xmlText(node, names) {
+      for (let i = 0; i < names.length; i += 1) {
+        const el = node.getElementsByTagName(names[i])[0];
+        if (el && (el.textContent || "").trim()) return el.textContent.trim();
+      }
+      const link = node.getElementsByTagName("link")[0];
+      if (link && link.getAttribute("href")) return link.getAttribute("href");
+      return "";
+    }
+
+    function parseRssXml(xml, feed) {
+      const doc = new DOMParser().parseFromString(xml, "text/xml");
+      if (doc.querySelector("parsererror")) throw new Error(feed.id + " invalid xml");
+      const nodes = doc.querySelectorAll("item, entry");
+      const items = [];
+      nodes.forEach(function (node) {
+        const title = xmlText(node, ["title"]);
+        const link = xmlText(node, ["link", "guid", "id"]);
+        if (!title || !link) return;
+        items.push({
+          title: title,
+          link: link,
+          published: xmlText(node, ["pubDate", "published", "updated", "dc:date"]),
+          snippet: stripHtml(xmlText(node, ["description", "summary", "content"])),
+          source: feed.title,
+          folder: feed.folder,
+          sourceId: feed.id
+        });
+      });
+      return items;
+    }
+
+    function wrapItems(feed, items) {
+      return { feed: feed, items: items };
+    }
+
+    function loadRssJson(feed) {
+      return fetchWithTimeout("https://api.rss2json.com/v1/api.json?rss_url=" + encodeURIComponent(feed.url), 10000)
+        .then(function (res) {
+          if (!res.ok) throw new Error(feed.id + " HTTP " + res.status);
+          return res.json();
+        })
+        .then(function (data) {
+          if (data.status && data.status !== "ok") throw new Error(feed.id + " " + (data.message || "rss error"));
+          const items = (data.items || []).map(function (row) {
+            return {
+              title: row.title || "",
+              link: row.link || row.guid || "",
+              published: row.pubDate || row.pubdate || "",
+              snippet: stripHtml(row.description || row.content || ""),
+              source: feed.title,
+              folder: feed.folder,
+              sourceId: feed.id
+            };
+          }).filter(function (item) { return item.title && item.link; });
+          return wrapItems(feed, items);
+        });
+    }
+
+    function loadRssXml(feed, proxyUrl) {
+      return fetchWithTimeout(proxyUrl, 10000).then(function (res) {
+        if (!res.ok) throw new Error(feed.id + " HTTP " + res.status);
+        return res.text();
+      }).then(function (xml) {
+        return wrapItems(feed, parseRssXml(xml, feed));
+      });
+    }
+
+    function loadFeed2Json(feed) {
+      return fetchWithTimeout("https://feed2json.org/convert?url=" + encodeURIComponent(feed.url), 15000)
+        .then(function (res) {
+          if (!res.ok) throw new Error(feed.id + " HTTP " + res.status);
+          return res.json();
+        })
+        .then(function (data) {
+          const items = (data.items || []).map(function (row) {
+            return {
+              title: row.title || "",
+              link: row.url || row.external_url || row.id || "",
+              published: row.date_published || row.date_modified || "",
+              snippet: stripHtml(row.content_text || row.summary || row.content_html || ""),
+              source: feed.title,
+              folder: feed.folder,
+              sourceId: feed.id
+            };
+          }).filter(function (item) { return item.title && item.link; });
+          if (!items.length) throw new Error(feed.id + " empty feed2json");
+          return wrapItems(feed, items);
+        });
+    }
+
+    function loadRssFeed(feed) {
+      const encoded = encodeURIComponent(feed.url);
+      return loadFeed2Json(feed)
+        .catch(function () { return loadRssXml(feed, "https://api.allorigins.win/raw?url=" + encoded); })
+        .catch(function () { return loadRssJson(feed); });
+    }
+
+    function unionPayloads(current, incoming) {
+      const items = ((current && current.items) || []).concat((incoming && incoming.items) || []);
+      const sources = ((current && current.sources) || []).concat((incoming && incoming.sources) || []);
+      const seenItems = {};
+      const deduped = [];
+      items.forEach(function (item) {
+        const key = (item.link || item.title).replace(/\/+$/, "").toLowerCase();
+        if (seenItems[key]) return;
+        seenItems[key] = true;
+        deduped.push(item);
+      });
+      deduped.sort(function (a, b) { return Date.parse(b.published || 0) - Date.parse(a.published || 0); });
+      const seenSrc = {};
+      sources.forEach(function (s) {
+        if (!s || !s.id) return;
+        if (!seenSrc[s.id] || (s.ok && !seenSrc[s.id].ok)) seenSrc[s.id] = s;
+      });
+      return { generatedAt: new Date().toISOString(), sources: Object.keys(seenSrc).map(function (id) { return seenSrc[id]; }), items: deduped };
+    }
+
+    const CLIENT_FEEDS = RSS_FEEDS.filter(function (feed) { return feed.url; });
+    let monitorPayload = null;
+    let monitorFolder = "official";
+    let pending = CLIENT_FEEDS.length;
+    const uiState = { open: {}, page: {}, search: "", sort: "desc" };
+
+    function applyPayload(incoming) {
+      if (!incoming) return;
+      incoming = {
+        generatedAt: incoming.generatedAt,
+        items: (incoming.items || []).filter(function (item) {
+          if (item.folder === "topics" || item.folder === "quality" || item.folder === "payer" || item.folder === "practice") item.folder = "context";
+          return item.folder !== "broad" && String(item.sourceId || "").indexOf("osha-") !== 0 && item.sourceId !== "dol-news";
+        }),
+        sources: (incoming.sources || []).filter(function (src) {
+          if (src.folder === "topics" || src.folder === "quality" || src.folder === "payer" || src.folder === "practice") src.folder = "context";
+          return src.folder !== "broad" && String(src.id || "").indexOf("osha-") !== 0 && src.id !== "dol-news";
+        })
+      };
+      monitorPayload = unionPayloads(monitorPayload, incoming);
+      if (monitorFolder !== "pages") renderMonitor(monitorFolder, monitorPayload);
+    }
+
+    function markDone() {
+      pending -= 1;
+      if (pending > 0) return;
+      if (monitorPayload && monitorPayload.items && monitorPayload.items.length) return;
+      if (monitorFolder === "pages") return;
+      document.getElementById("monitor-panel").innerHTML =
+        '<p class="muted">Live feeds could not be loaded. Pages are still available in the last tab.</p>';
+    }
+
+    CLIENT_FEEDS.forEach(function (feed) {
+      loadRssFeed(feed).then(function (value) {
+        applyPayload({
+          items: value.items,
+          sources: [{ id: feed.id, title: feed.title, folder: feed.folder, ok: true, count: value.items.length }]
+        });
+      }).catch(function (err) {
+        applyPayload({
+          items: [],
+          sources: [{ id: feed.id, title: feed.title, folder: feed.folder, ok: false, error: String(err && err.message || err) }]
+        });
+      }).then(markDone);
+    });
+
+    fetchWithTimeout(WORKER_URL + "/monitor", 8000).then(function (res) {
+      if (!res.ok) throw new Error("monitor " + res.status);
+      return res.json();
+    }).then(function (payload) {
+      if (payload && payload.items && payload.items.length) applyPayload(payload);
+    }).catch(function () {});
+
+    document.getElementById("monitor-tabs").addEventListener("click", function (e) {
+      const btn = e.target.closest("button[data-folder]");
+      if (!btn) return;
+      document.querySelectorAll("#monitor-tabs button").forEach(function (x) { x.classList.remove("active"); });
+      btn.classList.add("active");
+      monitorFolder = btn.dataset.folder;
+      uiState.search = "";
+      document.getElementById("feed-search").value = "";
+      renderMonitor(monitorFolder, monitorPayload);
+    });
+
+    document.getElementById("feed-search").addEventListener("input", function (e) {
+      uiState.search = e.target.value;
+      uiState.page = {};
+      renderMonitor(monitorFolder, monitorPayload);
+    });
+
+    document.getElementById("feed-sort").addEventListener("change", function (e) {
+      uiState.sort = e.target.value;
+      uiState.open = {};
+      renderMonitor(monitorFolder, monitorPayload);
+    });
+
+    document.getElementById("monitor-panel").addEventListener("click", function (e) {
+      const pager = e.target.closest(".pager button");
+      if (pager && !pager.disabled) {
+        const key = pager.getAttribute("data-week");
+        const dir = Number(pager.getAttribute("data-dir"));
+        uiState.page[key] = Math.max(0, (uiState.page[key] || 0) + dir);
+        renderMonitor(monitorFolder, monitorPayload);
+      }
+    });
+
+    document.getElementById("monitor-panel").addEventListener("toggle", function (e) {
+      const week = e.target.closest("details.week");
+      if (!week) return;
+      uiState.open[week.getAttribute("data-week")] = week.open;
+    }, true);
+  </script>
+</body>
+</html>

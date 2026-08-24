@@ -16,12 +16,11 @@ folder, not this git repo). Broader ontology:
 
 ## Live site
 
-- **Knowledge home**: `index.html` — Quality Manager RSS monitoring
-  (Official Federal Register/GovInfo, a single Context tab for secondary
-  SNF/industry feeds, plus the CMS and related Pages list). OSHA is out of this import.
+- **Knowledge home**: `index.html` — unpopulated Home shell. Quality Manager
+  RSS monitoring lives in the research view as **Quality Monitor**.
 
-- **Research view**: `regintel.html` — Roles, Care Settings, **Policy
-  Manager**, Workforce Readiness, and Facility/Learner Query (a
+- **Research view**: `regintel.html` — Roles, Care Settings, **Quality Monitor**,
+  **Policy**, Workforce Readiness, and Facility/Learner (a
   **type-level** archetype: Jurisdiction × HSTM Setting × HSTM Role —
   not a customer roster). Loads fresh from `requirements.json` and
   `wr.json` on every page load. Falls back to legacy `data.json` only if
@@ -210,7 +209,8 @@ is).
 
 | File | Purpose |
 |---|---|
-| `regintel.html` | Research view (Roles, Care Settings, Policy Manager, WR, Facility/Learner Query) |
+| `regintel.html` | Research view (Quality Monitor, Roles, Care Settings, Policy, WR, Facility/Learner) |
+| `quality-monitor.html` | Quality Manager RSS monitor (embedded in research view) |
 | `schema.js` | 47-column parser contract, closed vocabularies, Policy-relevance helper |
 | `record-editor.html` / `bulk-apply.html` / `pending-review.html` / `export.html` | Unified admin tools |
 | `requirements.json` | Live output-row projection — source of truth for Role + Care Setting |
