@@ -280,7 +280,7 @@
     if (new URLSearchParams(location.search).get("embed") === "1") {
       document.body.classList.add("embed");
     }
-    const WORKER_URL = "https://regintel-admin-proxy.regintel.workers.dev";
+    const WORKER_URL = "https://regintel-quality-monitor.regintel.workers.dev";
     const SCHEMA_VERSION = "qm-monitor-v1";
     const PAGE_SIZE = 15;
     const MAX_WEEKS = 5;
@@ -805,7 +805,7 @@
       const refresh = String(Date.now()) + "-" + gen;
       const url = WORKER_URL + "/monitor?refresh=" + encodeURIComponent(refresh);
       const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
-      const timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 28000) : null;
+      const timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 12000) : null;
       renderMonitor(monitorFolder, monitorPayload, true, null);
       fetch(url, {
         method: "GET",
@@ -836,7 +836,7 @@
       }).catch(function (err) {
         if (gen !== loadGen) return;
         const msg = (err && err.name === "AbortError")
-          ? "request timed out after 28s"
+          ? "request timed out after 12s"
           : String(err && err.message || err);
         lastDiag = {
           status: err && err.status != null ? err.status : (err && err.name === "TypeError" ? 0 : "n/a"),

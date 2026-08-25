@@ -13,7 +13,3 @@ workers_dev = true
 GITHUB_OWNER = "dalton-ls"
 GITHUB_REPO = "regintel"
 GITHUB_BRANCH = "claude/create-website-skeleton-hYJMa"
-MONITOR_PUBLIC_ORIGIN = "https://regintel-admin-proxy.regintel.workers.dev"
-
-[triggers]
-crons = ["0 * * * *"]

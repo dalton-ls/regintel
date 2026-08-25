@@ -1,0 +1,17 @@
+name = "regintel-quality-monitor"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+workers_dev = true
+
+# No GitHub write secrets. This Worker is public read-only ingest.
+
+[vars]
+MONITOR_PUBLIC_ORIGIN = "https://regintel-quality-monitor.regintel.workers.dev"
+
+[triggers]
+crons = ["0 * * * *"]
+
+# KV id filled after `wrangler kv namespace create MONITOR_KV`
+[[kv_namespaces]]
+binding = "MONITOR_KV"
+id = "3bde5d5a4dd44df9991f2234d393d018"
