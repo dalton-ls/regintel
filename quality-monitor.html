@@ -274,7 +274,7 @@
       </div>
     </div>
     <div id="monitor-status"></div>
-    <div class="panel" id="monitor-panel">Feeds have not yet loaded.</div>
+    <div class="panel" id="monitor-panel">Refreshing feeds from primary sources...</div>
   </main>
   <script>
     if (new URLSearchParams(location.search).get("embed") === "1") {
@@ -424,7 +424,7 @@
 
     function healthViewModel(payload) {
       if (!payload) {
-        return { state: "loading", title: "Feeds have not yet loaded", warning: "The Worker payload has not arrived yet." };
+        return { state: "loading", title: "Refreshing feeds", warning: "Fetching the latest items now. This can take up to a minute on first load." };
       }
       const failed = (payload.sources || []).filter(function (s) { return !s.ok; });
       const emptyOk = (payload.sources || []).filter(function (s) { return s.ok && s.status === "empty"; });
@@ -624,7 +624,7 @@
       const health = healthViewModel(payload);
       const tone = health.state === "failed" || health.state === "loading" ? "bad" : (health.state === "ok" ? "" : "warn");
       if (!payload) {
-        el.innerHTML = '<div class="status-banner bad"><span class="status-pill loading">Not loaded</span><span>' +
+        el.innerHTML = '<div class="status-banner warn"><span class="status-pill stale">Refreshing</span><span>' +
           escapeHtml(health.warning) + "</span></div>";
         return;
       }
@@ -666,7 +666,7 @@
         return;
       }
       if (!payload) {
-        panel.innerHTML = '<p class="muted">Feeds have not yet loaded.</p>';
+        panel.innerHTML = '<p class="muted">Refreshing feeds from primary sources...</p>';
         return;
       }
       const q = (uiState.search || "").trim().toLowerCase();
@@ -741,23 +741,42 @@
       else renderStatus(monitorPayload);
     }
 
-    renderMonitor(monitorFolder, null);
-
-    fetch(WORKER_URL + "/monitor").then(function (res) {
-      return res.json().then(function (payload) {
-        return { res: res, payload: payload };
+    function loadMonitor() {
+      if (!monitorPayload) renderMonitor(monitorFolder, null);
+      const url = WORKER_URL + "/monitor?refresh=1&t=" + Date.now();
+      const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+      const timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 55000) : null;
+      fetch(url, {
+        method: "GET",
+        cache: "no-store",
+        credentials: "omit",
+        signal: ctrl ? ctrl.signal : undefined,
+        headers: { Accept: "application/json" }
+      }).then(function (res) {
+        return res.json().then(function (payload) {
+          return { res: res, payload: payload };
+        });
+      }).then(function (bundle) {
+        if (!bundle.payload || (bundle.payload.error && !bundle.payload.schemaVersion)) {
+          throw new Error(bundle.payload && bundle.payload.error || ("monitor " + bundle.res.status));
+        }
+        applyPayload(bundle.payload);
+      }).catch(function (err) {
+        const msg = (err && err.name === "AbortError") ? "request timed out" : String(err && err.message || err);
+        document.getElementById("monitor-panel").innerHTML =
+          '<p class="warn-inline">Could not refresh feeds (' + escapeHtml(msg) +
+          '). Pages are still available in the last tab.</p>' +
+          '<p><button type="button" id="monitor-retry" class="tabs" style="padding:8px 16px;border-radius:99px;border:1px solid #dde1ea;background:#fff;cursor:pointer;font:inherit;font-weight:600;color:#2463eb">Retry refresh</button></p>';
+        renderStatus(null);
+        const retry = document.getElementById("monitor-retry");
+        if (retry) retry.addEventListener("click", function () { loadMonitor(); });
+      }).then(function () {
+        if (timer) clearTimeout(timer);
       });
-    }).then(function (bundle) {
-      if (!bundle.payload || bundle.payload.error && !bundle.payload.schemaVersion) {
-        throw new Error(bundle.payload && bundle.payload.error || ("monitor " + bundle.res.status));
-      }
-      applyPayload(bundle.payload);
-    }).catch(function (err) {
-      document.getElementById("monitor-panel").innerHTML =
-        '<p class="warn-inline">Live ingestion could not be loaded (' + escapeHtml(err && err.message || err) +
-        "). Pages are still available in the last tab. The browser is not using public CORS proxies.</p>";
-      renderStatus(null);
-    });
+    }
+
+    renderMonitor(monitorFolder, null);
+    loadMonitor();
 
     document.getElementById("monitor-tabs").addEventListener("click", function (e) {
       const btn = e.target.closest("button[data-folder]");

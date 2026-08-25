@@ -47,7 +47,7 @@ export async function fetchWithTimeout(url, init, timeoutMs, fetchImpl) {
   }
 }
 
-async function withRetry(fn, retries = 2) {
+async function withRetry(fn, retries = 1) {
   let last;
   for (let i = 0; i <= retries; i += 1) {
     try {
@@ -248,6 +248,7 @@ export function jsonResponse(payload, origin, extraHeaders = {}) {
   const headers = {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": CACHE_CONTROL,
+    "Pragma": "no-cache",
     "X-QM-Schema": SCHEMA_VERSION,
     "X-QM-Generated-At": payload.generatedAt || "",
     "X-QM-Status": payload.overallStatus || "",

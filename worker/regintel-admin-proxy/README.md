@@ -62,9 +62,11 @@ cache age, diagnostics, and a SHA-256 `payloadHash`. Official Federal
 Register documents are pulled from the FR JSON API (not RSS) and
 GovInfo search; Context remains RSS. OSHA is out of scope.
 
-Ingestion runs in the Worker (hourly cron plus on-demand if the cache is
-cold or stale). The browser should call only this endpoint — not public
-CORS proxies. `GET /monitor/health` is a short status probe.
+Ingestion runs in the Worker on every `GET /monitor` (page refresh) and also
+hourly via cron. The JSON response is `Cache-Control: no-store` so browsers
+and CDNs do not reuse a stale feed. The Worker Cache API keeps a last-good
+copy only as a fallback if live ingest fails. `GET /monitor/health` is a
+short status probe.
 
 Payload fields of note: `generatedAt`, `lastSuccessAt`, `cacheAgeSeconds`,
 `stale`, `overallStatus` (`ok` | `partial` | `failed` | `stale` | `empty`),

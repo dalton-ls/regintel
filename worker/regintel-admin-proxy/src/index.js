@@ -115,22 +115,8 @@ async function handleMonitor(request, env, ctx) {
   const url = new URL(request.url);
   const origin = publicOrigin(env, url);
   const now = new Date();
-  const force = url.searchParams.get("refresh") === "1";
 
   try {
-    if (!force) {
-      const cached = await readCachedPayload(caches.default, origin);
-      if (cached) {
-        const aged = agePayload(cached, now);
-        if (aged.stale && ctx && ctx.waitUntil) {
-          ctx.waitUntil(refreshMonitorCache(env, origin).catch((err) => {
-            console.log(JSON.stringify({ level: "error", event: "background_refresh_failed", error: String(err && err.message || err) }));
-          }));
-        }
-        return jsonResponse(aged, originHeader);
-      }
-    }
-
     const fresh = await ingestMonitor();
     const aged = agePayload(fresh, now);
     const response = jsonResponse(aged, originHeader);

@@ -2,9 +2,9 @@ export const SCHEMA_VERSION = "qm-monitor-v1";
 export const TIMEZONE = "America/New_York";
 export const DISPLAY_WEEK_LIMIT = 5;
 export const STALE_AFTER_SECONDS = 6 * 60 * 60;
-export const FETCH_TIMEOUT_MS = 12000;
+export const FETCH_TIMEOUT_MS = 8000;
 export const MAX_ITEMS_PER_SOURCE = 25;
-export const CACHE_CONTROL = "public, max-age=3600";
+export const CACHE_CONTROL = "no-store, no-cache, must-revalidate";
 
 export const FETCH_HEADERS = {
   "User-Agent": "RegIntel-monitor/1.1 (Quality Manager regulatory monitoring)",
