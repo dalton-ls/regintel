@@ -1223,9 +1223,19 @@ let selectedRole        = null;
   }
 
   // ─── Filter & group ───
+  // Removed/repealed rows stay in requirements.json (and in admin tools) but
+  // drop out of every public research projection once the tag is live.
+  function isHiddenFromPublicView(r) {
+    return r.change_type === 'Removed' || r.lifecycle_stage === 'Repealed/Removed';
+  }
+
+  function publicRecords(records) {
+    return records.filter(r => !isHiddenFromPublicView(r));
+  }
+
   function filterData() {
     const src = selectedRole ? (ROLE_DATA[selectedRole] || []) : DATA;
-    return src.filter(r => {
+    return publicRecords(src).filter(r => {
       if (!filterState.jurisdictions.has(r.state))         return false;
       if (!filterState.requirementLevels.has(r.requirement_level)) return false;
       if (!filterState.authorityLevels.has(r.authority_level)) return false;
@@ -2221,7 +2231,7 @@ let selectedRole        = null;
   }
 
   function policyUniverse() {
-    return [...DATA, ...CARE_DATA].filter(isPolicyRelevant);
+    return publicRecords([...DATA, ...CARE_DATA]).filter(isPolicyRelevant);
   }
 
   function filterPolicyData() {
@@ -2430,7 +2440,7 @@ let selectedRole        = null;
         updateDrawer();
         return;
       }
-      const careFiltered = CARE_DATA.filter(r => {
+      const careFiltered = publicRecords(CARE_DATA).filter(r => {
         if (r.hstm_setting !== selectedCareSetting) return false;
         if (!filterState.jurisdictions.has(r.state))     return false;
         if (!filterState.requirementLevels.has(r.requirement_level)) return false;
@@ -2464,7 +2474,7 @@ let selectedRole        = null;
         updateDrawer();
         return;
       }
-      const profileMatches = matchProfile(selectedProfileJurisdiction, selectedProfileSetting, selectedProfileRole, [...DATA, ...CARE_DATA]);
+      const profileMatches = matchProfile(selectedProfileJurisdiction, selectedProfileSetting, selectedProfileRole, publicRecords([...DATA, ...CARE_DATA]));
       const profileTree = buildHierarchy(profileMatches);
       const profileBody = profileTree.length
         ? renderTree(profileTree)
@@ -2996,7 +3006,7 @@ let selectedRole        = null;
       const roleLabel = ROLES.find(r => r.value === selectedRole)?.label || selectedRole || 'all';
       filename = `regintel-roles-${roleLabel.replace(/\s+/g, '-').toLowerCase()}`;
     } else if (activeSection === 'care-settings') {
-      rows = CARE_DATA.filter(r => {
+      rows = publicRecords(CARE_DATA).filter(r => {
         if (selectedCareSetting && r.hstm_setting !== selectedCareSetting) return false;
         if (!filterState.jurisdictions.has(r.state)) return false;
         if (!filterState.requirementLevels.has(r.requirement_level)) return false;
@@ -3009,7 +3019,7 @@ let selectedRole        = null;
       });
       filename = `regintel-care-settings-${(selectedCareSetting || 'all').replace(/\s+/g, '-').toLowerCase()}`;
     } else if (activeSection === 'profile') {
-      rows = matchProfile(selectedProfileJurisdiction, selectedProfileSetting, selectedProfileRole, [...DATA, ...CARE_DATA]);
+      rows = matchProfile(selectedProfileJurisdiction, selectedProfileSetting, selectedProfileRole, publicRecords([...DATA, ...CARE_DATA]));
       const label = (selectedProfileSetting || selectedProfileRole || 'all').replace(/\s+/g, '-').toLowerCase();
       filename = `regintel-facility-learner-${label}`;
     } else if (activeSection === 'workforce') {
