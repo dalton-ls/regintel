@@ -1,6 +1,7 @@
 name = "regintel-admin-proxy"
 main = "src/index.js"
 compatibility_date = "2025-01-01"
+workers_dev = true
 
 # Secrets (set via `wrangler secret put <NAME>`, never committed here):
 #   GITHUB_TOKEN  - fine-grained GitHub PAT, scoped to the regintel repo only,

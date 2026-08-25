@@ -638,6 +638,7 @@
 
     function renderStatus(payload, loading, diag) {
       const el = document.getElementById("monitor-status");
+      if (!payload && !diag) loading = true;
       const health = healthViewModel(payload, loading);
       const tone = health.state === "failed" || health.state === "loading" || diag ? "bad" : (health.state === "ok" ? "" : "warn");
       if (loading) {
@@ -647,7 +648,7 @@
           "</span></div>";
         return;
       }
-      if (diag && !payload) {
+      if (!payload || (diag && !payload)) {
         el.innerHTML = '<div class="status-banner bad"><span class="status-pill failed">Failed</span>' +
           "<span><span class=\"status-k\">HTTP</span>" + escapeHtml(String(diag.status == null ? "n/a" : diag.status)) + "</span>" +
           "<span><span class=\"status-k\">Endpoint</span>" + escapeHtml(diag.endpoint || WORKER_URL) + "</span>" +
@@ -811,7 +812,7 @@
         cache: "no-store",
         credentials: "omit",
         signal: ctrl ? ctrl.signal : undefined,
-        headers: { Accept: "application/json", "Cache-Control": "no-store" }
+        headers: { Accept: "application/json" }
       }).then(function (res) {
         return res.text().then(function (text) {
           let payload = null;
@@ -859,7 +860,11 @@
       });
     }
 
-    renderMonitor(monitorFolder, null);
+    try {
+      renderMonitor(monitorFolder, null, true, null);
+    } catch (bootErr) {
+      console.error("Quality Monitor boot render failed", bootErr);
+    }
     loadMonitor();
 
     document.getElementById("monitor-tabs").addEventListener("click", function (e) {

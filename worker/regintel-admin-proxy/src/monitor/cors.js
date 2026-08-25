@@ -5,7 +5,7 @@ const KNOWN_ORIGINS = new Set([
 ]);
 
 export function allowOrigin(requestOrigin) {
-  if (!requestOrigin) return "*";
+  if (!requestOrigin || requestOrigin === "null") return "*";
   if (LOCAL_ORIGIN.test(requestOrigin)) return requestOrigin;
   if (KNOWN_ORIGINS.has(requestOrigin)) return requestOrigin;
   if (/^https:\/\/[\w.-]+\.github\.io$/i.test(requestOrigin)) return requestOrigin;
@@ -16,7 +16,7 @@ export function corsHeaders(requestOrigin) {
   return {
     "Access-Control-Allow-Origin": allowOrigin(requestOrigin),
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Authorization, Content-Type, Accept",
+    "Access-Control-Allow-Headers": "Authorization, Content-Type, Accept, Cache-Control, Pragma",
     "Access-Control-Max-Age": "86400",
     Vary: "Origin",
   };
