@@ -347,7 +347,7 @@
       "aapacn-nac": "src-practice"
     };
     const REL_LABEL = {
-      direct_snf: "Direct SNF",
+      direct_snf: "SNF Direct",
       long_term_care: "Long-term care",
       cross_setting: "Cross-setting"
     };
@@ -422,24 +422,29 @@
       return d.toLocaleString("en-US", { timeZone: TIMEZONE, dateStyle: "medium", timeStyle: "short" }) + " ET";
     }
 
-    function healthViewModel(payload) {
-      if (!payload) {
-        return { state: "loading", title: "Refreshing feeds", warning: "Fetching the latest items now. This can take up to a minute on first load." };
+    function healthViewModel(payload, loading) {
+      if (loading || !payload) {
+        return { state: "loading", title: "Refreshing", warning: "Live request in progress." };
       }
       const failed = (payload.sources || []).filter(function (s) { return !s.ok; });
       const emptyOk = (payload.sources || []).filter(function (s) { return s.ok && s.status === "empty"; });
       const labels = { ok: "Fresh", partial: "Partial", failed: "Failed", stale: "Stale", empty: "No items found" };
       const warnings = [];
-      if (payload.stale) warnings.push("Displayed data is older than the freshness window.");
-      if (payload.overallStatus === "partial" || failed.length) {
-        warnings.push(failed.length + " source" + (failed.length === 1 ? "" : "s") + " failed. Incomplete data is not a full refresh.");
+      if (payload.fallback) {
+        warnings.push("Showing cached fallback from " + (payload.generatedAt || "unknown") + ". Live ingest failed: " + (payload.fallbackReason || "unknown") + ".");
+      } else if (payload.stale) {
+        warnings.push("Displayed data is older than the freshness window.");
       }
-      if (payload.overallStatus === "failed") warnings.push("Ingestion is unavailable. Nothing on this tab is a successful load.");
+      if (payload.overallStatus === "partial" || failed.length) {
+        warnings.push(failed.length + " source" + (failed.length === 1 ? "" : "s") + " failed: " +
+          failed.map(function (s) { return s.id; }).join(", ") + ".");
+      }
+      if (payload.overallStatus === "failed") warnings.push("No sources returned items. This is not a successful load.");
       if (payload.overallStatus === "empty") warnings.push("Sources responded, but no in-scope items were found.");
       if (emptyOk.length && payload.overallStatus !== "empty") {
         warnings.push(emptyOk.length + " source" + (emptyOk.length === 1 ? "" : "s") + " returned no items.");
       }
-      return { state: payload.overallStatus, title: labels[payload.overallStatus] || payload.overallStatus, warning: warnings.join(" ") };
+      return { state: payload.fallback ? "stale" : payload.overallStatus, title: payload.fallback ? "Stale fallback" : (labels[payload.overallStatus] || payload.overallStatus), warning: warnings.join(" ") };
     }
 
     function validatePayload(payload) {
@@ -619,13 +624,38 @@
       return "Success";
     }
 
-    function renderStatus(payload) {
+    function weekBoundaryNote(payload) {
+      const bound = payload && payload.weekBoundary;
+      const tz = (bound && bound.timezone) || (payload && payload.timezone) || TIMEZONE;
+      if (!bound) {
+        const todayYmd = zonedYmd(new Date());
+        return tz + " · Sunday-Saturday · this week starts " + sundayOfYmd(todayYmd);
+      }
+      return tz + " · " + (bound.cadence || "Sunday-Saturday") +
+        " · week " + bound.weekStartSunday + " to " + bound.weekEndSaturday +
+        " · today " + bound.todayYmd;
+    }
+
+    function renderStatus(payload, loading, diag) {
       const el = document.getElementById("monitor-status");
-      const health = healthViewModel(payload);
-      const tone = health.state === "failed" || health.state === "loading" ? "bad" : (health.state === "ok" ? "" : "warn");
-      if (!payload) {
-        el.innerHTML = '<div class="status-banner warn"><span class="status-pill stale">Refreshing</span><span>' +
-          escapeHtml(health.warning) + "</span></div>";
+      const health = healthViewModel(payload, loading);
+      const tone = health.state === "failed" || health.state === "loading" || diag ? "bad" : (health.state === "ok" ? "" : "warn");
+      if (loading) {
+        el.innerHTML = '<div class="status-banner warn"><span class="status-pill loading">Refreshing</span><span>' +
+          escapeHtml(health.warning) +
+          (payload ? " Previous payload remains visible until this request finishes." : "") +
+          "</span></div>";
+        return;
+      }
+      if (diag && !payload) {
+        el.innerHTML = '<div class="status-banner bad"><span class="status-pill failed">Failed</span>' +
+          "<span><span class=\"status-k\">HTTP</span>" + escapeHtml(String(diag.status == null ? "n/a" : diag.status)) + "</span>" +
+          "<span><span class=\"status-k\">Endpoint</span>" + escapeHtml(diag.endpoint || WORKER_URL) + "</span>" +
+          "<span><span class=\"status-k\">Requested</span>" + escapeHtml(diag.requestAt || "") + "</span>" +
+          '<span class="warn-inline" style="margin:0">' + escapeHtml(diag.message || "Request failed") + "</span>" +
+          ' <button type="button" id="monitor-retry" class="tabs" style="padding:6px 12px;border-radius:99px;border:1px solid #dde1ea;background:#fff;cursor:pointer;font:inherit;font-weight:600;color:#2463eb">Retry refresh</button></div>';
+        const retryOnly = document.getElementById("monitor-retry");
+        if (retryOnly) retryOnly.addEventListener("click", function () { loadMonitor(); });
         return;
       }
       const sources = payload.sources || [];
@@ -649,23 +679,40 @@
         "<span><span class=\"status-k\">Generated</span>" + formatStamp(payload.generatedAt) + "</span>" +
         "<span><span class=\"status-k\">Last success</span>" + formatStamp(payload.lastSuccessAt) + "</span>" +
         "<span><span class=\"status-k\">Cache age</span>" + escapeHtml(formatCacheAge(payload.cacheAgeSeconds)) + "</span>" +
+        "<span><span class=\"status-k\">Week boundary</span>" + escapeHtml(weekBoundaryNote(payload)) + "</span>" +
         (payload.payloadHash ? "<span><span class=\"status-k\">Integrity</span><span class=\"item-id\">" + escapeHtml(payload.payloadHash.slice(0, 12)) + "...</span></span>" : "") +
+        (diag ? "<span><span class=\"status-k\">HTTP</span>" + escapeHtml(String(diag.status)) + "</span><span><span class=\"status-k\">Endpoint</span>" + escapeHtml(diag.endpoint) + "</span>" : "") +
         (health.warning ? '<span class="warn-inline" style="margin:0">' + escapeHtml(health.warning) + "</span>" : "") +
+        ' <button type="button" id="monitor-retry" class="tabs" style="padding:6px 12px;border-radius:99px;border:1px solid #dde1ea;background:#fff;cursor:pointer;font:inherit;font-weight:600;color:#2463eb">Retry refresh</button>' +
         "</div><details class=\"health-details\"><summary>Source health (" + sources.length + ")</summary>" +
         '<div class="source-table-wrap"><table class="source-table"><thead><tr><th>Source</th><th>Status</th><th>Items</th><th>Last success</th><th>Error</th></tr></thead><tbody>' +
         rows + "</tbody></table></div></details>" + excl;
+      const retry = document.getElementById("monitor-retry");
+      if (retry) retry.addEventListener("click", function () { loadMonitor(); });
     }
 
-    function renderMonitor(folder, payload) {
+    function renderMonitor(folder, payload, loading, diag) {
       const panel = document.getElementById("monitor-panel");
       const tools = document.getElementById("monitor-tools");
       tools.hidden = folder === "pages";
-      renderStatus(payload);
+      renderStatus(payload, loading, diag);
       if (folder === "pages") {
         panel.innerHTML = renderCms();
         return;
       }
       if (!payload) {
+        if (diag) {
+          panel.innerHTML =
+            '<p class="warn-inline">Could not load feeds from the Worker.</p>' +
+            "<p class=\"muted\">HTTP " + escapeHtml(String(diag.status == null ? "n/a" : diag.status)) +
+            " · " + escapeHtml(diag.endpoint || WORKER_URL) +
+            " · requested " + escapeHtml(diag.requestAt || "") +
+            " · " + escapeHtml(diag.message || "Request failed") + "</p>" +
+            '<p><button type="button" id="monitor-retry" class="tabs" style="padding:8px 16px;border-radius:99px;border:1px solid #dde1ea;background:#fff;cursor:pointer;font:inherit;font-weight:600;color:#2463eb">Retry refresh</button></p>';
+          const retry = document.getElementById("monitor-retry");
+          if (retry) retry.addEventListener("click", function () { loadMonitor(); });
+          return;
+        }
         panel.innerHTML = '<p class="muted">Refreshing feeds from primary sources...</p>';
         return;
       }
@@ -684,12 +731,19 @@
       const grouped = groupByWeek(items, uiState.sort);
       const thisKey = sundayOfYmd(zonedYmd(new Date()));
       let html = "";
-      if (payload.overallStatus === "failed") {
+      if (payload.fallback) {
+        html += '<p class="warn-inline">Cached/stale fallback. Live ingest did not complete: ' +
+          escapeHtml(payload.fallbackReason || "unknown") + ". Fallback at " +
+          escapeHtml(payload.fallbackAt || payload.liveAttemptAt || "") + ".</p>";
+      } else if (payload.overallStatus === "failed") {
         html += '<p class="warn-inline">Ingestion failed. Do not treat this panel as a complete feed set.</p>';
       } else if (payload.overallStatus === "partial" || payload.stale) {
+        const failedIds = (payload.sources || []).filter(function (s) { return !s.ok; }).map(function (s) { return s.id; });
         html += '<p class="warn-inline">' + (payload.stale ? "Data is stale. " : "") +
-          (payload.overallStatus === "partial" ? "One or more sources failed; this is a partial set." : "") + "</p>";
+          (payload.overallStatus === "partial" ? ("Failed sources: " + escapeHtml(failedIds.join(", ") || "unknown") + ".") : "") + "</p>";
       }
+      html += '<p class="muted">Ingested ' + escapeHtml(formatStamp(payload.generatedAt)) +
+        " · week boundary " + escapeHtml(weekBoundaryNote(payload)) + ".</p>";
       html += '<div class="weeks">' + grouped.weeks.map(function (week) {
         const open = uiState.open[week.meta.key];
         const defaultOpen = week.meta.key === thisKey;
@@ -717,8 +771,8 @@
           body + "</div></details>";
       }).join("") + "</div>";
       const limit = payload.displayWeekLimit || MAX_WEEKS;
-      html += '<p class="note">Showing up to ' + limit + " Sunday-Saturday weeks in " +
-        escapeHtml(payload.timezone || TIMEZONE) + ". Older dated items are not shown" +
+      html += '<p class="note">Showing up to ' + limit + " Sunday-Saturday weeks using " +
+        escapeHtml(weekBoundaryNote(payload)) + ". Dates are grouped in this timezone, not the browser locale. Older dated items are not shown" +
         (grouped.hiddenOlder ? " (" + grouped.hiddenOlder + " hidden)" : "") +
         ". Notification only. Confirm citation, effective date, and applicability in the primary source before changing product logic.</p>";
       panel.innerHTML = html;
@@ -731,47 +785,77 @@
     function applyPayload(incoming) {
       const check = validatePayload(incoming);
       if (!check.ok) {
-        document.getElementById("monitor-panel").innerHTML =
-          '<p class="warn-inline">Worker payload failed schema validation: ' + escapeHtml(check.error) + "</p>";
-        renderStatus(null);
+        const diag = { status: "invalid", endpoint: WORKER_URL, requestAt: new Date().toISOString(), message: "Worker payload failed schema validation: " + check.error };
+        lastDiag = diag;
+        renderMonitor(monitorFolder, monitorPayload, false, diag);
         return;
       }
+      lastDiag = null;
       monitorPayload = incoming;
-      if (monitorFolder !== "pages") renderMonitor(monitorFolder, monitorPayload);
-      else renderStatus(monitorPayload);
+      renderMonitor(monitorFolder, monitorPayload, false, null);
     }
 
+    let loadGen = 0;
+    let lastDiag = null;
+
     function loadMonitor() {
-      if (!monitorPayload) renderMonitor(monitorFolder, null);
-      const url = WORKER_URL + "/monitor?refresh=1&t=" + Date.now();
+      const gen = (loadGen += 1);
+      const requestAt = new Date().toISOString();
+      const refresh = String(Date.now()) + "-" + gen;
+      const url = WORKER_URL + "/monitor?refresh=" + encodeURIComponent(refresh);
       const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
-      const timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 55000) : null;
+      const timer = ctrl ? setTimeout(function () { ctrl.abort(); }, 28000) : null;
+      renderMonitor(monitorFolder, monitorPayload, true, null);
       fetch(url, {
         method: "GET",
         cache: "no-store",
         credentials: "omit",
         signal: ctrl ? ctrl.signal : undefined,
-        headers: { Accept: "application/json" }
+        headers: { Accept: "application/json", "Cache-Control": "no-store" }
       }).then(function (res) {
-        return res.json().then(function (payload) {
-          return { res: res, payload: payload };
+        return res.text().then(function (text) {
+          let payload = null;
+          try { payload = text ? JSON.parse(text) : null; } catch (parseErr) {
+            const err = new Error("Worker returned non-JSON (" + res.status + ")");
+            err.status = res.status;
+            err.endpoint = url;
+            throw err;
+          }
+          return { res: res, payload: payload, cacheControl: res.headers.get("Cache-Control") || "" };
         });
       }).then(function (bundle) {
+        if (gen !== loadGen) return;
         if (!bundle.payload || (bundle.payload.error && !bundle.payload.schemaVersion)) {
-          throw new Error(bundle.payload && bundle.payload.error || ("monitor " + bundle.res.status));
+          const err = new Error(bundle.payload && bundle.payload.error || ("monitor HTTP " + bundle.res.status));
+          err.status = bundle.res.status;
+          err.endpoint = url;
+          throw err;
         }
         applyPayload(bundle.payload);
       }).catch(function (err) {
-        const msg = (err && err.name === "AbortError") ? "request timed out" : String(err && err.message || err);
-        document.getElementById("monitor-panel").innerHTML =
-          '<p class="warn-inline">Could not refresh feeds (' + escapeHtml(msg) +
-          '). Pages are still available in the last tab.</p>' +
-          '<p><button type="button" id="monitor-retry" class="tabs" style="padding:8px 16px;border-radius:99px;border:1px solid #dde1ea;background:#fff;cursor:pointer;font:inherit;font-weight:600;color:#2463eb">Retry refresh</button></p>';
-        renderStatus(null);
+        if (gen !== loadGen) return;
+        const msg = (err && err.name === "AbortError")
+          ? "request timed out after 28s"
+          : String(err && err.message || err);
+        lastDiag = {
+          status: err && err.status != null ? err.status : (err && err.name === "TypeError" ? 0 : "n/a"),
+          endpoint: (err && err.endpoint) || url,
+          requestAt: requestAt,
+          message: msg + (msg.indexOf("Failed to fetch") !== -1
+            ? " This is a browser network/CORS failure, not a parsed Worker JSON error."
+            : "")
+        };
+        renderMonitor(monitorFolder, monitorPayload, false, lastDiag);
         const retry = document.getElementById("monitor-retry");
         if (retry) retry.addEventListener("click", function () { loadMonitor(); });
       }).then(function () {
         if (timer) clearTimeout(timer);
+        if (gen === loadGen) {
+          const el = document.getElementById("monitor-status");
+          if (el && /Refreshing/.test(el.textContent || "") && !monitorPayload && lastDiag) {
+            renderMonitor(monitorFolder, monitorPayload, false, lastDiag);
+          }
+        }
       });
     }
 
@@ -786,19 +870,19 @@
       monitorFolder = btn.dataset.folder;
       uiState.search = "";
       document.getElementById("feed-search").value = "";
-      renderMonitor(monitorFolder, monitorPayload);
+      renderMonitor(monitorFolder, monitorPayload, false, lastDiag);
     });
 
     document.getElementById("feed-search").addEventListener("input", function (e) {
       uiState.search = e.target.value;
       uiState.page = {};
-      renderMonitor(monitorFolder, monitorPayload);
+      renderMonitor(monitorFolder, monitorPayload, false, lastDiag);
     });
 
     document.getElementById("feed-sort").addEventListener("change", function (e) {
       uiState.sort = e.target.value;
       uiState.open = {};
-      renderMonitor(monitorFolder, monitorPayload);
+      renderMonitor(monitorFolder, monitorPayload, false, lastDiag);
     });
 
     document.getElementById("monitor-panel").addEventListener("click", function (e) {
@@ -807,7 +891,7 @@
         const key = pager.getAttribute("data-week");
         const dir = Number(pager.getAttribute("data-dir"));
         uiState.page[key] = Math.max(0, (uiState.page[key] || 0) + dir);
-        renderMonitor(monitorFolder, monitorPayload);
+        renderMonitor(monitorFolder, monitorPayload, false, lastDiag);
       }
     });
 

@@ -367,7 +367,7 @@ test("week grouping uses America/New_York and keeps this week plus Date not stat
 
 test("source-health warning rendering for loading, partial, stale, and failed", () => {
   assert.equal(healthViewModel(null).state, "loading");
-  assert.match(healthViewModel(null).title, /not yet loaded/i);
+  assert.match(healthViewModel(null).title, /Refreshing/i);
   const partial = healthViewModel({
     overallStatus: "partial",
     stale: false,
@@ -438,4 +438,74 @@ test("repairs RSS mojibake and ASCII-folds punctuation for future feed items", a
   assert.equal(payload.items[0].title.includes("\u2014"), false);
   assert.match(payload.items[0].title, /SNF - staffing - update/);
   assert.match(payload.items[0].snippet, /Sunday-Saturday/);
+});
+
+test("CORS headers echo GitHub Pages origin and include Vary", async () => {
+  const { corsHeaders } = await import("../src/monitor/cors.js");
+  const headers = corsHeaders("https://dalton-ls.github.io");
+  assert.equal(headers["Access-Control-Allow-Origin"], "https://dalton-ls.github.io");
+  assert.match(headers["Access-Control-Allow-Methods"], /GET/);
+  assert.match(headers["Access-Control-Allow-Methods"], /OPTIONS/);
+  assert.match(headers["Access-Control-Allow-Headers"], /Accept/);
+  assert.equal(headers.Vary, "Origin");
+  const local = corsHeaders("http://localhost:5173");
+  assert.equal(local["Access-Control-Allow-Origin"], "http://localhost:5173");
+});
+
+test("Worker JSON responses are no-store and CORS-enabled", async () => {
+  const { jsonResponse } = await import("../src/monitor/ingest.js");
+  const payload = await ingestMonitor({
+    feeds: [FR_SNF],
+    fetchImpl: fetchMap({ "snf-pps": jsonRes({ results: [SNF_RULE] }) }),
+    now: () => new Date("2026-08-24T15:00:00Z"),
+  });
+  const res = jsonResponse(payload, "https://dalton-ls.github.io");
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get("Cache-Control"), /no-store/);
+  assert.equal(res.headers.get("Access-Control-Allow-Origin"), "https://dalton-ls.github.io");
+  assert.equal(res.headers.get("Vary"), "Origin");
+});
+
+test("live ingest budget abort still returns remaining sources as timeouts", async () => {
+  const { ingestMonitorWithBudget } = await import("../src/monitor/ingest.js");
+  const payload = await ingestMonitorWithBudget({
+    feeds: [FR_SNF, RSS],
+    budgetMs: 40,
+    timeoutMs: 5000,
+    fetchImpl: () => new Promise(() => {}),
+    now: () => new Date("2026-08-24T15:00:00Z"),
+  });
+  assert.equal(payload.schemaVersion, SCHEMA_VERSION);
+  assert.equal(payload.overallStatus, "failed");
+  assert.equal(payload.sources.every((s) => s.status === "timeout"), true);
+  assert.equal(payload.weekBoundary.cadence, "Sunday-Saturday");
+  assert.equal(payload.weekBoundary.timezone, "America/New_York");
+});
+
+test("cached fallback is marked stale with reason", async () => {
+  const { markAsFallback } = await import("../src/monitor/ingest.js");
+  const live = await ingestMonitor({
+    feeds: [FR_SNF],
+    fetchImpl: fetchMap({ "snf-pps": jsonRes({ results: [SNF_RULE] }) }),
+    now: () => new Date("2026-08-24T15:00:00Z"),
+  });
+  const fallback = markAsFallback(live, "live ingest budget exceeded", "2026-08-24T16:00:00.000Z");
+  assert.equal(fallback.fallback, true);
+  assert.equal(fallback.stale, true);
+  assert.equal(fallback.fallbackReason, "live ingest budget exceeded");
+  assert.equal(fallback.fallbackAt, "2026-08-24T16:00:00.000Z");
+});
+
+test("GovInfo Official queries cover skilled nursing, nursing homes, and 42 CFR 483", async () => {
+  const { MONITOR_FEEDS } = await import("../src/monitor/config.js");
+  const ids = MONITOR_FEEDS.filter((f) => f.folder === "official").map((f) => f.id);
+  assert.ok(ids.includes("fr-snf-pps"));
+  assert.ok(ids.includes("fr-snf"));
+  const snf = MONITOR_FEEDS.find((f) => f.id === "govinfo-fr-snf");
+  assert.match(snf.query, /skilled nursing/);
+  assert.match(snf.query, /nursing facility/);
+  const nh = MONITOR_FEEDS.find((f) => f.id === "govinfo-fr-nh");
+  assert.match(nh.query, /nursing homes/);
+  const cfr = MONITOR_FEEDS.find((f) => f.id === "govinfo-fr-483");
+  assert.match(cfr.query, /42 CFR 483/);
 });

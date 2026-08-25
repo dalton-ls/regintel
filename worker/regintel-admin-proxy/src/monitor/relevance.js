@@ -157,7 +157,7 @@ function applicabilityFrom(classification, directHits, ltcHits, offHits) {
 
 export function relevanceLabel(classification) {
   return {
-    direct_snf: "Direct SNF",
+    direct_snf: "SNF Direct",
     long_term_care: "Long-term care",
     cross_setting: "Cross-setting",
     excluded: "Excluded as off-topic",

@@ -3,16 +3,19 @@ import {
   DISPLAY_WEEK_LIMIT,
   FETCH_HEADERS,
   FETCH_TIMEOUT_MS,
+  LIVE_INGEST_BUDGET_MS,
   MONITOR_FEEDS,
   SCHEMA_VERSION,
+  SOURCE_CONCURRENCY,
   STALE_AFTER_SECONDS,
   TIMEZONE,
 } from "./config.js";
 import { parseFrApi, parseGovInfo, parseRssItems } from "./parse.js";
 import { dedupeItems, normalizeRawItems, sha256Hex } from "./normalize.js";
-import { sortItems } from "./weeks.js";
+import { addDaysYmd, sortItems, sundayOfYmd, zonedYmd } from "./weeks.js";
 import { emptyFailedPayload, validatePayload } from "./schema.js";
 import { sanitizePayloadStrings } from "./text.js";
+import { corsHeaders } from "./cors.js";
 
 export { MONITOR_FEEDS, SCHEMA_VERSION, STALE_AFTER_SECONDS, TIMEZONE, DISPLAY_WEEK_LIMIT };
 export { validatePayload, emptyFailedPayload };
@@ -23,18 +26,27 @@ function logEvent(log, level, event, fields) {
   else console.log(JSON.stringify(line));
 }
 
-export async function fetchWithTimeout(url, init, timeoutMs, fetchImpl) {
+function timeoutError(message = "timeout") {
+  const timeout = new Error(message);
+  timeout.code = "timeout";
+  return timeout;
+}
+
+export async function fetchWithTimeout(url, init, timeoutMs, fetchImpl, parentSignal) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
-  const timeoutError = () => {
-    const timeout = new Error("timeout");
-    timeout.code = "timeout";
-    return timeout;
-  };
+  const onParent = () => ctrl.abort();
+  if (parentSignal) {
+    if (parentSignal.aborted) {
+      clearTimeout(timer);
+      throw timeoutError();
+    }
+    parentSignal.addEventListener("abort", onParent, { once: true });
+  }
   try {
     const pending = Promise.resolve(fetchImpl(url, { ...init, signal: ctrl.signal }));
     const aborted = new Promise((_, reject) => {
-      ctrl.signal.addEventListener("abort", () => reject(timeoutError()));
+      ctrl.signal.addEventListener("abort", () => reject(timeoutError()), { once: true });
     });
     return await Promise.race([pending, aborted]);
   } catch (err) {
@@ -44,10 +56,11 @@ export async function fetchWithTimeout(url, init, timeoutMs, fetchImpl) {
     throw err;
   } finally {
     clearTimeout(timer);
+    if (parentSignal) parentSignal.removeEventListener("abort", onParent);
   }
 }
 
-async function withRetry(fn, retries = 1) {
+async function withRetry(fn, retries = 0) {
   let last;
   for (let i = 0; i <= retries; i += 1) {
     try {
@@ -73,9 +86,9 @@ function safeErrorMessage(err) {
   return msg.replace(/https?:\/\/[^\s]+/gi, "[url]").slice(0, 240);
 }
 
-async function fetchRawItems(feed, fetchImpl, timeoutMs) {
+async function fetchRawItems(feed, fetchImpl, timeoutMs, signal) {
   if (feed.kind === "fr-api") {
-    const res = await fetchWithTimeout(feed.url, { headers: FETCH_HEADERS }, timeoutMs, fetchImpl);
+    const res = await fetchWithTimeout(feed.url, { headers: FETCH_HEADERS }, timeoutMs, fetchImpl, signal);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const payload = await res.json();
     return parseFrApi(payload, feed);
@@ -85,12 +98,12 @@ async function fetchRawItems(feed, fetchImpl, timeoutMs) {
       method: "POST",
       headers: { ...FETCH_HEADERS, "Content-Type": "application/json" },
       body: JSON.stringify({ query: feed.query, offset: 0, pageSize: 20, historical: false }),
-    }, timeoutMs, fetchImpl);
+    }, timeoutMs, fetchImpl, signal);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const payload = await res.json();
     return parseGovInfo(payload, feed);
   }
-  const res = await fetchWithTimeout(feed.url, { headers: FETCH_HEADERS }, timeoutMs, fetchImpl);
+  const res = await fetchWithTimeout(feed.url, { headers: FETCH_HEADERS }, timeoutMs, fetchImpl, signal);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return parseRssItems(await res.text(), feed);
 }
@@ -101,24 +114,59 @@ export async function ingestMonitor({
   log,
   timeoutMs = FETCH_TIMEOUT_MS,
   feeds = MONITOR_FEEDS,
+  signal,
+  concurrency = SOURCE_CONCURRENCY,
 } = {}) {
   const retrievedAt = now().toISOString();
+  const todayYmd = zonedYmd(now(), TIMEZONE);
+  const weekStartSunday = sundayOfYmd(todayYmd);
+  const weekEndSaturday = addDaysYmd(weekStartSunday, 6);
   const sources = [];
   const included = [];
   const excluded = [];
   const unsafe = [];
   const invalidDates = [];
+  const settled = new Array(feeds.length);
+  let budgetExceeded = false;
 
-  const settled = await Promise.allSettled(feeds.map(async (feed) => {
+  async function runFeed(feed) {
+    if (signal && signal.aborted) throw timeoutError("live ingest budget exceeded");
     const started = Date.now();
-    const raw = await withRetry(() => fetchRawItems(feed, fetchImpl, timeoutMs));
-    const normalized = await normalizeRawItems(raw, feed, retrievedAt);
-    return { feed, normalized, durationMs: Date.now() - started };
-  }));
+    try {
+      const raw = await withRetry(() => fetchRawItems(feed, fetchImpl, timeoutMs, signal));
+      const normalized = await normalizeRawItems(raw, feed, retrievedAt);
+      return { feed, normalized, durationMs: Date.now() - started };
+    } catch (err) {
+      if (err && err.code === "malformed") {
+        logEvent(log, "error", "parse_failed", { sourceId: feed.id, error: safeErrorMessage(err) });
+      }
+      throw err;
+    }
+  }
+
+  for (let i = 0; i < feeds.length; i += concurrency) {
+    if (signal && signal.aborted) {
+      budgetExceeded = true;
+      for (let j = i; j < feeds.length; j += 1) {
+        settled[j] = { status: "rejected", reason: timeoutError("live ingest budget exceeded") };
+      }
+      logEvent(log, "error", "ingest_budget_exceeded", { completed: i, remaining: feeds.length - i });
+      break;
+    }
+    const batch = feeds.slice(i, i + concurrency).map((feed, offset) => {
+      const index = i + offset;
+      return runFeed(feed).then(
+        (value) => { settled[index] = { status: "fulfilled", value }; },
+        (reason) => { settled[index] = { status: "rejected", reason }; },
+      );
+    });
+    await Promise.allSettled(batch);
+    if (signal && signal.aborted) budgetExceeded = true;
+  }
 
   for (let i = 0; i < settled.length; i += 1) {
     const feed = feeds[i];
-    const result = settled[i];
+    const result = settled[i] || { status: "rejected", reason: timeoutError("live ingest budget exceeded") };
     if (result.status === "fulfilled") {
       const { normalized, durationMs } = result.value;
       included.push(...normalized.included);
@@ -136,6 +184,7 @@ export async function ingestMonitor({
         itemCount,
         fetchedCount: itemCount + normalized.excluded.length + normalized.unsafe.length,
         excludedCount: normalized.excluded.length,
+        lastAttemptAt: retrievedAt,
         lastSuccessAt: retrievedAt,
         error: "",
         durationMs,
@@ -153,6 +202,7 @@ export async function ingestMonitor({
         itemCount: 0,
         fetchedCount: 0,
         excludedCount: 0,
+        lastAttemptAt: retrievedAt,
         lastSuccessAt: "",
         error: safeErrorMessage(result.reason),
         durationMs: 0,
@@ -179,8 +229,20 @@ export async function ingestMonitor({
     staleAfterSeconds: STALE_AFTER_SECONDS,
     timezone: TIMEZONE,
     displayWeekLimit: DISPLAY_WEEK_LIMIT,
+    weekBoundary: {
+      timezone: TIMEZONE,
+      todayYmd,
+      weekStartSunday,
+      weekEndSaturday,
+      cadence: "Sunday-Saturday",
+    },
     overallStatus,
+    lastAttemptAt: retrievedAt,
     lastSuccessAt: okSources.length ? retrievedAt : "",
+    fallback: false,
+    fallbackReason: "",
+    fallbackAt: "",
+    liveAttemptAt: retrievedAt,
     sources,
     items,
     excluded: excluded.slice(0, 80),
@@ -192,6 +254,7 @@ export async function ingestMonitor({
       unsafeUrls: unsafe.length,
       invalidDates: invalidDates.length,
       failedSources: failed.length,
+      budgetExceeded,
       duplicates: duplicates.slice(0, 40),
       unsafe: unsafe.slice(0, 40),
       invalidDateSamples: invalidDates.slice(0, 20),
@@ -215,6 +278,7 @@ export async function ingestMonitor({
     overallStatus,
     items: items.length,
     failedSources: failed.length,
+    budgetExceeded,
   });
   return cleaned;
 }
@@ -248,14 +312,46 @@ export function jsonResponse(payload, origin, extraHeaders = {}) {
   const headers = {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": CACHE_CONTROL,
-    "Pragma": "no-cache",
+    Pragma: "no-cache",
     "X-QM-Schema": SCHEMA_VERSION,
     "X-QM-Generated-At": payload.generatedAt || "",
     "X-QM-Status": payload.overallStatus || "",
-    "Access-Control-Allow-Origin": origin || "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Authorization, Content-Type",
+    ...corsHeaders(origin),
     ...extraHeaders,
   };
-  return new Response(JSON.stringify(payload), { status: payload.overallStatus === "failed" && !payload.items.length ? 503 : 200, headers });
+  return new Response(JSON.stringify(payload), {
+    status: 200,
+    headers,
+  });
+}
+
+export function markAsFallback(payload, reason, nowIso) {
+  const next = { ...payload, diagnostics: { ...(payload.diagnostics || {}) } };
+  next.stale = true;
+  next.fallback = true;
+  next.fallbackReason = reason;
+  next.fallbackAt = nowIso;
+  next.liveAttemptAt = nowIso;
+  next.cacheAgeSeconds = typeof payload.cacheAgeSeconds === "number" ? payload.cacheAgeSeconds : 0;
+  if (next.overallStatus === "ok" || next.overallStatus === "empty") next.overallStatus = "stale";
+  next.diagnostics.error = reason;
+  return next;
+}
+
+export async function ingestMonitorWithBudget(opts = {}) {
+  const budget = opts.budgetMs || LIVE_INGEST_BUDGET_MS;
+  const parent = opts.signal;
+  const ctrl = new AbortController();
+  const onParent = () => ctrl.abort();
+  if (parent) {
+    if (parent.aborted) ctrl.abort();
+    else parent.addEventListener("abort", onParent, { once: true });
+  }
+  const timer = setTimeout(() => ctrl.abort(), budget);
+  try {
+    return await ingestMonitor({ ...opts, signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+    if (parent) parent.removeEventListener("abort", onParent);
+  }
 }

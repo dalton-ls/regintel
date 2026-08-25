@@ -9,27 +9,24 @@
 import {
   agePayload,
   emptyFailedPayload,
-  ingestMonitor,
+  ingestMonitorWithBudget,
   jsonResponse,
+  markAsFallback,
   monitorCacheKey,
   readCachedPayload,
 } from "./monitor/ingest.js";
+import { corsHeaders } from "./monitor/cors.js";
 
 const ALLOWED_PATHS = new Set(["requirements.json", "wr.json"]);
-
-function corsHeaders(origin) {
-  return {
-    "Access-Control-Allow-Origin": origin || "*",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Authorization, Content-Type",
-    "Access-Control-Max-Age": "86400",
-  };
-}
 
 function json(data, status, origin) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "Content-Type": "application/json", ...corsHeaders(origin) },
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store, no-cache, max-age=0, must-revalidate",
+      ...corsHeaders(origin),
+    },
   });
 }
 
@@ -103,10 +100,9 @@ function publicOrigin(env, requestUrl) {
 }
 
 async function refreshMonitorCache(env, origin) {
-  const payload = await ingestMonitor();
+  const payload = await ingestMonitorWithBudget();
   const aged = agePayload(payload, new Date());
-  const response = jsonResponse(aged, "*");
-  await caches.default.put(monitorCacheKey(origin), response.clone());
+  await caches.default.put(monitorCacheKey(origin), jsonResponse(aged, "*", { "Cache-Control": "private, max-age=3600" }));
   return aged;
 }
 
@@ -115,29 +111,55 @@ async function handleMonitor(request, env, ctx) {
   const url = new URL(request.url);
   const origin = publicOrigin(env, url);
   const now = new Date();
+  const liveAttemptAt = now.toISOString();
+  logMonitor("info", "monitor_live_start", { refresh: url.searchParams.get("refresh") || "", origin: originHeader || "" });
 
   try {
-    const fresh = await ingestMonitor();
+    const fresh = await ingestMonitorWithBudget();
     const aged = agePayload(fresh, now);
+    aged.liveAttemptAt = liveAttemptAt;
+    const liveFailed = aged.overallStatus === "failed" && !(aged.items || []).length;
+    if (liveFailed) {
+      const cached = await readCachedPayload(caches.default, origin);
+      if (cached) {
+        const fallback = markAsFallback(agePayload(cached, now), aged.diagnostics && aged.diagnostics.error
+          ? aged.diagnostics.error
+          : (aged.diagnostics && aged.diagnostics.budgetExceeded ? "live ingest budget exceeded" : "all sources failed"), liveAttemptAt);
+        logMonitor("info", "monitor_fallback_cache", { reason: fallback.fallbackReason, generatedAt: fallback.generatedAt });
+        return jsonResponse(fallback, originHeader);
+      }
+    }
+    aged.fallback = false;
+    aged.fallbackReason = "";
     const response = jsonResponse(aged, originHeader);
-    if (ctx && ctx.waitUntil) ctx.waitUntil(caches.default.put(monitorCacheKey(origin), response.clone()));
+    if (ctx && ctx.waitUntil) {
+      ctx.waitUntil(caches.default.put(
+        monitorCacheKey(origin),
+        jsonResponse(aged, originHeader, { "Cache-Control": "private, max-age=3600" }),
+      ));
+    }
+    logMonitor("info", "monitor_live_ok", { overallStatus: aged.overallStatus, items: (aged.items || []).length });
     return response;
   } catch (err) {
-    console.log(JSON.stringify({
-      level: "error",
-      event: "monitor_unavailable",
-      error: String(err && err.message || err).replace(/https?:\/\/[^\s]+/gi, "[url]"),
-    }));
+    const reason = String(err && err.message || err).replace(/https?:\/\/[^\s]+/gi, "[url]");
+    logMonitor("error", "monitor_live_failed", { error: reason });
     const cached = await readCachedPayload(caches.default, origin);
     if (cached) {
       const aged = agePayload(cached, now);
-      aged.stale = true;
-      aged.diagnostics = { ...aged.diagnostics, error: "Live ingest failed; serving last cached payload" };
-      if (aged.overallStatus === "ok") aged.overallStatus = "stale";
-      return jsonResponse(aged, originHeader);
+      const fallback = markAsFallback(aged, reason, liveAttemptAt);
+      logMonitor("info", "monitor_fallback_cache", { reason, generatedAt: fallback.generatedAt });
+      return jsonResponse(fallback, originHeader);
     }
-    return jsonResponse(emptyFailedPayload(now.toISOString(), "ingestion unavailable"), originHeader);
+    const failed = emptyFailedPayload(liveAttemptAt, reason);
+    failed.liveAttemptAt = liveAttemptAt;
+    failed.fallback = false;
+    failed.fallbackReason = "";
+    return jsonResponse(failed, originHeader);
   }
+}
+
+function logMonitor(level, event, fields) {
+  console.log(JSON.stringify({ ts: new Date().toISOString(), level, event, ...fields }));
 }
 
 async function handleHealth(request, env) {
@@ -167,7 +189,10 @@ export default {
     const origin = request.headers.get("Origin");
     const url = new URL(request.url);
 
+    try {
     if (request.method === "OPTIONS") {
+      logMonitor("info", "cors_preflight", { origin: origin || "", path: url.pathname });
+      if (origin) logMonitor("info", "cors_allow", { origin, allow: corsHeaders(origin)["Access-Control-Allow-Origin"] });
       return new Response(null, { status: 204, headers: corsHeaders(origin) });
     }
 
@@ -220,6 +245,13 @@ export default {
     }
 
     return json({ error: "not found" }, 404, origin);
+    } catch (err) {
+      logMonitor("error", "worker_exception", {
+        path: url.pathname,
+        error: String(err && err.message || err).replace(/https?:\/\/[^\s]+/gi, "[url]"),
+      });
+      return json({ error: "worker exception", schemaVersion: "qm-monitor-v1" }, 500, origin);
+    }
   },
 
   async scheduled(event, env, ctx) {

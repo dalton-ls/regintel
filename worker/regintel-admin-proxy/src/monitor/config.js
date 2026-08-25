@@ -2,9 +2,11 @@ export const SCHEMA_VERSION = "qm-monitor-v1";
 export const TIMEZONE = "America/New_York";
 export const DISPLAY_WEEK_LIMIT = 5;
 export const STALE_AFTER_SECONDS = 6 * 60 * 60;
-export const FETCH_TIMEOUT_MS = 8000;
+export const FETCH_TIMEOUT_MS = 4000;
+export const LIVE_INGEST_BUDGET_MS = 20000;
+export const SOURCE_CONCURRENCY = 6;
 export const MAX_ITEMS_PER_SOURCE = 25;
-export const CACHE_CONTROL = "no-store, no-cache, must-revalidate";
+export const CACHE_CONTROL = "no-store, no-cache, max-age=0, must-revalidate";
 
 export const FETCH_HEADERS = {
   "User-Agent": "RegIntel-monitor/1.1 (Quality Manager regulatory monitoring)",
@@ -38,19 +40,19 @@ export const MONITOR_FEEDS = [
     id: "govinfo-fr-snf",
     folder: "official",
     title: "GovInfo FR - skilled nursing facility",
-    queryLabel: 'Federal Register collection · "skilled nursing facility"',
+    queryLabel: 'Federal Register collection · "skilled nursing" OR "nursing facility" OR "skilled nursing facility"',
     agency: "Federal Register / GovInfo",
     kind: "govinfo-search",
-    query: 'collection:(FR) "skilled nursing facility"',
+    query: 'collection:(FR) ("skilled nursing" OR "nursing facility" OR "skilled nursing facility")',
   },
   {
     id: "govinfo-fr-nh",
     folder: "official",
     title: "GovInfo FR - nursing home",
-    queryLabel: 'Federal Register collection · "nursing home"',
+    queryLabel: 'Federal Register collection · "nursing homes"',
     agency: "Federal Register / GovInfo",
     kind: "govinfo-search",
-    query: 'collection:(FR) "nursing home"',
+    query: 'collection:(FR) ("nursing homes" OR "nursing home")',
   },
   {
     id: "govinfo-fr-483",
