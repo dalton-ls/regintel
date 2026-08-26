@@ -2,6 +2,7 @@ const LOCAL_ORIGIN = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i;
 const KNOWN_ORIGINS = new Set([
   "https://dalton-ls.github.io",
   "https://regintel-admin-proxy.regintel.workers.dev",
+  "https://regintel-quality-monitor.regintel.workers.dev",
 ]);
 
 export function allowOrigin(requestOrigin) {
