@@ -28,8 +28,8 @@ folder, not this git repo). Broader ontology:
   `wr.json` on every page load. Falls back to legacy `data.json` only if
   those two fetches fail. Policy Manager lists obligations the parser
   routed to a written-policy response (or tagged Policy / Procedure).
-- **Admin tools** (passphrase toggle, top-right): Record Editor,
-  Bulk-Apply, Pending Review, Export, WR Ingest — see below.
+- **Admin tools** (passphrase toggle, top-right): Bulk-Apply,
+  Pending Review, Export, WR Ingest — see below.
 
 ## Data model
 
@@ -172,12 +172,11 @@ count, not a customer headcount.
 
 ## Unified admin tools (`requirements.json`)
 
-Four screens, all reading/writing `requirements.json` directly against
+Three screens, all reading/writing `requirements.json` directly against
 GitHub — no browser localStorage, usable from any computer:
 
 | Screen | File | Purpose |
 |---|---|---|
-| Individual Record Editor | `record-editor.html` | Search/select an output row, edit, save |
 | Filter → Bulk-Apply | `bulk-apply.html` | Filter rows, preview one field change, apply |
 | Pending Review Queue | `pending-review.html` | Upload a classified batch; resolve conflicts; see type-level affected settings/roles/jurisdictions |
 | Export | `export.html` | Download the current dataset (and/or `wr.json`) as a backup snapshot |
@@ -201,8 +200,8 @@ per-sheet JSON shape and a `localStorage` overlay (`regintel_user_imports`):
 | WR Ingest (`ingest.html`) | `wr.json` | `export_wr.py` |
 
 **WR Ingest is still the primary way to get Workforce Readiness content
-in.** Role and Care Setting data go through Pending Review + Bulk-Apply +
-Record Editor. The research-view **Import JSON** / **Export JSON** /
+in.** Role and Care Setting data go through Pending Review + Bulk-Apply.
+  The research-view **Import JSON** / **Export JSON** /
 **Clear imports** controls use the same `localStorage` mechanism as WR
 Ingest; they merge WR records, they are not the identity model (Record ID
 is).
@@ -214,7 +213,7 @@ is).
 | `regintel.html` | Research view (Quality Monitor, Roles, Care Settings, Policy, WR, Facility/Learner) |
 | `quality-monitor.html` | Quality Manager RSS monitor (embedded in research view) |
 | `schema.js` | 47-column parser contract, closed vocabularies, Policy-relevance helper |
-| `record-editor.html` / `bulk-apply.html` / `pending-review.html` / `export.html` | Unified admin tools |
+| `bulk-apply.html` / `pending-review.html` / `export.html` | Unified admin tools |
 | `requirements.json` | Live output-row projection — source of truth for Role + Care Setting |
 | `wr.json` | Workforce Readiness (`WR *` sheets) |
 | `role.json` / `caresetting.json` | Legacy per-type files consumed by `migrate_to_unified.py` |

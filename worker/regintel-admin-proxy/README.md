@@ -1,7 +1,7 @@
 # regintel-admin-proxy
 
 A small Cloudflare Worker that lets the RegIntel admin screens
-(`record-editor.html`, `bulk-apply.html`, `pending-review.html`, and
+(`bulk-apply.html`, `pending-review.html`, and
 in-place Edit on `regintel.html`) commit edits directly to
 `requirements.json` (Role + Care Setting output rows) or `wr.json`
 (Workforce Readiness) on GitHub — the live **output-row projection**,
@@ -49,8 +49,8 @@ secret gating write access for one trusted operator.
    Wrangler prints the Worker's URL, e.g.
    `https://regintel-admin-proxy.<your-subdomain>.workers.dev`
 
-5. **Point the admin screens at it**: open `record-editor.html`,
-   `bulk-apply.html`, and `pending-review.html` in the repo root and set
+5. **Point the admin screens at it**: open `bulk-apply.html` and
+   `pending-review.html` in the repo root and set
    the `WORKER_URL` constant near the top of each `<script>` block to the
    URL from step 4.
 

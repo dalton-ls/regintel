@@ -220,6 +220,7 @@
   async function fetchLatestRecords() {
     const loaded = await loadRequirementsProjection(WORKER_URL);
     window.__projectionSource = loaded.source;
+    window.__proxyError = loaded.proxyError || '';
     return loaded.records;
   }
 
@@ -476,7 +477,7 @@
     try {
       records = await fetchLatestRecords();
       if (window.__projectionSource === 'local') {
-        document.getElementById('globalError').innerHTML = proxyUnavailableNote(records.length);
+        document.getElementById('globalError').innerHTML = proxyUnavailableNote(records.length, window.__proxyError);
       }
     } catch (err) {
       document.getElementById('filterGrid').innerHTML = '<p class="muted">Could not load requirements.json: ' + esc(err.message) + '</p>';

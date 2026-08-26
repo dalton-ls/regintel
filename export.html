@@ -59,7 +59,7 @@
     <main class="content-panel">
   <div class="page-wrap">
     <h1 class="page-title">Export</h1>
-    <p class="page-desc">Download the current dataset as JSON. Requirements is always read fresh from the latest commit on GitHub — the Record Editor, Bulk-Apply, and Pending Review screens commit directly there, so this always reflects the live state. Choose which datasets to export, then download.</p>
+    <p class="page-desc">Download the current dataset as JSON. Requirements is always read fresh from the latest commit on GitHub — Bulk-Apply and Pending Review commit directly there, so this always reflects the live state. Choose which datasets to export, then download.</p>
     <div id="globalError"></div>
 
     <label class="dataset-card">
@@ -116,6 +116,7 @@
   async function fetchLatestRequirements() {
     const loaded = await loadRequirementsProjection(WORKER_URL);
     window.__projectionSource = loaded.source;
+    window.__proxyError = loaded.proxyError || '';
     return loaded.records;
   }
 
@@ -134,7 +135,7 @@
       const from = window.__projectionSource === 'worker' ? 'loaded fresh from GitHub' : 'loaded from local file (admin proxy unreachable)';
       document.getElementById('reqMeta').textContent = baseRecords.length + ' records · ' + from;
       if (window.__projectionSource === 'local') {
-        document.getElementById('globalError').innerHTML = proxyUnavailableNote(baseRecords.length);
+        document.getElementById('globalError').innerHTML = proxyUnavailableNote(baseRecords.length, window.__proxyError);
       }
     } catch (err) {
       document.getElementById('reqMeta').textContent = 'Could not load requirements.json: ' + err.message;

@@ -221,7 +221,7 @@
   // ─── Phase 3/4/5 advisory checks (Dalton, 2026-08-17) ───
   // Warn, never block -- distinct from the hard-blocking anchor-rule check
   // in applyResolutions() below, which guards the original required schema
-  // fields. Mirrors the same logic in record-editor.html.
+  // fields.
   const APPLICABILITY_ANCHOR_FIELDS = ["setting", "role", "organization_type", "profession", "activity"];
 
   function advisoryWarnings(resolved) {

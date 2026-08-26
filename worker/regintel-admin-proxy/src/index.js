@@ -60,6 +60,14 @@ async function getFile(env, path, branch) {
   return { sha: body.sha, content: base64ToUtf8(blobBody.content.replace(/\n/g, "")) };
 }
 
+async function getFileRaw(env, path, branch) {
+  const res = await githubApiRequest(env, `contents/${path}?ref=${encodeURIComponent(branch)}`, {
+    headers: { Accept: "application/vnd.github.raw" },
+  });
+  if (!res.ok) throw new Error(`GitHub GET ${path} failed: ${res.status} ${await res.text()}`);
+  return res.text();
+}
+
 async function putFile(env, path, branch, message, newContentStr, sha) {
   const res = await githubApiRequest(env, `contents/${path}`, {
     method: "PUT",
@@ -103,12 +111,16 @@ export default {
         }, 410, origin);
       }
 
+      if (request.method === "GET" && (url.pathname === "/health" || url.pathname === "/")) {
+        return json({ ok: true, service: "regintel-admin-proxy" }, 200, origin);
+      }
+
       if (request.method === "GET" && url.pathname === "/file") {
         const path = url.searchParams.get("path") || "requirements.json";
         if (!ALLOWED_PATHS.has(path)) return json({ error: "path not allowed" }, 400, origin);
         try {
-          const { sha, content } = await getFile(env, path, env.GITHUB_BRANCH);
-          return json({ sha, content: JSON.parse(content) }, 200, origin);
+          const raw = await getFileRaw(env, path, env.GITHUB_BRANCH);
+          return json({ sha: null, content: JSON.parse(raw) }, 200, origin);
         } catch (err) {
           return json({ error: err.message }, 502, origin);
         }

@@ -125,7 +125,7 @@ Required, Approval Basis, Hours Required, Frequency, Source URL,
 Notes / Research Flags.
 
 Invariants enforced at every write path (`migrate_to_unified.py`,
-Record Editor, Bulk-Apply, Pending Review):
+Bulk-Apply, Pending Review):
 
 - Anchor: at least one of Jurisdiction Setting or Jurisdiction Role.
 - `Requirement Level` ∈ {Explicit Training, Other Training Reference}
@@ -229,18 +229,17 @@ named customer’s policies.
 
 ## 7. Admin workflow
 
-Four screens, all reading/writing the projection file
+Three screens, all reading/writing the projection file
 `requirements.json` on GitHub via the Cloudflare Worker:
 
-1. **Record Editor** — spot-correct one output row.
-2. **Bulk-Apply** — one field change across a filtered set (Impact Types
+1. **Bulk-Apply** — one field change across a filtered set (Impact Types
    included; structured Applicability objects are not bulk-edited from a
    plain text box).
-3. **Pending Review** — classify an incoming batch by Record ID. New IDs
+2. **Pending Review** — classify an incoming batch by Record ID. New IDs
    can be added; differing content is always queued. **Nothing
    auto-overwrites.** This is also how change tags and applicability/impact
    tags enter the projection.
-4. **Export** — convenience snapshot, not the write path.
+3. **Export** — convenience snapshot, not the write path.
 
 Human QA is part of the architecture: the site does not parse source
 text. It reviews already-classified output. For Impact Types, humans
