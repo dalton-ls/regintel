@@ -4,57 +4,486 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>RegIntel | Home</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     html, body {
-      min-height: 100%;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      height: 100%;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       font-size: 14px;
-      color: #1a2332;
-      background: #f0f2f5;
+      color: #1e293b;
+      background: #f1f5f9;
+      overflow: hidden;
     }
+
     .app-header {
-      height: 60px;
-      background: #1a2e5a;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 200;
+      height: 48px;
+      background: #0d1b2e;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 24px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-      position: sticky; top: 0; z-index: 20;
+      padding-right: 16px;
     }
-    .header-brand { display: flex; align-items: center; gap: 10px; }
-    .logo-text { font-size: 17px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
-    .header-sep { color: rgba(255,255,255,0.25); font-size: 20px; font-weight: 200; }
-    .header-subtitle { font-size: 12px; color: rgba(255,255,255,0.6); }
-    .header-link {
-      font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.65);
-      text-decoration: none; padding: 6px 12px; border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.15);
+    .header-left { display: flex; align-items: center; flex: 1; min-width: 0; }
+    .sidebar-toggle {
+      width: 48px; height: 48px;
+      display: flex; align-items: center; justify-content: center;
+      background: none; border: none;
+      color: #94a3b8; cursor: pointer; flex-shrink: 0;
     }
-    .header-link:hover { background: rgba(255,255,255,0.08); color: #fff; }
-    main { max-width: 1100px; margin: 0 auto; padding: 80px 24px; }
-    .empty-state { text-align: center; color: #6b7a99; }
-    .empty-state h1 {
-      font-size: 22px; font-weight: 700; color: #1a2332; margin-bottom: 8px;
+    .sidebar-toggle:hover { color: #fff; }
+    .header-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .logo-text { font-size: 14px; font-weight: 600; color: #fff; letter-spacing: -0.2px; white-space: nowrap; }
+    .header-sep { color: #64748b; font-size: 14px; font-weight: 400; }
+    .header-subtitle { font-size: 13px; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .admin-toggle {
+      display: flex; align-items: center; gap: 6px;
+      background: none; border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px; padding: 5px 10px;
+      color: rgba(255,255,255,0.6); cursor: pointer;
+      font-size: 11px; font-weight: 600; font-family: inherit;
+      letter-spacing: 0.03em; text-transform: uppercase;
     }
-    .empty-state p { line-height: 1.6; max-width: 36rem; margin: 0 auto; }
+    .admin-toggle:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); }
+    .admin-toggle.active { background: rgba(234,179,8,0.15); color: #fbbf24; border-color: rgba(234,179,8,0.4); }
+
+    .body-row {
+      display: flex;
+      position: fixed;
+      top: 48px; left: 0; right: 0; bottom: 0;
+    }
+
+    .sidebar {
+      width: 208px; flex-shrink: 0;
+      background: #fff;
+      border-right: 1px solid #e2e8f0;
+      overflow: hidden;
+      transition: width 200ms ease;
+    }
+    .sidebar.collapsed { width: 40px; }
+    .sidebar-nav { padding: 8px 0 16px; }
+    #adminNav { display: none !important; }
+    body.admin-on #adminNav { display: block !important; }
+
+    .nav-section {
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: #94a3b8;
+      padding: 14px 16px 4px;
+      white-space: nowrap; overflow: hidden;
+    }
+    .sidebar.collapsed .nav-section { opacity: 0; height: 0; padding: 0; overflow: hidden; }
+
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 16px;
+      text-decoration: none;
+      color: #475569;
+      font-size: 13px; font-weight: 500;
+      white-space: nowrap; overflow: hidden;
+    }
+    .nav-item:hover { background: #f8fafc; color: #1e293b; }
+    .nav-item.active { background: #eff6ff; color: #1d4ed8; font-weight: 500; }
+    .nav-icon {
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; color: #94a3b8; width: 16px; height: 16px;
+    }
+    .nav-item.active .nav-icon { color: #3b82f6; }
+    .nav-label { opacity: 1; }
+    .sidebar.collapsed .nav-label { opacity: 0; pointer-events: none; }
+
+    .content-panel {
+      flex: 1; min-width: 0;
+      overflow-y: auto; overflow-x: hidden;
+      background: #f1f5f9;
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 transparent;
+    }
+
+    .home {
+      max-width: 56rem;
+      margin: 0 auto;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 32px;
+    }
+
+    .eyebrow {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 12px; font-weight: 500; color: #94a3b8;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .home h1 {
+      font-size: 24px; font-weight: 600; color: #1e293b;
+      line-height: 1.25; margin-top: 8px;
+    }
+    .lede {
+      font-size: 14px; color: #64748b; line-height: 1.65;
+      max-width: 42rem; margin-top: 8px;
+    }
+
+    .section-label {
+      font-size: 12px; font-weight: 600; color: #94a3b8;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 12px;
+    }
+
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .pipe {
+      border-radius: 4px; border: 1px solid; padding: 16px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .pipe.signal { border-color: #fde68a; background: #fffbeb; }
+    .pipe.horizon { border-color: #bfdbfe; background: #eff6ff; }
+    .pipe.codified { border-color: #a7f3d0; background: #ecfdf5; }
+    .pipe-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+    .pipe-badge {
+      font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px;
+    }
+    .pipe.signal .pipe-badge { color: #b45309; background: #fef3c7; }
+    .pipe.horizon .pipe-badge { color: #1d4ed8; background: #dbeafe; }
+    .pipe.codified .pipe-badge { color: #047857; background: #d1fae5; }
+    .pipe-cadence { font-size: 11px; color: #94a3b8; text-align: right; }
+    .pipe-title { font-size: 14px; font-weight: 500; color: #334155; }
+    .pipe-body { font-size: 12px; color: #64748b; line-height: 1.55; }
+
+    .tools {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .tool-card {
+      display: flex; flex-direction: column; gap: 12px;
+      text-align: left; text-decoration: none;
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 4px;
+      padding: 16px; color: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .tool-card:hover { border-color: #93c5fd; box-shadow: 0 1px 2px rgba(15,23,42,0.06); }
+    .tool-card-head { display: flex; align-items: center; justify-content: space-between; }
+    .tool-card-name { display: flex; align-items: center; gap: 8px; }
+    .tool-card-name svg { color: #3b82f6; width: 16px; height: 16px; }
+    .tool-card:hover .tool-card-name svg { color: #2563eb; }
+    .tool-card-name span { font-size: 14px; font-weight: 600; color: #334155; }
+    .tool-card:hover .tool-card-name span { color: #0f172a; }
+    .tool-chevron { color: #cbd5e1; width: 12px; height: 12px; }
+    .tool-card:hover .tool-chevron { color: #60a5fa; }
+    .tool-card p { font-size: 12px; color: #94a3b8; line-height: 1.55; }
+    .tool-group {
+      font-size: 11px; font-weight: 500; color: #cbd5e1;
+      text-transform: uppercase; letter-spacing: 0.04em;
+    }
+
+    .about {
+      border: 1px solid #e2e8f0; background: #f8fafc;
+      border-radius: 4px; padding: 20px;
+    }
+    .about p:first-child {
+      font-size: 12px; font-weight: 600; color: #64748b;
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
+    }
+    .about p:last-child { font-size: 14px; color: #475569; line-height: 1.65; }
+    .about strong { font-weight: 500; color: #334155; }
+
+    .admin-toast {
+      position: fixed; bottom: 24px; right: 24px; z-index: 400;
+      background: #1a2332; color: #fff; font-size: 13px; font-weight: 500;
+      padding: 10px 16px; border-radius: 8px;
+      opacity: 0; transition: opacity 0.3s; pointer-events: none;
+    }
+    .admin-toast.show { opacity: 1; }
+
+    @media (max-width: 860px) {
+      .pipeline { grid-template-columns: 1fr; }
+      .tools { grid-template-columns: 1fr; }
+      .header-subtitle { display: none; }
+    }
   </style>
 </head>
 <body>
   <header class="app-header">
-    <div class="header-brand">
-      <span class="logo-text">RegIntel</span>
-      <span class="header-sep">|</span>
-      <span class="header-subtitle">Home</span>
+    <div class="header-left">
+      <button class="sidebar-toggle" id="sidebarToggle" aria-label="Collapse sidebar">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/>
+        </svg>
+      </button>
+      <div class="header-brand">
+        <span class="logo-text">RegIntel</span>
+        <span class="header-sep">|</span>
+        <span class="header-subtitle">Regulatory Intelligence Research</span>
+      </div>
     </div>
-    <a class="header-link" href="regintel.html">Open research view →</a>
+    <button class="admin-toggle" id="adminToggle" onclick="toggleAdmin()">
+      <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
+      </svg>
+      <span id="adminLabel">Admin</span>
+    </button>
   </header>
-  <main>
-    <div class="empty-state">
-      <h1>Home</h1>
-      <p>This page is not populated yet. Quality Manager monitoring lives in the research view under Intelligence → Quality Monitor.</p>
-    </div>
-  </main>
+
+  <div class="body-row">
+    <aside class="sidebar" id="sidebar">
+      <nav class="sidebar-nav">
+        <a href="index.html" class="nav-item active">
+          <span class="nav-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+              <path fill-rule="evenodd" d="M9.293 2.293a1 1 0 011.414 0l7 7A1 1 0 0117 11h-1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-3a1 1 0 00-1-1H9a1 1 0 00-1 1v3a1 1 0 01-1 1H5a1 1 0 01-1-1v-6H3a1 1 0 01-.707-1.707l7-7z" clip-rule="evenodd"/>
+            </svg>
+          </span>
+          <span class="nav-label">Home</span>
+        </a>
+        <div class="nav-section">Intelligence</div>
+        <a href="regintel.html#quality-monitor" class="nav-item">
+          <span class="nav-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+              <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/>
+            </svg>
+          </span>
+          <span class="nav-label">Quality Monitor</span>
+        </a>
+        <a href="regintel.html#roles" class="nav-item">
+          <span class="nav-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+              <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/>
+            </svg>
+          </span>
+          <span class="nav-label">Roles</span>
+        </a>
+        <a href="regintel.html#care-settings" class="nav-item">
+          <span class="nav-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+              <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/>
+            </svg>
+          </span>
+          <span class="nav-label">Care Settings</span>
+        </a>
+        <div class="nav-section">Query</div>
+        <a href="regintel.html#policy" class="nav-item">
+          <span class="nav-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+              <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/>
+            </svg>
+          </span>
+          <span class="nav-label">Policy</span>
+        </a>
+        <a href="regintel.html#profile" class="nav-item">
+          <span class="nav-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+              <path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zm14 5H2v7a2 2 0 002 2h12a2 2 0 002-2V9zM9 11a1 1 0 112 0 1 1 0 01-2 0zm-4 0a1 1 0 112 0 1 1 0 01-2 0zm8 0a1 1 0 112 0 1 1 0 01-2 0z" clip-rule="evenodd"/>
+            </svg>
+          </span>
+          <span class="nav-label">Facility/Learner</span>
+        </a>
+        <a href="regintel.html#workforce" class="nav-item">
+          <span class="nav-icon">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16">
+              <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v1h8v-1zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-1a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v1h-3zM4.75 14.094A5.973 5.973 0 004 17v1H1v-1a3 3 0 013.75-2.906z"/>
+            </svg>
+          </span>
+          <span class="nav-label">Workforce Readiness</span>
+        </a>
+        <div id="adminNav">
+          <div style="border-top:1px solid #e2e8f0;margin:12px 0;"></div>
+          <a href="ingest.html" class="nav-item" style="color:#6b7a99;">
+            <span class="nav-label">WR Ingest</span>
+          </a>
+          <a href="record-editor.html" class="nav-item" style="color:#6b7a99;">
+            <span class="nav-label">Record Editor</span>
+          </a>
+          <a href="bulk-apply.html" class="nav-item" style="color:#6b7a99;">
+            <span class="nav-label">Bulk-Apply</span>
+          </a>
+          <a href="pending-review.html" class="nav-item" style="color:#6b7a99;">
+            <span class="nav-label">Pending Review</span>
+          </a>
+          <a href="export.html" class="nav-item" style="color:#6b7a99;">
+            <span class="nav-label">Export</span>
+          </a>
+        </div>
+      </nav>
+    </aside>
+
+    <main class="content-panel">
+      <div class="home">
+        <div>
+          <div class="eyebrow">
+            <span>Research Services</span>
+            <span>·</span>
+            <span>HealthStream</span>
+          </div>
+          <h1>Regulatory Intelligence Research</h1>
+          <p class="lede">
+            RegIntel is the Research Services team's infrastructure for ingesting, structuring, and
+            codifying regulatory requirements across federal and state jurisdictions. Use the tools
+            below to query obligations by care setting, role, or facility — and to monitor signals
+            the team is actively tracking.
+          </p>
+        </div>
+
+        <section>
+          <h2 class="section-label">Research Artifact Pipeline</h2>
+          <div class="pipeline">
+            <article class="pipe signal">
+              <div class="pipe-top">
+                <span class="pipe-badge">Signal</span>
+                <span class="pipe-cadence">Biweekly, Monthly · Internal</span>
+              </div>
+              <p class="pipe-title">Quality and Signal Reports</p>
+              <p class="pipe-body">Identifies emerging and prior-stage CMS changes for the SNF quality use case — signals likely to spark future mandates, training requirements, or product changes in HSTM.</p>
+            </article>
+            <article class="pipe horizon">
+              <div class="pipe-top">
+                <span class="pipe-badge">Horizon</span>
+                <span class="pipe-cadence">Quarterly · Broader audience</span>
+              </div>
+              <p class="pipe-title">Quarterly Report</p>
+              <p class="pipe-body">Scoped, evidence-backed assessment of where regulation is heading — synthesizing signals into strategic context for product and advisory teams.</p>
+            </article>
+            <article class="pipe codified">
+              <div class="pipe-top">
+                <span class="pipe-badge">Codified</span>
+                <span class="pipe-cadence">Ongoing · Internal</span>
+              </div>
+              <p class="pipe-title">RegIntel Dataset</p>
+              <p class="pipe-body">Structured, versioned, searchable repository of codified mandates. What's in here now is authoritative. Query it through the tools in this app.</p>
+            </article>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="section-label">Tool Navigation</h2>
+          <div class="tools">
+            <a class="tool-card" href="regintel.html#quality-monitor">
+              <div class="tool-card-head">
+                <div class="tool-card-name">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+                  <span>Quality Monitor</span>
+                </div>
+                <svg class="tool-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+              </div>
+              <p>Track CMS signals affecting quality measures. Routes official changes to product review via the biweekly SNF monitor workflow.</p>
+              <span class="tool-group">Intelligence</span>
+            </a>
+            <a class="tool-card" href="regintel.html#roles">
+              <div class="tool-card-head">
+                <div class="tool-card-name">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+                  <span>Roles</span>
+                </div>
+                <svg class="tool-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+              </div>
+              <p>Browse codified regulatory obligations filtered by workforce role or job function — surfacing what each role is accountable for under federal and state authority.</p>
+              <span class="tool-group">Intelligence</span>
+            </a>
+            <a class="tool-card" href="regintel.html#care-settings">
+              <div class="tool-card-head">
+                <div class="tool-card-name">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+                  <span>Care Settings</span>
+                </div>
+                <svg class="tool-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+              </div>
+              <p>Scope the regulatory dataset to a specific care setting — SNF, hospital, home health, behavioral health, and others — to view applicable requirements.</p>
+              <span class="tool-group">Intelligence</span>
+            </a>
+            <a class="tool-card" href="regintel.html#policy">
+              <div class="tool-card-head">
+                <div class="tool-card-name">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+                  <span>Policy</span>
+                </div>
+                <svg class="tool-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+              </div>
+              <p>Query the regulation-linked policy framework by obligation type, authority source, or risk level — supporting evidence-based policy operating model decisions.</p>
+              <span class="tool-group">Query</span>
+            </a>
+            <a class="tool-card" href="regintel.html#profile">
+              <div class="tool-card-head">
+                <div class="tool-card-name">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4zm14 5H2v7a2 2 0 002 2h12a2 2 0 002-2V9zM9 11a1 1 0 112 0 1 1 0 01-2 0zm-4 0a1 1 0 112 0 1 1 0 01-2 0zm8 0a1 1 0 112 0 1 1 0 01-2 0z" clip-rule="evenodd"/></svg>
+                  <span>Facility/Learner</span>
+                </div>
+                <svg class="tool-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+              </div>
+              <p>Cross-reference a facility's obligation profile with learner and workforce context to identify training applicability and compliance gaps.</p>
+              <span class="tool-group">Query</span>
+            </a>
+            <a class="tool-card" href="regintel.html#workforce">
+              <div class="tool-card-head">
+                <div class="tool-card-name">
+                  <svg viewBox="0 0 20 20" fill="currentColor"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v1h8v-1zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-1a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v1h-3zM4.75 14.094A5.973 5.973 0 004 17v1H1v-1a3 3 0 013.75-2.906z"/></svg>
+                  <span>Workforce Readiness</span>
+                </div>
+                <svg class="tool-chevron" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+              </div>
+              <p>Surfaces job study information for pre- and post-acute care roles.</p>
+              <span class="tool-group">Query</span>
+            </a>
+          </div>
+        </section>
+
+        <aside class="about">
+          <p>About This Tool</p>
+          <p>
+            RegIntel is maintained by the <strong>Research Services</strong> team
+            at HealthStream. It serves as the shared regulatory intelligence backbone for product
+            development, content strategy, and internal advisory work. The dataset is updated on a
+            monthly cadence; signals and in-flight items are tracked continuously.
+          </p>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <div class="admin-toast" id="adminToast"></div>
+
+  <script>
+    let sidebarOpen = true;
+    document.getElementById('sidebarToggle').addEventListener('click', () => {
+      sidebarOpen = !sidebarOpen;
+      document.getElementById('sidebar').classList.toggle('collapsed', !sidebarOpen);
+    });
+
+    let adminMode = false;
+    function toggleAdmin() {
+      if (adminMode) {
+        adminMode = false;
+        document.getElementById('adminToggle').classList.remove('active');
+        document.getElementById('adminLabel').textContent = 'Admin';
+        document.body.classList.remove('admin-on');
+        showToast('Admin mode deactivated');
+        return;
+      }
+      const pass = prompt('Enter admin passphrase:');
+      if (pass === null) return;
+      if (pass === 'regintel2025') {
+        adminMode = true;
+        document.getElementById('adminToggle').classList.add('active');
+        document.getElementById('adminLabel').textContent = 'Active';
+        document.body.classList.add('admin-on');
+        showToast('Admin mode activated');
+      } else {
+        showToast('Incorrect passphrase');
+      }
+    }
+    function showToast(msg) {
+      const el = document.getElementById('adminToast');
+      el.textContent = msg;
+      el.classList.add('show');
+      setTimeout(() => el.classList.remove('show'), 2500);
+    }
+  </script>
 </body>
 </html>

@@ -16,8 +16,10 @@ folder, not this git repo). Broader ontology:
 
 ## Live site
 
-- **Knowledge home**: `index.html` — unpopulated Home shell. Quality Manager
-  RSS monitoring lives in the research view as **Quality Monitor**.
+- **Knowledge home**: `index.html` — Research Services home. Orients
+  users to the Signal → Horizon → Codified pipeline and links into the
+  research view. Quality Manager RSS monitoring lives in that view as
+  **Quality Monitor**.
 
 - **Research view**: `regintel.html` — Roles, Care Settings, **Quality Monitor**,
   **Policy**, Workforce Readiness, and Facility/Learner (a
@@ -219,7 +221,7 @@ is).
 | `migrate_to_unified.py` | One-time / full regeneration of `requirements.json` |
 | `normalize_batch.py` | Normalize one already-extracted sheet for Pending Review |
 | `impact-types.js` | Phase 4 Impact Type closed taxonomy (shared by admin + research UI) |
-| `index.html` | Quality Manager RSS monitoring home |
+| `index.html` | Research Services home (pipeline + tool navigation) |
 | `DESIGN.md` | Site boundary, projection schema, admin workflow |
 | `worker/regintel-admin-proxy/` | Cloudflare Worker that commits `requirements.json` |
 | `ingest.html` | WR ingest only |
