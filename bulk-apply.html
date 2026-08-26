@@ -125,6 +125,7 @@
 
   <script src="impact-types.js"></script>
   <script src="schema.js"></script>
+  <script src="admin-proxy.js"></script>
   <script>
   // Set this to the deployed Worker URL from worker/regintel-admin-proxy (see its README).
   const WORKER_URL = 'https://regintel-admin-proxy.regintel.workers.dev';
@@ -217,10 +218,9 @@
   }
 
   async function fetchLatestRecords() {
-    const res = await fetch(WORKER_URL + '/file?path=requirements.json');
-    if (!res.ok) throw new Error('Failed to load requirements.json (HTTP ' + res.status + ')');
-    const body = await res.json();
-    return body.content;
+    const loaded = await loadRequirementsProjection(WORKER_URL);
+    window.__projectionSource = loaded.source;
+    return loaded.records;
   }
 
   async function commitRecords(newRecords, message) {
@@ -475,6 +475,9 @@
     }
     try {
       records = await fetchLatestRecords();
+      if (window.__projectionSource === 'local') {
+        document.getElementById('globalError').innerHTML = proxyUnavailableNote(records.length);
+      }
     } catch (err) {
       document.getElementById('filterGrid').innerHTML = '<p class="muted">Could not load requirements.json: ' + esc(err.message) + '</p>';
       return;

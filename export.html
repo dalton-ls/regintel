@@ -34,6 +34,7 @@
 
     .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1a2332; color: #fff; padding: 10px 20px; border-radius: 10px; font-size: 13px; font-weight: 500; z-index: 999; box-shadow: 0 4px 20px rgba(0,0,0,0.25); opacity: 0; transition: opacity 0.3s; pointer-events: none; }
     .toast.show { opacity: 1; }
+    .warn-note { background: #fef3e2; border: 1px solid #f5cd87; color: #92620a; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin: 0 0 16px; }
   </style>
 </head>
 <body class="chrome-lock admin-on" data-page="export">
@@ -59,6 +60,7 @@
   <div class="page-wrap">
     <h1 class="page-title">Export</h1>
     <p class="page-desc">Download the current dataset as JSON. Requirements is always read fresh from the latest commit on GitHub — the Record Editor, Bulk-Apply, and Pending Review screens commit directly there, so this always reflects the live state. Choose which datasets to export, then download.</p>
+    <div id="globalError"></div>
 
     <label class="dataset-card">
       <input type="checkbox" id="chkReq" checked>
@@ -90,6 +92,7 @@
 
   <div class="toast" id="toast"></div>
 
+  <script src="admin-proxy.js"></script>
   <script>
   // Set this to the deployed Worker URL from worker/regintel-admin-proxy (see its README).
   // Export still works without it configured — it just falls back to a plain
@@ -111,14 +114,9 @@
   }
 
   async function fetchLatestRequirements() {
-    if (WORKER_URL !== 'REPLACE_WITH_WORKER_URL') {
-      const res = await fetch(WORKER_URL + '/file?path=requirements.json');
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      return (await res.json()).content;
-    }
-    const res = await fetch('requirements.json');
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    return res.json();
+    const loaded = await loadRequirementsProjection(WORKER_URL);
+    window.__projectionSource = loaded.source;
+    return loaded.records;
   }
 
   function download(filename, data) {
@@ -133,7 +131,11 @@
   async function init() {
     try {
       baseRecords = await fetchLatestRequirements();
-      document.getElementById('reqMeta').textContent = baseRecords.length + ' records · loaded fresh from GitHub';
+      const from = window.__projectionSource === 'worker' ? 'loaded fresh from GitHub' : 'loaded from local file (admin proxy unreachable)';
+      document.getElementById('reqMeta').textContent = baseRecords.length + ' records · ' + from;
+      if (window.__projectionSource === 'local') {
+        document.getElementById('globalError').innerHTML = proxyUnavailableNote(baseRecords.length);
+      }
     } catch (err) {
       document.getElementById('reqMeta').textContent = 'Could not load requirements.json: ' + err.message;
       document.getElementById('chkReq').checked = false;

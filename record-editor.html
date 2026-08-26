@@ -71,6 +71,7 @@
     .field input[readonly], .field input[disabled] { background: #f1f5f9; color: #64748b; cursor: not-allowed; }
     .validation-warning { background: #fef3e2; border: 1px solid #f5cd87; color: #92620a; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-bottom: 16px; }
     .error-banner { background: #fdecec; border: 1px solid #f5b8b8; color: #a12b2b; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-bottom: 16px; }
+    .warn-note { background: #fef3e2; border: 1px solid #f5cd87; color: #92620a; border-radius: 8px; padding: 10px 14px; font-size: 12px; margin-bottom: 16px; }
     /* Non-blocking, distinct from .validation-warning above (which blocks
        Save). Used for Phase 3/4/5's additive-field vocabulary checks --
        advisory only, per Dalton's 2026-08-17 "warn, never block" choice. */
@@ -169,6 +170,7 @@
 
   <script src="impact-types.js"></script>
   <script src="schema.js"></script>
+  <script src="admin-proxy.js"></script>
   <script>
   // Set this to the deployed Worker URL from worker/regintel-admin-proxy (see its README).
   const WORKER_URL = 'https://regintel-admin-proxy.regintel.workers.dev';
@@ -460,10 +462,9 @@
   }
 
   async function fetchLatestRecords() {
-    const res = await fetch(WORKER_URL + '/file?path=requirements.json');
-    if (!res.ok) throw new Error('Failed to load requirements.json (HTTP ' + res.status + ')');
-    const body = await res.json();
-    return body.content;
+    const loaded = await loadRequirementsProjection(WORKER_URL);
+    window.__projectionSource = loaded.source;
+    return loaded.records;
   }
 
   async function commitRecords(newRecords, message) {
@@ -495,6 +496,9 @@
     }
     try {
       records = await fetchLatestRecords();
+      if (window.__projectionSource === 'local') {
+        document.getElementById('globalError').innerHTML = proxyUnavailableNote(records.length);
+      }
     } catch (err) {
       document.getElementById('resultList').innerHTML =
         '<div class="empty-state"><p>Could not load requirements.json: ' + esc(err.message) + '</p></div>';
