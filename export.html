@@ -132,7 +132,9 @@
   async function init() {
     try {
       baseRecords = await fetchLatestRequirements();
-      const from = window.__projectionSource === 'worker' ? 'loaded fresh from GitHub' : 'loaded from local file (admin proxy unreachable)';
+      const from = window.__projectionSource === 'worker'
+        ? 'loaded fresh from GitHub via admin proxy'
+        : (window.__projectionSource === 'github' ? 'loaded fresh from GitHub' : 'loaded from local file (admin proxy unreachable)');
       document.getElementById('reqMeta').textContent = baseRecords.length + ' records · ' + from;
       if (window.__projectionSource === 'local') {
         document.getElementById('globalError').innerHTML = proxyUnavailableNote(baseRecords.length, window.__proxyError);

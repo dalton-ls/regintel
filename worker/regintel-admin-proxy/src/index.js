@@ -71,8 +71,13 @@ async function getFileRaw(env, path, branch) {
   if (res.status === 401 && githubToken(env)) {
     res = await githubApiRequest(env, reqPath, rawHeaders, { forceAnonymous: true });
   }
-  if (!res.ok) throw new Error(`GitHub GET ${path} failed: ${res.status} ${await res.text()}`);
-  return res.text();
+  if (res.ok) return res.text();
+  const apiStatus = res.status;
+  const apiBody = await res.text();
+  const rawUrl = `https://raw.githubusercontent.com/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/${branch}/${path}`;
+  const rawRes = await fetch(rawUrl, { headers: { "User-Agent": "regintel-admin-proxy" } });
+  if (!rawRes.ok) throw new Error(`GitHub GET ${path} failed: ${apiStatus} ${apiBody}`);
+  return rawRes.text();
 }
 
 async function putFile(env, path, branch, message, newContentStr, sha) {

@@ -152,6 +152,7 @@
 
   <script src="impact-types.js"></script>
   <script src="schema.js"></script>
+  <script src="admin-proxy.js"></script>
   <script>
   // Set this to the deployed Worker URL from worker/regintel-admin-proxy (see its README).
   const WORKER_URL = 'https://regintel-admin-proxy.regintel.workers.dev';
@@ -290,18 +291,6 @@
       if (typeof out[field] === 'string') out[field] = asPipeList(out[field]);
     });
     return out;
-  }
-
-  function unwrapRecordArray(raw) {
-    if (Array.isArray(raw)) return raw;
-    if (!raw || typeof raw !== 'object') return null;
-    if (Array.isArray(raw.content)) return raw.content;
-    if (Array.isArray(raw.records)) return raw.records;
-    if (Array.isArray(raw.rows)) return raw.rows;
-    const buckets = Object.keys(raw)
-      .filter(k => Array.isArray(raw[k]) && raw[k].length && raw[k][0] && typeof raw[k][0] === 'object')
-      .map(k => raw[k]);
-    return buckets.length ? buckets.flat() : null;
   }
 
   function parseJsonText(text) {
@@ -518,33 +507,11 @@
     return t;
   }
 
-  async function fetchWorkerRecords() {
-    const res = await fetch(WORKER_URL + '/file?path=requirements.json');
-    if (!res.ok) throw new Error('Failed to load requirements.json (HTTP ' + res.status + ')');
-    const body = await res.json();
-    let content = body.content;
-    if (typeof content === 'string') content = JSON.parse(content);
-    const rows = unwrapRecordArray(content);
-    if (!rows) throw new Error('Admin proxy did not return a record array');
-    return rows;
-  }
-
   async function fetchLatestRecords() {
-    if (WORKER_URL && WORKER_URL !== 'REPLACE_WITH_WORKER_URL') {
-      try {
-        const rows = await fetchWorkerRecords();
-        projectionSource = 'worker';
-        return rows;
-      } catch (err) {
-        console.warn('Admin proxy unavailable', err);
-      }
-    }
-    const local = await fetch('requirements.json');
-    if (!local.ok) throw new Error('Failed to load requirements.json (admin proxy unavailable, local HTTP ' + local.status + ')');
-    const rows = unwrapRecordArray(await local.json());
-    if (!rows) throw new Error('requirements.json is not a JSON array of records');
-    projectionSource = 'local';
-    return rows;
+    const loaded = await loadRequirementsProjection(WORKER_URL);
+    projectionSource = loaded.source;
+    window.__proxyError = loaded.proxyError || '';
+    return loaded.records;
   }
 
   async function commitRecords(newRecordsArr, message) {
@@ -620,8 +587,12 @@
       el.innerHTML = '';
       return;
     }
+    if (projectionSource === 'github') {
+      el.innerHTML = '<div class="warn-note">Live records loaded from GitHub (' + baseRecords.length + '). Apply/commit still needs the admin proxy' + (window.__proxyError ? ' (' + esc(window.__proxyError) + ')' : '') + '.</div>';
+      return;
+    }
     if (projectionSource === 'local') {
-      el.innerHTML = '<div class="warn-note">Admin proxy is unavailable, so this queue is comparing against local <code>requirements.json</code> (' + baseRecords.length + ' records). You can still classify a batch. Apply/commit needs the proxy.</div>';
+      el.innerHTML = '<div class="warn-note">Admin proxy is unavailable' + (window.__proxyError ? ' (' + esc(window.__proxyError) + ')' : '') + ', so this queue is comparing against local <code>requirements.json</code> (' + baseRecords.length + ' records). You can still classify a batch. Apply/commit needs the proxy.</div>';
       return;
     }
     el.innerHTML = '<div class="warn-note">Could not load the live projection' + (err ? ' (' + esc(err.message) + ')' : '') + '. Upload still works — incoming Record IDs will look new until the projection loads. Apply/commit needs the admin proxy.</div>';

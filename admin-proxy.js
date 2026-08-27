@@ -1,5 +1,8 @@
-/** Shared loader for admin screens: try the Cloudflare proxy, then local requirements.json. */
+/** Shared loader for admin screens: Cloudflare proxy, then public GitHub, then local file. */
 const ADMIN_PROXY_TIMEOUT_MS = 25000;
+const GITHUB_REPO_OWNER = 'dalton-ls';
+const GITHUB_REPO_NAME = 'regintel';
+const GITHUB_PROJECTION_BRANCH = 'claude/create-website-skeleton-hYJMa';
 
 function unwrapRecordArray(raw) {
   if (Array.isArray(raw)) return raw;
@@ -13,14 +16,40 @@ function unwrapRecordArray(raw) {
   return buckets.length ? buckets.flat() : null;
 }
 
-async function fetchWithTimeout(url, ms) {
+async function fetchWithTimeout(url, ms, init) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), ms);
   try {
-    return await fetch(url, { signal: ctrl.signal, cache: 'no-store' });
+    return await fetch(url, Object.assign({ cache: 'no-store' }, init || {}, { signal: ctrl.signal }));
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function parseProjectionResponse(res, label) {
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body && body.error) ? (label + ' HTTP ' + res.status + ': ' + body.error) : (label + ' HTTP ' + res.status));
+  }
+  const body = await res.json();
+  let content = body && Object.prototype.hasOwnProperty.call(body, 'content') ? body.content : body;
+  if (typeof content === 'string') content = JSON.parse(content);
+  const rows = unwrapRecordArray(content);
+  if (!rows) throw new Error(label + ' did not return a record array');
+  return rows;
+}
+
+async function loadRequirementsFromGithub() {
+  const apiUrl = 'https://api.github.com/repos/' + GITHUB_REPO_OWNER + '/' + GITHUB_REPO_NAME +
+    '/contents/requirements.json?ref=' + encodeURIComponent(GITHUB_PROJECTION_BRANCH);
+  const res = await fetchWithTimeout(apiUrl, ADMIN_PROXY_TIMEOUT_MS, {
+    headers: { Accept: 'application/vnd.github.raw' }
+  });
+  if (!res.ok) throw new Error('GitHub HTTP ' + res.status);
+  const text = await res.text();
+  const rows = unwrapRecordArray(JSON.parse(text));
+  if (!rows) throw new Error('GitHub did not return a record array');
+  return rows;
 }
 
 async function loadRequirementsProjection(workerUrl) {
@@ -28,20 +57,18 @@ async function loadRequirementsProjection(workerUrl) {
   if (workerUrl && workerUrl !== 'REPLACE_WITH_WORKER_URL') {
     try {
       const res = await fetchWithTimeout(workerUrl + '/file?path=requirements.json', ADMIN_PROXY_TIMEOUT_MS);
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error((body && body.error) ? ('HTTP ' + res.status + ': ' + body.error) : ('HTTP ' + res.status));
-      }
-      const body = await res.json();
-      let content = body && Object.prototype.hasOwnProperty.call(body, 'content') ? body.content : body;
-      if (typeof content === 'string') content = JSON.parse(content);
-      const rows = unwrapRecordArray(content);
-      if (!rows) throw new Error('Admin proxy did not return a record array');
-      return { records: rows, source: 'worker' };
+      return { records: await parseProjectionResponse(res, 'Admin proxy'), source: 'worker' };
     } catch (err) {
       proxyError = err && err.name === 'AbortError' ? 'timed out' : (err && err.message) || String(err);
       console.warn('Admin proxy unavailable', err);
     }
+  }
+  try {
+    const rows = await loadRequirementsFromGithub();
+    return { records: rows, source: 'github', proxyError };
+  } catch (err) {
+    console.warn('GitHub projection unavailable', err);
+    if (!proxyError) proxyError = (err && err.message) || String(err);
   }
   try {
     const local = await fetch('requirements.json', { cache: 'no-store' });
