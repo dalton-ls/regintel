@@ -2764,15 +2764,16 @@ let selectedRole        = null;
       else if (k.startsWith('CS ')) CS_DATA[k] = tagged;
       else if (k.startsWith('WR ')) tagged.forEach(row => WR_DATA.push(row));
     });
-    DATA      = Object.values(ROLE_DATA).flat();
-    CARE_DATA = Object.values(CS_DATA).flat();
+    DATA      = uniqueNormalizedRows(Object.values(ROLE_DATA).flat());
+    CARE_DATA = uniqueNormalizedRows(Object.values(CS_DATA).flat());
 
     // Derive ROLES from loaded R * sheets
     const seenRoles = new Set();
     ROLES = Object.keys(ROLE_DATA).sort().flatMap(k => {
-      const records = ROLE_DATA[k];
-      const parent  = records.find(r => r.row_type !== 'Child') || records[0];
-      const label   = parent ? (parent.jurisdictional_name || k.slice(2)) : k.slice(2);
+      // Bucket key is the HSTM Role ("R Clinical, Non-Medication Dispensing").
+      // Use that as the dropdown label so Individual/CE obligations that share
+      // a jurisdiction title but map to several HSTM Roles stay distinct.
+      const label = k.slice(2);
       if (seenRoles.has(label)) return [];
       seenRoles.add(label);
       return [{ value: k, label }];
@@ -2835,17 +2836,51 @@ let selectedRole        = null;
   // "CS <setting>": [...] }); requirements.json is instead a flat array of
   // unified records. This buckets it back into that shape so parseData's
   // downstream derivations (ROLES, CARE_SETTINGS_LIST, WF_ROLE_MATCH, etc.)
-  // don't need to change. Role records bucket by canonical HSTM Role (one
-  // role type can span several jurisdiction-specific titles, e.g. LPN/LVN
-  // across states); Care Setting records bucket by HSTM Setting.
+  // don't need to change.
+  //
+  // Research-view tabs route on Regulation Type (the product compatibility
+  // field), not Source Dataset (legacy extraction lane):
+  //   Individual/Continuing Education → Obligations by Role
+  //   Facility-Based/Organizational Training / Organizational Policy → Care Settings
+  // Policy Manager still pulls Organizational Policy (and other policy signals)
+  // from both lanes via isPolicyRelevant().
+  function hstmRoleLabels(r) {
+    const roles = Array.isArray(r['HSTM Role']) ? r['HSTM Role'] : (r['HSTM Role'] ? [r['HSTM Role']] : []);
+    const labels = roles.map(v => String(v).trim()).filter(Boolean);
+    return labels.length ? labels : [r['Jurisdiction Role'] || 'Unlabeled'];
+  }
+
+  function routesToRoleTab(r) {
+    const rt = r['Regulation Type'] || '';
+    if (rt === 'Individual/Continuing Education') return true;
+    if (rt === 'Facility-Based/Organizational Training' || rt === 'Organizational Policy') return false;
+    return r['Source Dataset'] === 'Role';
+  }
+
+  function uniqueNormalizedRows(rows) {
+    const seen = new Set();
+    const out = [];
+    rows.forEach(r => {
+      const id = r.record_id || cardKey(r);
+      if (seen.has(id)) return;
+      seen.add(id);
+      out.push(r);
+    });
+    return out;
+  }
+
   function unifiedToSheetShape(requirements) {
     const sheets = {};
     requirements.forEach(r => {
-      const isRole = r['Source Dataset'] === 'Role';
-      const bucketLabel = isRole
-        ? (Array.isArray(r['HSTM Role']) ? r['HSTM Role'][0] : r['HSTM Role']) || r['Jurisdiction Role'] || 'Unlabeled'
-        : r['HSTM Setting'] || r['Jurisdiction Setting'] || 'Unlabeled';
-      const key = (isRole ? 'R ' : 'CS ') + bucketLabel;
+      if (routesToRoleTab(r)) {
+        hstmRoleLabels(r).forEach(label => {
+          const key = 'R ' + label;
+          (sheets[key] || (sheets[key] = [])).push(r);
+        });
+        return;
+      }
+      const bucketLabel = r['HSTM Setting'] || r['Jurisdiction Setting'] || 'Unlabeled';
+      const key = 'CS ' + bucketLabel;
       (sheets[key] || (sheets[key] = [])).push(r);
     });
     return sheets;
