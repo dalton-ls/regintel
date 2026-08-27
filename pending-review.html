@@ -514,6 +514,15 @@
     return loaded.records;
   }
 
+  async function fetchWorkerRecords() {
+    const rows = await fetchLatestRecords();
+    if (projectionSource !== 'worker' && projectionSource !== 'github') {
+      throw new Error('Cannot apply — live requirements.json is unavailable' +
+        (window.__proxyError ? ' (' + window.__proxyError + ')' : '') + '.');
+    }
+    return rows;
+  }
+
   async function commitRecords(newRecordsArr, message) {
     const token = getToken();
     if (!token) throw new Error('Admin token is required to save.');
