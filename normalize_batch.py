@@ -83,8 +83,10 @@ Usage
 ---------------------------------------------------------------------------
     python3 normalize_batch.py <input.xlsx> --source-dataset Role
     python3 normalize_batch.py <input.xlsx> --source-dataset "Care Setting" -o batch.json
-    python3 normalize_batch.py <input.xlsx>          # auto-detect per sheet from
-                                                      # an "R "/"CS " tab-name prefix
+    python3 normalize_batch.py <input.xlsx>          # per row from Regulation Type
+                                                      # (Individual/Continuing Education → Role;
+                                                      #  Facility-Based / Organizational Policy → Care Setting).
+                                                      # Sheet prefix R / CS is fallback only.
 
     python3 normalize_batch.py <input.json>          # JSON array input instead of Excel
 
@@ -206,12 +208,38 @@ def derive_explicit_training(requirement_level):
     return "Yes" if requirement_level == "Explicit Training" else "No"
 
 
+ROLE_REGULATION_TYPE = "Individual/Continuing Education"
+CARE_REGULATION_TYPES = {
+    "Facility-Based/Organizational Training",
+    "Organizational Policy",
+}
+INSTRUCTION_SHEET_NAMES = {"Review Instructions"}
+
+
 def source_dataset_from_sheet_name(name):
     if name.startswith("R "):
         return "Role"
     if name.startswith("CS "):
         return "Care Setting"
     return None
+
+
+def source_dataset_from_regulation_type(raw_row):
+    rt = str((raw_row or {}).get("Regulation Type") or "").strip()
+    if rt == ROLE_REGULATION_TYPE:
+        return "Role"
+    if rt in CARE_REGULATION_TYPES:
+        return "Care Setting"
+    return None
+
+
+def resolve_source_dataset(raw_row, cli_source_dataset, sheet_name):
+    if cli_source_dataset:
+        return cli_source_dataset
+    inferred = source_dataset_from_regulation_type(raw_row)
+    if inferred:
+        return inferred
+    return source_dataset_from_sheet_name(sheet_name or "")
 
 
 def make_record_id(source_dataset, record):
@@ -499,20 +527,29 @@ def load_excel(input_path, cli_source_dataset):
     workbook = pd.read_excel(input_path, sheet_name=None, dtype=str)
     records = []
     for sheet_name, df in workbook.items():
+        if sheet_name in INSTRUCTION_SHEET_NAMES:
+            continue
         if df.empty:
             continue
-        source_dataset = cli_source_dataset or source_dataset_from_sheet_name(sheet_name)
-        if not source_dataset:
-            print(
-                f"ERROR: sheet '{sheet_name}' doesn't start with 'R ' or 'CS ', and "
-                f"--source-dataset wasn't given. Pass --source-dataset Role|\"Care Setting\", "
-                f"or rename the tab."
-            )
-            sys.exit(1)
         df = df.where(pd.notnull(df), None)
+        sheet_records = []
+        lane_counts = {}
         for _, row in df.iterrows():
-            records.append(normalize_row(row.to_dict(), source_dataset))
-        print(f"  OK  {sheet_name}: {len(df)} rows -> {source_dataset}")
+            raw_row = row.to_dict()
+            source_dataset = resolve_source_dataset(raw_row, cli_source_dataset, sheet_name)
+            if not source_dataset:
+                print(
+                    f"ERROR: sheet '{sheet_name}' has a row with no Regulation Type "
+                    f"of Individual/Continuing Education, Facility-Based/Organizational "
+                    f"Training, or Organizational Policy, and the tab is not 'R '/'CS '. "
+                    f"Pass --source-dataset Role|\"Care Setting\", or classify the row."
+                )
+                sys.exit(1)
+            sheet_records.append(normalize_row(raw_row, source_dataset))
+            lane_counts[source_dataset] = lane_counts.get(source_dataset, 0) + 1
+        records.extend(sheet_records)
+        lanes = ", ".join(f"{lane}={count}" for lane, count in sorted(lane_counts.items()))
+        print(f"  OK  {sheet_name}: {len(sheet_records)} rows -> {lanes}")
     return records
 
 
@@ -521,17 +558,25 @@ def load_json_array(input_path, cli_source_dataset):
     if not isinstance(raw, list):
         print("ERROR: JSON input must be a flat array of row objects.")
         sys.exit(1)
-    if not cli_source_dataset:
-        print("ERROR: --source-dataset is required for JSON input (can't infer from a sheet-tab name).")
-        sys.exit(1)
-    return [normalize_row(row, cli_source_dataset) for row in raw]
+    records = []
+    for row in raw:
+        source_dataset = resolve_source_dataset(row, cli_source_dataset, None)
+        if not source_dataset:
+            print(
+                "ERROR: JSON row is missing Regulation Type, and --source-dataset "
+                "was not given. Classify the row or pass --source-dataset Role|"
+                "\"Care Setting\"."
+            )
+            sys.exit(1)
+        records.append(normalize_row(row, source_dataset))
+    return records
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("input", help="Excel workbook (.xlsx) or JSON array (.json) using the 20-column extraction template or the 47-column parser batch")
     parser.add_argument("--source-dataset", choices=["Role", "Care Setting"], default=None,
-                         help="Force the Source Dataset lane. If omitted for Excel input, inferred per-sheet from an 'R '/'CS ' tab-name prefix.")
+                         help="Force the Source Dataset identity field. If omitted, inferred per row from Regulation Type (Individual/Continuing Education → Role; Facility-Based/Organizational Policy → Care Setting). Sheet prefix R / CS is fallback only.")
     parser.add_argument("--reference", default="requirements.json",
                          help="Existing requirements.json to check incoming Jurisdiction/HSTM values against (default: requirements.json in the current directory; pass '' to skip)")
     parser.add_argument("-o", "--output", default=None, help="Output path (default: <input>-normalized.json)")

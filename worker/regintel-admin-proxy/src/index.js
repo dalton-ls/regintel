@@ -34,17 +34,21 @@ function base64ToUtf8(b64) {
   return new TextDecoder().decode(bytes);
 }
 
-async function githubApiRequest(env, urlPath, init = {}) {
+function githubToken(env) {
+  return (env.GITHUB_TOKEN || "").trim();
+}
+
+async function githubApiRequest(env, urlPath, init = {}, { forceAnonymous = false } = {}) {
   const url = `https://api.github.com/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/${urlPath}`;
-  return fetch(url, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${(env.GITHUB_TOKEN || "").trim()}`,
-      "User-Agent": "regintel-admin-proxy",
-      Accept: "application/vnd.github+json",
-      ...(init.headers || {}),
-    },
-  });
+  const token = forceAnonymous ? "" : githubToken(env);
+  const headers = {
+    "User-Agent": "regintel-admin-proxy",
+    Accept: "application/vnd.github+json",
+    ...(init.headers || {}),
+  };
+  // Empty Bearer makes GitHub 401 even for public repos. Omit when unset.
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return fetch(url, { ...init, headers });
 }
 
 async function getFile(env, path, branch) {
@@ -61,9 +65,12 @@ async function getFile(env, path, branch) {
 }
 
 async function getFileRaw(env, path, branch) {
-  const res = await githubApiRequest(env, `contents/${path}?ref=${encodeURIComponent(branch)}`, {
-    headers: { Accept: "application/vnd.github.raw" },
-  });
+  const reqPath = `contents/${path}?ref=${encodeURIComponent(branch)}`;
+  const rawHeaders = { headers: { Accept: "application/vnd.github.raw" } };
+  let res = await githubApiRequest(env, reqPath, rawHeaders);
+  if (res.status === 401 && githubToken(env)) {
+    res = await githubApiRequest(env, reqPath, rawHeaders, { forceAnonymous: true });
+  }
   if (!res.ok) throw new Error(`GitHub GET ${path} failed: ${res.status} ${await res.text()}`);
   return res.text();
 }
@@ -112,7 +119,12 @@ export default {
       }
 
       if (request.method === "GET" && (url.pathname === "/health" || url.pathname === "/")) {
-        return json({ ok: true, service: "regintel-admin-proxy" }, 200, origin);
+        return json({
+          ok: true,
+          service: "regintel-admin-proxy",
+          githubTokenConfigured: Boolean(githubToken(env)),
+          adminTokenConfigured: Boolean((env.ADMIN_TOKEN || "").trim()),
+        }, 200, origin);
       }
 
       if (request.method === "GET" && url.pathname === "/file") {
@@ -128,6 +140,11 @@ export default {
 
       if (request.method === "POST" && url.pathname === "/commit") {
         if (!checkAuth(request, env)) return json({ error: "unauthorized" }, 401, origin);
+        if (!githubToken(env)) {
+          return json({
+            error: "GITHUB_TOKEN is not set on the Worker. From worker/regintel-admin-proxy run: npx wrangler secret put GITHUB_TOKEN",
+          }, 503, origin);
+        }
 
         let body;
         try { body = await request.json(); }

@@ -1046,9 +1046,10 @@ let selectedRole        = null;
 
   // ─── Facility/Learner Applicability Profile (Phase 6) ───
   // NOT a customer -- a reusable type-level archetype (Jurisdiction, HSTM
-  // Setting, HSTM Role). Queries across the FULL flat dataset (both the
-  // Role lane and Care Setting lane), unlike the Roles/Care Settings tabs
-  // above which are each confined to their own lane. Mirrors
+  // Setting, HSTM Role). Queries across the FULL flat dataset (both
+  // Individual/Continuing Education and Facility-Based / Organizational
+  // Policy rows), unlike the Roles/Care Settings tabs above which each
+  // show one Regulation Type grouping. Mirrors
   // facility_learner_profile.py's Profile/match_profile() exactly.
   let selectedProfileJurisdiction = null;
   let selectedProfileSetting      = null;
@@ -1741,9 +1742,25 @@ let selectedRole        = null;
     return t;
   }
 
+  function proxyNetworkError(err, action) {
+    const msg = err && err.message ? err.message : String(err);
+    if (err && (err.name === 'TypeError' || /Failed to fetch|NetworkError|Load failed/i.test(msg))) {
+      return (action || 'Admin proxy request') + ' failed — the Worker at ' + WORKER_URL + ' is unreachable.';
+    }
+    return msg;
+  }
+
   async function fetchWorkerFile(path) {
-    const res = await fetch(WORKER_URL + '/file?path=' + encodeURIComponent(path));
-    if (!res.ok) throw new Error('Failed to load ' + path + ' (HTTP ' + res.status + ')');
+    let res;
+    try {
+      res = await fetch(WORKER_URL + '/file?path=' + encodeURIComponent(path));
+    } catch (err) {
+      throw new Error(proxyNetworkError(err, 'Load ' + path));
+    }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || ('Failed to load ' + path + ' (HTTP ' + res.status + ')'));
+    }
     const body = await res.json();
     if (body.content === undefined) throw new Error(path + ' did not return content');
     return body.content;
@@ -1752,11 +1769,16 @@ let selectedRole        = null;
   async function commitWorkerFile(path, content, message) {
     const token = getAdminToken();
     if (!token) throw new Error('Admin token is required to save.');
-    const res = await fetch(WORKER_URL + '/commit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ path, message, content })
-    });
+    let res;
+    try {
+      res = await fetch(WORKER_URL + '/commit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ path, message, content })
+      });
+    } catch (err) {
+      throw new Error(proxyNetworkError(err, 'Save'));
+    }
     if (res.status === 401) {
       sessionStorage.removeItem(TOKEN_KEY);
       throw new Error('Admin token was rejected. It has been cleared — try saving again to re-enter it.');
@@ -2770,9 +2792,7 @@ let selectedRole        = null;
     // Derive ROLES from loaded R * sheets
     const seenRoles = new Set();
     ROLES = Object.keys(ROLE_DATA).sort().flatMap(k => {
-      // Bucket key is the HSTM Role ("R Clinical, Non-Medication Dispensing").
-      // Use that as the dropdown label so Individual/CE obligations that share
-      // a jurisdiction title but map to several HSTM Roles stay distinct.
+      // Bucket key is Jurisdiction Role ("R nurse assistant").
       const label = k.slice(2);
       if (seenRoles.has(label)) return [];
       seenRoles.add(label);
@@ -2838,23 +2858,21 @@ let selectedRole        = null;
   // downstream derivations (ROLES, CARE_SETTINGS_LIST, WF_ROLE_MATCH, etc.)
   // don't need to change.
   //
-  // Research-view tabs route on Regulation Type (the product compatibility
-  // field), not Source Dataset (legacy extraction lane):
+  // Research-view tabs route on Regulation Type only:
   //   Individual/Continuing Education → Obligations by Role
   //   Facility-Based/Organizational Training / Organizational Policy → Care Settings
+  // Source Dataset is a legacy Record ID identity field, not a tab router.
   // Policy Manager still pulls Organizational Policy (and other policy signals)
-  // from both lanes via isPolicyRelevant().
-  function hstmRoleLabels(r) {
-    const roles = Array.isArray(r['HSTM Role']) ? r['HSTM Role'] : (r['HSTM Role'] ? [r['HSTM Role']] : []);
+  // via isPolicyRelevant().
+  function jurisdictionRoleLabels(r) {
+    const raw = r['Jurisdiction Role'];
+    const roles = Array.isArray(raw) ? raw : (raw ? [raw] : []);
     const labels = roles.map(v => String(v).trim()).filter(Boolean);
-    return labels.length ? labels : [r['Jurisdiction Role'] || 'Unlabeled'];
+    return labels.length ? labels : ['Unlabeled'];
   }
 
   function routesToRoleTab(r) {
-    const rt = r['Regulation Type'] || '';
-    if (rt === 'Individual/Continuing Education') return true;
-    if (rt === 'Facility-Based/Organizational Training' || rt === 'Organizational Policy') return false;
-    return r['Source Dataset'] === 'Role';
+    return (r['Regulation Type'] || '') === 'Individual/Continuing Education';
   }
 
   function uniqueNormalizedRows(rows) {
@@ -2873,7 +2891,7 @@ let selectedRole        = null;
     const sheets = {};
     requirements.forEach(r => {
       if (routesToRoleTab(r)) {
-        hstmRoleLabels(r).forEach(label => {
+        jurisdictionRoleLabels(r).forEach(label => {
           const key = 'R ' + label;
           (sheets[key] || (sheets[key] = [])).push(r);
         });

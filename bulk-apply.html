@@ -227,11 +227,19 @@
   async function commitRecords(newRecords, message) {
     const token = getToken();
     if (!token) throw new Error('Admin token is required to save.');
-    const res = await fetch(WORKER_URL + '/commit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ path: 'requirements.json', message, content: newRecords })
-    });
+    let res;
+    try {
+      res = await fetch(WORKER_URL + '/commit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+        body: JSON.stringify({ path: 'requirements.json', message, content: newRecords })
+      });
+    } catch (err) {
+      const msg = err && err.message ? err.message : String(err);
+      throw new Error(/Failed to fetch|NetworkError|Load failed/i.test(msg)
+        ? 'Apply failed — the admin proxy at ' + WORKER_URL + ' is unreachable.'
+        : msg);
+    }
     if (res.status === 401) {
       sessionStorage.removeItem(TOKEN_KEY);
       throw new Error('Admin token was rejected. It has been cleared — try applying again to re-enter it.');

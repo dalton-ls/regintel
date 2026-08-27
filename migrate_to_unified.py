@@ -13,9 +13,10 @@ Background
 Care Setting and Role requirements share the same metadata shape (see
 DESIGN.md), so they are combined into one unified record type here. Each
 unified record keeps track of which source file it came from via
-"Source Dataset", which also doubles as the admin-tool "lane" routing
-signal (Role lane vs. Care Setting lane) until "Regulation Type" values
-are fully backfilled.
+"Source Dataset". That field is a Record ID identity input only.
+Research-view tabs route on Regulation Type (Individual/Continuing
+Education → Obligations by Role; Facility-Based/Organizational Training
+and Organizational Policy → Obligations by Care Setting).
 
 Workforce Readiness (wr.json) is intentionally NOT included. WR stays a
 separate dataset per the locked design.

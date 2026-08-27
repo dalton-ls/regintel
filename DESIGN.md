@@ -76,7 +76,10 @@ used by the current product. It is not the knowledge model.
   row as `Obligation ID` so related projections can share classification
   and impact.
 - **Source Dataset** (`Role` | `Care Setting`) is a legacy extraction
-  lane, not a property of the regulation.
+  lane used only in the Record ID hash. Research-view tabs do **not**
+  route on it. **Obligations by Role** is `Regulation Type` =
+  Individual/Continuing Education. **Obligations by Care Setting** is
+  Facility-Based/Organizational Training or Organizational Policy.
 
 Do not store derived counts (“7 policies”, “4,300 learners”) on the row.
 Those are computed from type-level applicability, not from customer
@@ -101,9 +104,9 @@ the operator infers which downstream products (policy management, training
 modules, competency programs, etc.) may be affected.
 
 `Regulation Type` (Facility-Based/Organizational Training,
-Individual/Continuing Education, Organizational Policy) remains a
-**routing / compatibility** field for the current workforce product. It
-is not the ontology. Impact Type is.
+Individual/Continuing Education, Organizational Policy) is the
+**research-view tab router** and a compatibility field for the current
+workforce product. It is not the ontology. Impact Type is.
 
 ## 5. Current projection schema
 

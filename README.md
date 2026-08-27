@@ -34,9 +34,11 @@ folder, not this git repo). Broader ontology:
 ## Data model
 
 `requirements.json` is the live **output-row projection**: a flat array
-covering both Role and Care Setting extraction lanes, tagged
-`"Source Dataset": "Role" | "Care Setting"`. A Record ID identifies one
-row, not the underlying obligation. See [DESIGN.md](DESIGN.md).
+of classified rows. `"Source Dataset": "Role" | "Care Setting"` is kept
+for Record ID identity. The research view **Obligations by Role** tab
+shows `Regulation Type` = Individual/Continuing Education. **Obligations
+by Care Setting** shows Facility-Based/Organizational Training and
+Organizational Policy. See [DESIGN.md](DESIGN.md).
 
 `wr.json` (Workforce Readiness) is intentionally **not** part of that
 projection — internally authored Domain/KSA framework, not
