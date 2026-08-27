@@ -101,6 +101,26 @@ function checkAuth(request, env) {
   return token && env.ADMIN_TOKEN && token === (env.ADMIN_TOKEN || "").trim();
 }
 
+function githubCredentialError(detail) {
+  return "GITHUB_TOKEN was rejected by GitHub (401 Bad credentials). Create a fine-grained PAT at https://github.com/settings/personal-access-tokens/new with repository dalton-ls/regintel and Contents: Read and write, then from worker/regintel-admin-proxy run: npx wrangler secret put GITHUB_TOKEN" + (detail ? " (" + detail + ")" : "");
+}
+
+async function githubAuthStatus(env) {
+  const token = githubToken(env);
+  if (!token) return "missing";
+  const res = await fetch(`https://api.github.com/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "User-Agent": "regintel-admin-proxy",
+      Accept: "application/vnd.github+json",
+    },
+  });
+  if (res.status === 401) return "bad_credentials";
+  if (res.status === 403) return "forbidden";
+  if (res.ok) return "ok";
+  return "http_" + res.status;
+}
+
 export default {
   async fetch(request, env) {
     const origin = request.headers.get("Origin");
@@ -119,10 +139,12 @@ export default {
       }
 
       if (request.method === "GET" && (url.pathname === "/health" || url.pathname === "/")) {
+        const githubAuth = await githubAuthStatus(env);
         return json({
-          ok: true,
+          ok: githubAuth === "ok" || githubAuth === "missing",
           service: "regintel-admin-proxy",
           githubTokenConfigured: Boolean(githubToken(env)),
+          githubAuth,
           adminTokenConfigured: Boolean((env.ADMIN_TOKEN || "").trim()),
         }, 200, origin);
       }
@@ -168,7 +190,11 @@ export default {
           if (err.status === 409) {
             return json({ error: "conflict — the file changed since you loaded it; reload and try again" }, 409, origin);
           }
-          return json({ error: err.message }, 502, origin);
+          const msg = err && err.message ? err.message : String(err);
+          if (/401/.test(msg) && /Bad credentials/i.test(msg)) {
+            return json({ error: githubCredentialError() }, 502, origin);
+          }
+          return json({ error: msg }, 502, origin);
         }
       }
 
