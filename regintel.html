@@ -101,7 +101,7 @@
       flex-shrink: 0;
       background: #fff;
       border-right: 1px solid #e2e8f0;
-      overflow: hidden;
+      overflow: hidden auto;
       transition: width 200ms ease;
       z-index: 100;
     }
@@ -678,6 +678,7 @@
       background: #f0fdf4; color: #16a34a;
       font-size: 12px; font-weight: 600; font-family: inherit;
       cursor: pointer; white-space: nowrap;
+      flex-shrink: 0; margin-left: auto;
       transition: background 0.15s, border-color 0.15s, color 0.15s;
     }
     .export-btn:hover { background: #dcfce7; border-color: #15803d; color: #15803d; }
@@ -2465,28 +2466,27 @@ let selectedRole        = null;
 </div>`;
   }
 
-  function renderProfileQueryBar() {
-    const hasQuery = !!(selectedProfileSetting || selectedProfileRole);
-    const exportBtn = hasQuery ? `<button class="export-btn" onclick="exportToExcel()" title="Export matching obligations to Excel">
+  function renderExportBtn(title) {
+    return `<button type="button" class="export-btn" onclick="exportToExcel()" title="${esc(title)}">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       Export .xlsx
-    </button>` : '';
+    </button>${exportScopeChip()}`;
+  }
+
+  function renderProfileQueryBar() {
     return `<div class="filter-bar">
     ${renderProfileSingleSelect('profile-jurisdiction', 'Jurisdiction', ALL_JURISDICTIONS, selectedProfileJurisdiction)}
     ${renderProfileSingleSelect('profile-setting', 'HSTM Setting', ALL_HSTM_SETTINGS, selectedProfileSetting)}
     ${renderProfileSingleSelect('profile-role', 'HSTM Role', ALL_HSTM_ROLES, selectedProfileRole)}
     <button type="button" class="btn" id="profileClearBtn">Clear</button>
-    ${exportBtn}
+    ${renderExportBtn('Export matching obligations to Excel')}
   </div>`;
   }
 
   function renderCareFilterBar(settingOnly = false) {
     const settingDD = renderCareSettingDropdown();
-    const exportBtn = `<button class="export-btn" onclick="exportToExcel()" title="Export filtered results to Excel">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      Export .xlsx
-    </button>${exportScopeChip()}`;
-    if (settingOnly) return `<div class="filter-bar">${settingDD}</div>`;
+    const exportBtn = renderExportBtn('Export filtered results to Excel');
+    if (settingOnly) return `<div class="filter-bar">${settingDD}${exportBtn}</div>`;
     return `<div class="filter-bar">
     ${settingDD}
     ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
@@ -2499,10 +2499,7 @@ let selectedRole        = null;
   }
 
   function renderPolicyFilterBar() {
-    const exportBtn = `<button class="export-btn" onclick="exportToExcel()" title="Export filtered results to Excel">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      Export .xlsx
-    </button>${exportScopeChip()}`;
+    const exportBtn = renderExportBtn('Export filtered results to Excel');
     return `<div class="filter-bar">
     ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
     ${ALL_POLICY_ACTIONS.length ? renderDropdown('policyActions', 'Policy action', ALL_POLICY_ACTIONS, filterState.policyActions) : ''}
@@ -2563,11 +2560,8 @@ let selectedRole        = null;
   // ─── Filter bar ─── 
   function renderFilterBar(roleOnly = false) {
     const roleDD = renderRoleDropdown();
-    const exportBtn = `<button class="export-btn" onclick="exportToExcel()" title="Export filtered results to Excel">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-      Export .xlsx
-    </button>${exportScopeChip()}`;
-    if (roleOnly) return `<div class="filter-bar">${roleDD}</div>`;
+    const exportBtn = renderExportBtn('Export filtered results to Excel');
+    if (roleOnly) return `<div class="filter-bar">${roleDD}${exportBtn}</div>`;
     return `<div class="filter-bar">
     ${roleDD}
     ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
@@ -2597,6 +2591,7 @@ let selectedRole        = null;
     return `<div class="filter-bar">
   ${renderWFSingleSelect('wf-setting', 'Care Setting', CARE_SETTINGS_LIST, selectedWFSetting, 'data-wf-setting-select')}
   ${renderWFSingleSelect('wf-role',    'Role',         ROLES,              selectedWFRole,    'data-wf-role-select')}
+  ${renderExportBtn('Export workforce rows to Excel')}
 </div>`;
   }
 

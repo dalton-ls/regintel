@@ -6,12 +6,10 @@ Converts RegIntel_POC_WR.xlsx → wr.json for the RegIntel web tool.
 This is the primary data file for the RegIntel UI and the source of truth for
 the regintel.html inline data embed.
 
-Sheets exported:
-    R LPN           — Role: LPN/LVN, no setting scope
-    CS SNF          — Care Setting: Skilled Nursing Facility
-    CS ALF          — Care Setting: Assisted Living Facility
-    WR LVN_ALF      — Workforce Readiness: LVN × ALF (Job Study sourced)
-    WR LVN_SNF      — Workforce Readiness: LVN × SNF (Job Study sourced)
+Sheets exported (WR * only; job-study Domain/KSA rows):
+    WR CNA_SNF / WR LVN_SNF / WR RN_SNF
+    WR CNA_ALF / WR LVN_ALF / WR RN_ALF
+    WR HHA_HH / WR LVN_HH
 
 Usage:
     python export_wr.py                                    # defaults below
@@ -34,8 +32,14 @@ DEFAULT_INPUT  = "RegIntel_POC_WR.xlsx"
 DEFAULT_OUTPUT = "wr.json"
 
 SHEETS = [
-    "WR LVN_ALF",
+    "WR CNA_SNF",
     "WR LVN_SNF",
+    "WR RN_SNF",
+    "WR CNA_ALF",
+    "WR LVN_ALF",
+    "WR RN_ALF",
+    "WR HHA_HH",
+    "WR LVN_HH",
 ]
 
 # Columns to drop before export — excluded by design, not absent from file
