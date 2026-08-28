@@ -16392,6 +16392,7 @@
     "Jurisdiction Role": "Respiratory care staff",
     "HSTM Setting": "Hospital",
     "HSTM Role": [
+      "Clinical, Medication Dispensing",
       "Clinical, Non-Medication Dispensing"
     ],
     "Regulation Type": "Facility-Based/Organizational Training",
