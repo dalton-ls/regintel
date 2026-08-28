@@ -305,6 +305,7 @@
   function updateValueHint() {
     const field = document.getElementById('targetField').value;
     document.getElementById('valueHint').textContent =
+      field === 'HSTM Role' ? 'Pipe-separated list ( | ). Do not use commas — role names contain commas. Closed set: ' + (SCHEMA_VOCAB['HSTM Role'] || []).join(' | ') :
       field === 'Impact Types' ? 'Comma-separated list, from: ' + IMPACT_TYPES.join(', ') + (LEGACY_IMPACT_TYPES.length ? ' (legacy: ' + LEGACY_IMPACT_TYPES.join(', ') + ')' : '') :
       ARRAY_FIELDS.has(field) ? 'Comma-separated list (HSTM Role is multi-value)' :
       'Leave blank to clear the field';
@@ -375,6 +376,7 @@
 
   function parseNewValue(field, raw) {
     const val = raw.trim();
+    if (field === 'HSTM Role') return val ? splitPipeList(val) : [];
     if (ARRAY_FIELDS.has(field)) return val ? val.split(',').map(s => s.trim()).filter(Boolean) : [];
     return val === '' ? null : val;
   }

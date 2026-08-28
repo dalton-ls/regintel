@@ -1616,6 +1616,20 @@ let selectedRole        = null;
     ).join('') + '</div>';
   }
 
+  function hstmRoleOptions(selected) {
+    const set = new Set(Array.isArray(selected) ? selected : splitPipeList(selected));
+    const known = (SCHEMA_VOCAB['HSTM Role'] || []).slice();
+    set.forEach(v => { if (v && !known.includes(v)) known.push(v); });
+    return { known, set };
+  }
+
+  function renderHstmRoleChecks(selected) {
+    const { known, set } = hstmRoleOptions(selected);
+    return '<div class="edit-impact-list">' + known.map(t =>
+      '<label class="edit-impact-opt"><input type="checkbox" data-hstm-role="' + esc(t) + '"' + (set.has(t) ? ' checked' : '') + '> ' + esc(t) + '</label>'
+    ).join('') + '</div>';
+  }
+
   function renderDrawerEditForm(row) {
     const rec = rawRecord(row);
     const recordId = rec['Record ID'] || row.record_id || '';
@@ -1628,6 +1642,9 @@ let selectedRole        = null;
         const derived = deriveExplicitTraining(rec['Requirement Level'] || row.requirement_level);
         inputEl = '<input type="text" id="explicitTrainingDisplay" value="' + esc(derived) + '" readonly disabled>';
         hint = '<div class="drawer-edit-hint">Computed from Requirement Level — not editable</div>';
+      } else if (field === 'HSTM Role') {
+        inputEl = renderHstmRoleChecks(rec['HSTM Role'] || row.hstm_role);
+        hint = '<div class="drawer-edit-hint">Select all that apply. Role names contain commas, so this is not a comma-separated text field.</div>';
       } else if (field === 'Impact Types') {
         inputEl = renderImpactTypeChecks(rec['Impact Types'] || row.impact_types);
         hint = '<div class="drawer-edit-hint">Parser-assigned response categories. No catalog IDs.</div>';
@@ -1694,8 +1711,9 @@ let selectedRole        = null;
         values[field] = val === 'true' ? true : val === 'false' ? false : null;
         return;
       }
+      if (field === 'HSTM Role') return;
       if (EDIT_ARRAY_FIELDS.has(field)) {
-        values[field] = val ? val.split(',').map(s => s.trim()).filter(Boolean) : [];
+        values[field] = val ? splitPipeList(val) : [];
         return;
       }
       values[field] = val === '' ? null : val;
@@ -1706,6 +1724,13 @@ let selectedRole        = null;
       impactBoxes.forEach(box => { if (box.checked) types.push(box.dataset.impactType); });
       const prev = Array.isArray(original['Impact Types']) ? original['Impact Types'] : splitPipeList(original['Impact Types']);
       if (JSON.stringify(types) !== JSON.stringify(prev)) values['Impact Types'] = types;
+    }
+    const roleBoxes = panel.querySelectorAll('[data-hstm-role]');
+    if (roleBoxes.length) {
+      const roles = [];
+      roleBoxes.forEach(box => { if (box.checked) roles.push(box.dataset.hstmRole); });
+      const prev = Array.isArray(original['HSTM Role']) ? original['HSTM Role'] : splitPipeList(original['HSTM Role']);
+      if (JSON.stringify(roles) !== JSON.stringify(prev)) values['HSTM Role'] = roles;
     }
     return values;
   }

@@ -83,6 +83,14 @@ const PARSER_COLUMNS = [
 const SCHEMA_VOCAB = {
   "Jurisdiction": ["US"],
   "Authority Level": ["Federal Floor", "State Floor", "Competency"],
+  "HSTM Role": [
+    "Clinical, Medication Dispensing",
+    "Clinical, Non-Medication Dispensing",
+    "Non-Clinical, Patient-Facing",
+    "Non-Clinical, Non-Patient Facing",
+    "Managerial Staff",
+    "Physicians & Practitioners"
+  ],
   "Regulation Type": [
     "Facility-Based/Organizational Training",
     "Individual/Continuing Education",

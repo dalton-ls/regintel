@@ -812,6 +812,7 @@
       catch { showToast('Invalid JSON in ' + field + ' -- kept as empty array'); return []; }
     }
     if (BOOLEAN_FIELDS.has(field)) return normalizeImpactReview(val);
+    if (field === 'HSTM Role') return val ? splitPipeList(val) : [];
     if (ARRAY_FIELDS.has(field)) return val ? val.split(',').map(s => s.trim()).filter(Boolean) : [];
     return val === '' ? null : val;
   }
