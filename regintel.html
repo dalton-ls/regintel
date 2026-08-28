@@ -1083,32 +1083,111 @@ let selectedRole        = null;
 
   let openDropdown  = null;
 
+  const WR_SHEET_META = {
+    'WR CNA_SNF': { role: 'Certified Nursing Assistant (CNA)', setting: 'Skilled Nursing Facility' },
+    'WR CNA_ALF': { role: 'Certified Nursing Assistant (CNA)', setting: 'Assisted Living Facility' },
+    'WR LVN_SNF': { role: 'Licensed Vocational Nurse (LVN)', setting: 'Skilled Nursing Facility' },
+    'WR LVN_ALF': { role: 'Licensed Vocational Nurse (LVN)', setting: 'Assisted Living Facility' },
+    'WR LVN_HH':  { role: 'Licensed Vocational Nurse (LVN)', setting: 'Home Health' },
+    'WR RN_SNF':  { role: 'Registered Nurse (RN)', setting: 'Skilled Nursing Facility' },
+    'WR RN_ALF':  { role: 'Registered Nurse (RN)', setting: 'Assisted Living Facility' },
+    'WR HHA_HH':  { role: 'Home Health Aide (HHA)', setting: 'Home Health' }
+  };
+  const WR_ROLE_ORDER = [
+    'Certified Nursing Assistant (CNA)',
+    'Licensed Vocational Nurse (LVN)',
+    'Registered Nurse (RN)',
+    'Home Health Aide (HHA)'
+  ];
+  const WR_SETTING_ORDER = [
+    'Skilled Nursing Facility',
+    'Assisted Living Facility',
+    'Home Health'
+  ];
+  const WR_ROLE_ALIASES = {
+    'cna': 'Certified Nursing Assistant (CNA)',
+    'certified nursing assistant': 'Certified Nursing Assistant (CNA)',
+    'certified nursing assistant (cna)': 'Certified Nursing Assistant (CNA)',
+    'snf nurse assistant': 'Certified Nursing Assistant (CNA)',
+    'certified nurse assistant': 'Certified Nursing Assistant (CNA)',
+    'certified and noncertified nurse assistants': 'Certified Nursing Assistant (CNA)',
+    'rcfe staff': 'Certified Nursing Assistant (CNA)',
+    'lvn': 'Licensed Vocational Nurse (LVN)',
+    'lpn': 'Licensed Vocational Nurse (LVN)',
+    'licensed vocational nurse': 'Licensed Vocational Nurse (LVN)',
+    'licensed vocational nurse (lvn)': 'Licensed Vocational Nurse (LVN)',
+    'licensed practical nurse': 'Licensed Vocational Nurse (LVN)',
+    'licensed nurses': 'Licensed Vocational Nurse (LVN)',
+    'rn': 'Registered Nurse (RN)',
+    'registered nurse': 'Registered Nurse (RN)',
+    'registered nurse (rn)': 'Registered Nurse (RN)',
+    'hha': 'Home Health Aide (HHA)',
+    'home health aide': 'Home Health Aide (HHA)',
+    'home health aide (hha)': 'Home Health Aide (HHA)',
+    'hh home health aide': 'Home Health Aide (HHA)'
+  };
+  const WR_SETTING_ALIASES = {
+    'skilled nursing facility': 'Skilled Nursing Facility',
+    'snf': 'Skilled Nursing Facility',
+    'assisted living facility': 'Assisted Living Facility',
+    'alf': 'Assisted Living Facility',
+    'home health': 'Home Health',
+    'home health agency': 'Home Health',
+    'hh': 'Home Health'
+  };
+
+  function wrCanonicalRole(raw) {
+    const key = String(raw || '').trim().toLowerCase();
+    return WR_ROLE_ALIASES[key] || null;
+  }
+
+  function wrCanonicalSetting(raw) {
+    const key = String(raw || '').trim().toLowerCase();
+    return WR_SETTING_ALIASES[key] || null;
+  }
+
+  function wrSheetMeta(sheet) {
+    return WR_SHEET_META[sheet] || null;
+  }
+
   function wrJobStudyRole(r) {
-    return (r.jurisdictional_name || '').trim();
+    const meta = wrSheetMeta(r._sheet);
+    if (meta) return meta.role;
+    return wrCanonicalRole(r.jurisdictional_name);
+  }
+
+  function wrJobStudySetting(r) {
+    const meta = wrSheetMeta(r._sheet);
+    if (meta) return meta.setting;
+    return wrCanonicalSetting(r.hstm_setting);
+  }
+
+  function wrOrderedOptions(values, order) {
+    const have = new Set(values.filter(Boolean));
+    return order.filter(v => have.has(v)).map(v => ({ value: v, label: v }));
   }
 
   function wrSettingOptions() {
     const rows = selectedWFRole
       ? WR_DATA.filter(r => wrJobStudyRole(r) === selectedWFRole)
       : WR_DATA;
-    return [...new Set(rows.map(r => r.hstm_setting).filter(Boolean))]
-      .sort()
-      .map(s => ({ value: s, label: s }));
+    return wrOrderedOptions(rows.map(wrJobStudySetting), WR_SETTING_ORDER);
   }
 
   function wrRoleOptions() {
     const rows = selectedWFSetting
-      ? WR_DATA.filter(r => r.hstm_setting === selectedWFSetting)
+      ? WR_DATA.filter(r => wrJobStudySetting(r) === selectedWFSetting)
       : WR_DATA;
-    return [...new Set(rows.map(wrJobStudyRole).filter(Boolean))]
-      .sort()
-      .map(s => ({ value: s, label: s }));
+    return wrOrderedOptions(rows.map(wrJobStudyRole), WR_ROLE_ORDER);
   }
 
   function wrRowsForSelection(role, setting) {
     return WR_DATA.filter(r => {
-      if (setting && r.hstm_setting !== setting) return false;
-      if (role && wrJobStudyRole(r) !== role) return false;
+      const jobRole = wrJobStudyRole(r);
+      const jobSetting = wrJobStudySetting(r);
+      if (!jobRole || !jobSetting) return false;
+      if (setting && jobSetting !== setting) return false;
+      if (role && jobRole !== role) return false;
       return true;
     });
   }
@@ -3251,7 +3330,12 @@ let selectedRole        = null;
       const sheets = unifiedToSheetShape(requirements);
       try {
         const wrLoaded = await loadProjectionContent(WORKER_URL, 'wr.json');
-        if (wrLoaded.content && typeof wrLoaded.content === 'object') Object.assign(sheets, wrLoaded.content);
+        const wr = wrLoaded.content;
+        if (wr && typeof wr === 'object' && !Array.isArray(wr)) {
+          Object.keys(wr).forEach(key => {
+            if (key.startsWith('WR ') && Array.isArray(wr[key])) sheets[key] = wr[key];
+          });
+        }
       } catch (err) {
         console.warn('wr.json unavailable', err);
       }
