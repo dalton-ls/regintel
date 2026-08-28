@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="app-chrome.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    .page-wrap { max-width: 1100px; margin: 0 auto; padding: 32px 24px 80px; }
+    .page-wrap { max-width: 1280px; margin: 0 auto; padding: 32px 24px 80px; }
     .page-title { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
     .page-desc { font-size: 14px; color: #6b7a99; line-height: 1.6; margin-bottom: 24px; max-width: 780px; }
 
@@ -46,6 +46,16 @@
     .val-new { color: #15803d; font-weight: 600; }
     .rec-id { font-family: ui-monospace, monospace; color: #9ca3af; font-size: 11px; }
     .preview-scroll { max-height: 340px; overflow-y: auto; border: 1px solid #f0f2f5; border-radius: 8px; }
+    .match-list { margin-top: 16px; }
+    .match-list-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+    .match-list-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #6b7a99; }
+    .match-empty { font-size: 13px; color: #9aaac4; margin-top: 14px; }
+    table.match { width: 100%; border-collapse: collapse; font-size: 12px; }
+    table.match th { text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; color: #9ca3af; padding: 6px 10px; border-bottom: 1px solid #e8ecf0; position: sticky; top: 0; background: #fff; }
+    table.match td { padding: 7px 10px; border-bottom: 1px solid #f0f2f5; vertical-align: top; }
+    table.match tr:last-child td { border-bottom: none; }
+    table.match .topic { color: #1a2332; max-width: 360px; }
+    table.match .meta { color: #6b7a99; white-space: nowrap; }
 
     .hint { font-size: 10px; color: #b0b8cc; margin-top: 3px; }
     .muted { color: #9aaac4; font-size: 13px; }
@@ -82,7 +92,7 @@
     <main class="content-panel">
   <div class="page-wrap">
     <h1 class="page-title">Filter &rarr; Bulk-Apply</h1>
-    <p class="page-desc">Filter output rows in the <code>requirements.json</code> projection by any combination of fields, preview the matching set, then apply a single field change across all matching records at once. Nothing is written until you review the change preview and click apply — applying commits directly to GitHub.</p>
+    <p class="page-desc">Filter output rows in the <code>requirements.json</code> projection by any combination of fields. Matching records appear in the table below as soon as a filter is set. Then choose one field to change, preview the before/after, and apply — applying commits directly to GitHub.</p>
 
     <div id="globalError"></div>
 
@@ -94,6 +104,7 @@
         <span>records match these filters</span>
         <button class="btn" id="clearFiltersBtn" style="margin-left:auto">Clear filters</button>
       </div>
+      <div id="matchList"></div>
     </div>
 
     <div class="card">
@@ -162,7 +173,8 @@
 
   // Fields offered as filters (single-value dropdowns).
   const FILTER_FIELDS = [
-    "Source Dataset", "Jurisdiction", "HSTM Setting", "HSTM Role",
+    "Source Dataset", "Jurisdiction", "Jurisdiction Setting", "Jurisdiction Role",
+    "HSTM Setting", "HSTM Role",
     "Regulation Type", "Requirement Level", "Authority Level", "Relationship",
     "Product Use Case", "Policy Action Relevance", "Operational Domain"
   ];
@@ -318,8 +330,47 @@
     const filters = currentFilters();
     matching = records.filter(r => recordMatches(r, filters));
     document.getElementById('matchCount').textContent = matching.length;
+    renderMatchList(filters);
     // Any active preview is now stale.
     document.getElementById('previewCard').style.display = 'none';
+  }
+
+  function renderMatchList(filters) {
+    const el = document.getElementById('matchList');
+    const filterCount = Object.keys(filters).length;
+    if (!filterCount) {
+      el.innerHTML = '<p class="match-empty">Set at least one filter to list the records that would be in scope. Unfiltered, the table stays hidden so the full projection is not dumped here.</p>';
+      return;
+    }
+    if (!matching.length) {
+      el.innerHTML = '<p class="match-empty">No records match these filters.</p>';
+      return;
+    }
+    const cap = 200;
+    const shown = matching.slice(0, cap);
+    const rows = shown.map(r =>
+      '<tr>' +
+        '<td class="rec-id">' + esc(r['Record ID'] || '') + '</td>' +
+        '<td class="meta">' + esc(r['Citation'] || '') + '</td>' +
+        '<td class="topic" title="' + esc(r['Training Topic / Competency Item'] || '') + '">' + esc(r['Training Topic / Competency Item'] || '') + '</td>' +
+        '<td class="meta">' + esc(displayVal(r['Jurisdiction Role'])) + '</td>' +
+        '<td class="meta">' + esc(r['HSTM Setting'] || '') + '</td>' +
+        '<td class="meta">' + esc(r['Regulation Type'] || '') + '</td>' +
+      '</tr>'
+    ).join('');
+    const more = matching.length > cap
+      ? '<p class="hint">Showing first ' + cap + ' of ' + matching.length + '. Narrow the filters or use Preview changes for the write set.</p>'
+      : '';
+    el.innerHTML =
+      '<div class="match-list">' +
+        '<div class="match-list-head">' +
+          '<div class="match-list-title">Matching records</div>' +
+          '<span class="hint">These rows are in scope. Preview changes (step 2) shows the before/after for the field you pick.</span>' +
+        '</div>' +
+        '<div class="preview-scroll"><table class="match"><thead><tr>' +
+          '<th>Record ID</th><th>Citation</th><th>Topic</th><th>Jurisdiction Role</th><th>HSTM Setting</th><th>Regulation Type</th>' +
+        '</tr></thead><tbody>' + rows + '</tbody></table></div>' + more +
+      '</div>';
   }
 
   function parseNewValue(field, raw) {

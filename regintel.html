@@ -686,6 +686,17 @@
     .admin-toggle:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); border-color: rgba(255,255,255,0.25); }
     .admin-toggle.active { background: rgba(234,179,8,0.15); color: #fbbf24; border-color: rgba(234,179,8,0.4); }
 
+    .projection-badge {
+      font-size: 11px; font-weight: 600; font-family: inherit;
+      padding: 4px 10px; border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18);
+      color: rgba(255,255,255,0.75); background: rgba(255,255,255,0.06);
+      white-space: nowrap; max-width: 280px; overflow: hidden; text-overflow: ellipsis;
+    }
+    .projection-badge.live { border-color: rgba(74,222,128,0.45); background: rgba(22,163,74,0.18); color: #bbf7d0; }
+    .projection-badge.github { border-color: rgba(147,197,253,0.45); background: rgba(37,99,235,0.22); color: #bfdbfe; }
+    .projection-badge.fallback { border-color: rgba(251,191,36,0.5); background: rgba(217,119,6,0.22); color: #fde68a; }
+
     .admin-bar {
       display: none; align-items: center; gap: 10px;
       position: fixed; top: 48px; left: 0; right: 0; z-index: 150;
@@ -790,6 +801,7 @@
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;">
+      <span class="projection-badge" id="projectionBadge" title="Where this page loaded requirements.json from">Loading data…</span>
       <button class="admin-toggle" id="adminToggle" onclick="toggleAdmin()">
         <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
           <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"/>
@@ -973,6 +985,7 @@
   // old inline RAW_DATA constant as the mutable store the admin bar's
   // legacy Import/Export JSON tools and re-parse-on-import logic read/write.
   let CURRENT_SHEETS = {};
+  let PROJECTION_META = { source: 'none', count: 0, proxyError: '' };
 
   const WORKER_URL = adminApiBase();
   const TOKEN_KEY = 'regintel_admin_token';
@@ -1753,19 +1766,42 @@ let selectedRole        = null;
   }
 
   async function fetchWorkerFile(path) {
-    let res;
     try {
-      res = await fetch(WORKER_URL + '/file?path=' + encodeURIComponent(path), { cache: 'no-store' });
+      const loaded = await loadProjectionContent(WORKER_URL, path, {
+        unwrapArray: path === 'requirements.json'
+      });
+      return loaded.content;
     } catch (err) {
       throw new Error(proxyNetworkError(err, 'Load ' + path));
     }
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      throw new Error(body.error || ('Failed to load ' + path + ' (HTTP ' + res.status + ')'));
+  }
+
+  function updateProjectionBadge() {
+    const el = document.getElementById('projectionBadge');
+    if (!el) return;
+    const n = PROJECTION_META.count;
+    const err = PROJECTION_META.proxyError ? ' — API: ' + PROJECTION_META.proxyError : '';
+    if (PROJECTION_META.source === 'worker') {
+      el.className = 'projection-badge live';
+      el.textContent = 'Live · ' + n + ' records';
+      el.title = 'Loaded requirements.json via the admin API (GitHub HEAD).' + err;
+      return;
     }
-    const body = await res.json();
-    if (body.content === undefined) throw new Error(path + ' did not return content');
-    return body.content;
+    if (PROJECTION_META.source === 'github') {
+      el.className = 'projection-badge github';
+      el.textContent = 'GitHub · ' + n + ' records';
+      el.title = 'Admin API unavailable; loaded the live GitHub file.' + err;
+      return;
+    }
+    if (PROJECTION_META.source === 'local') {
+      el.className = 'projection-badge fallback';
+      el.textContent = 'Bundled assets · ' + n + ' records';
+      el.title = 'Admin API and GitHub both failed; this is the last-deployed file, which may be stale.' + err;
+      return;
+    }
+    el.className = 'projection-badge fallback';
+    el.textContent = 'Data unavailable';
+    el.title = 'Could not load requirements.json.';
   }
 
   async function commitWorkerFile(path, content, message) {
@@ -2954,22 +2990,20 @@ let selectedRole        = null;
 
   async function loadData() {
     try {
-      let requirements;
-      try {
-        requirements = await fetchWorkerFile('requirements.json');
-      } catch (err) {
-        console.warn('Live projection unavailable, using bundled requirements.json', err);
-        const reqRes = await fetch('requirements.json', { cache: 'no-store' });
-        if (!reqRes.ok) throw new Error(`requirements.json HTTP ${reqRes.status}`);
-        requirements = await reqRes.json();
-      }
+      const loaded = await loadProjectionContent(WORKER_URL, 'requirements.json', { unwrapArray: true });
+      const requirements = loaded.content;
+      PROJECTION_META = {
+        source: loaded.source,
+        count: Array.isArray(requirements) ? requirements.length : 0,
+        proxyError: loaded.proxyError || ''
+      };
+      updateProjectionBadge();
       const sheets = unifiedToSheetShape(requirements);
       try {
-        const wr = await fetchWorkerFile('wr.json');
-        if (wr && typeof wr === 'object') Object.assign(sheets, wr);
+        const wrLoaded = await loadProjectionContent(WORKER_URL, 'wr.json');
+        if (wrLoaded.content && typeof wrLoaded.content === 'object') Object.assign(sheets, wrLoaded.content);
       } catch (err) {
-        const wrRes = await fetch('wr.json', { cache: 'no-store' });
-        if (wrRes.ok) Object.assign(sheets, await wrRes.json());
+        console.warn('wr.json unavailable', err);
       }
 
       CURRENT_SHEETS = sheets;
@@ -2986,8 +3020,12 @@ let selectedRole        = null;
         CURRENT_SHEETS = json;
         mergeUserImports(CURRENT_SHEETS);
         parseData(CURRENT_SHEETS);
+        PROJECTION_META = { source: 'local', count: DATA.length + CARE_DATA.length, proxyError: err && err.message ? err.message : '' };
+        updateProjectionBadge();
         return;
       } catch (fallbackErr) {
+        PROJECTION_META = { source: 'none', count: 0, proxyError: fallbackErr && fallbackErr.message ? fallbackErr.message : '' };
+        updateProjectionBadge();
         document.getElementById('contentPanel').innerHTML =
           `<div class="main-content"><div class="empty-state">
             <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>

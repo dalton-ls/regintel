@@ -25,7 +25,7 @@
     .summary-stat strong { color: #1a2332; font-size: 18px; display: block; }
     .summary-stat.conflict strong { color: #d97706; }
     .summary-stat.new strong { color: #15803d; }
-    .summary-actions { margin-left: auto; display: flex; gap: 8px; }
+    .summary-actions { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; }
 
     .section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7a99; margin: 22px 0 12px; }
 
@@ -136,6 +136,8 @@
       <div class="summary-stat conflict"><strong id="statConflict">0</strong>Conflicts to review</div>
       <div class="summary-stat"><strong id="statIdentical">0</strong>Identical (no action)</div>
       <div class="summary-actions">
+        <button class="btn" id="keepAllBtn">Keep existing for all</button>
+        <button class="btn" id="incomingAllBtn">Use incoming for all</button>
         <button class="btn primary" id="applyAllBtn">Apply resolutions</button>
       </div>
     </div>
@@ -624,6 +626,8 @@
       if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
     });
     document.getElementById('applyAllBtn').addEventListener('click', applyResolutions);
+    document.getElementById('keepAllBtn').addEventListener('click', () => setChoiceAll('existing'));
+    document.getElementById('incomingAllBtn').addEventListener('click', () => setChoiceAll('incoming'));
   }
 
   function loadFile(file) {
@@ -788,6 +792,18 @@
     card.classList.toggle('mode-manual', choice === 'manual');
   }
 
+  function setChoiceAll(choice) {
+    if (!conflicts.length) {
+      showToast('No conflicts to resolve');
+      return;
+    }
+    conflicts.forEach(c => { c.choice = choice; });
+    render();
+    showToast(choice === 'incoming'
+      ? 'All ' + conflicts.length + ' conflict(s) set to Use incoming'
+      : 'All ' + conflicts.length + ' conflict(s) set to Keep existing');
+  }
+
   function parseField(field, raw) {
     const val = (raw ?? '').trim();
     if (JSON_FIELDS.has(field)) {
@@ -842,6 +858,15 @@
 
       resolutions[c.id] = resolved;
     });
+
+    if (!Object.keys(resolutions).length && !newRecords.length) {
+      if (kept) {
+        showToast('Nothing to write — all ' + kept + ' conflict(s) are still Keep existing. Click Use incoming for all, then Apply.');
+      } else {
+        showToast('Nothing to apply');
+      }
+      return;
+    }
 
     const applyBtn = document.getElementById('applyAllBtn');
     applyBtn.disabled = true;

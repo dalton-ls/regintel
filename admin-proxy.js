@@ -70,51 +70,80 @@ async function loadJsonViaApi(workerUrl, path) {
   return content;
 }
 
-async function loadRequirementsFromGithub() {
+async function loadGithubFile(path) {
   const apiUrl = 'https://api.github.com/repos/' + GITHUB_REPO_OWNER + '/' + GITHUB_REPO_NAME +
-    '/contents/requirements.json?ref=' + encodeURIComponent(GITHUB_PROJECTION_BRANCH);
+    '/contents/' + path + '?ref=' + encodeURIComponent(GITHUB_PROJECTION_BRANCH);
   const res = await fetchWithTimeout(apiUrl, ADMIN_PROXY_TIMEOUT_MS, {
     headers: { Accept: 'application/vnd.github.raw' }
   });
   if (!res.ok) throw new Error('GitHub HTTP ' + res.status);
-  const text = await res.text();
-  const rows = unwrapRecordArray(JSON.parse(text));
+  return JSON.parse(await res.text());
+}
+
+async function loadRequirementsFromGithub() {
+  const rows = unwrapRecordArray(await loadGithubFile('requirements.json'));
   if (!rows) throw new Error('GitHub did not return a record array');
   return rows;
 }
 
-async function loadRequirementsProjection(workerUrl) {
+function abortOrMessage(err) {
+  return err && err.name === 'AbortError' ? 'timed out' : (err && err.message) || String(err);
+}
+
+// Worker /api/file, then public GitHub, then the deployed/local file.
+// unwrapArray:true returns { content: record[] } for requirements.json.
+async function loadProjectionContent(workerUrl, path, opts) {
+  const unwrap = !!(opts && opts.unwrapArray);
   let proxyError = '';
   if (workerUrl && workerUrl !== 'REPLACE_WITH_WORKER_URL') {
     try {
-      const res = await fetchWithTimeout(workerUrl + '/file?path=requirements.json', ADMIN_PROXY_TIMEOUT_MS);
-      return { records: await parseProjectionResponse(res, 'Admin proxy'), source: 'worker' };
+      const content = await loadJsonViaApi(workerUrl, path);
+      if (unwrap) {
+        const rows = unwrapRecordArray(content);
+        if (!rows) throw new Error(path + ' did not return a record array');
+        return { content: rows, source: 'worker' };
+      }
+      return { content, source: 'worker' };
     } catch (err) {
-      proxyError = err && err.name === 'AbortError' ? 'timed out' : (err && err.message) || String(err);
-      console.warn('Admin proxy unavailable', err);
+      proxyError = abortOrMessage(err);
+      console.warn('Admin proxy unavailable for ' + path, err);
     }
   }
   try {
-    const rows = await loadRequirementsFromGithub();
-    return { records: rows, source: 'github', proxyError };
+    const content = await loadGithubFile(path);
+    if (unwrap) {
+      const rows = unwrapRecordArray(content);
+      if (!rows) throw new Error('GitHub did not return a record array');
+      return { content: rows, source: 'github', proxyError };
+    }
+    return { content, source: 'github', proxyError };
   } catch (err) {
-    console.warn('GitHub projection unavailable', err);
-    if (!proxyError) proxyError = (err && err.message) || String(err);
+    console.warn('GitHub projection unavailable for ' + path, err);
+    if (!proxyError) proxyError = abortOrMessage(err);
   }
   try {
-    const local = await fetch('requirements.json', { cache: 'no-store' });
+    const local = await fetch(path, { cache: 'no-store' });
     if (!local.ok) {
-      throw new Error('Failed to load requirements.json (admin proxy unavailable, local HTTP ' + local.status + ')');
+      throw new Error('Failed to load ' + path + ' (admin proxy unavailable, local HTTP ' + local.status + ')');
     }
-    const rows = unwrapRecordArray(await local.json());
-    if (!rows) throw new Error('requirements.json is not a JSON array of records');
-    return { records: rows, source: 'local', proxyError };
+    const parsed = await local.json();
+    if (unwrap) {
+      const rows = unwrapRecordArray(parsed);
+      if (!rows) throw new Error(path + ' is not a JSON array of records');
+      return { content: rows, source: 'local', proxyError };
+    }
+    return { content: parsed, source: 'local', proxyError };
   } catch (err) {
     if (location.protocol === 'file:') {
-      throw new Error('Cannot load requirements.json from a file:// URL. Open the site over http(s) (GitHub Pages or a local server).');
+      throw new Error('Cannot load ' + path + ' from a file:// URL. Open the site over http(s) (GitHub Pages or a local server).');
     }
     throw err;
   }
+}
+
+async function loadRequirementsProjection(workerUrl) {
+  const loaded = await loadProjectionContent(workerUrl, 'requirements.json', { unwrapArray: true });
+  return { records: loaded.content, source: loaded.source, proxyError: loaded.proxyError || '' };
 }
 
 function proxyUnavailableNote(recordCount, proxyError) {
