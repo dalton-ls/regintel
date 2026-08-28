@@ -23,14 +23,15 @@ JOBSTUDY_ROOT = Path(
     r"C:\Users\dascott\OneDrive - HealthStream, Inc\Research Services - Documents\e_jobstudies"
 )
 
-# Filename stem → WR sheet + canonical HSTM values used by the research view.
+# Filename stem → WR sheet. Care Setting / Role labels come from the job
+# study (not from Intelligence jurisdiction roles).
 STUDIES = [
     {
         "path": JOBSTUDY_ROOT / "Skilled Nursing Facilities" / "JobStudy_CNA_SNF_FINAL.docx",
         "sheet": "WR CNA_SNF",
         "hstm_setting": "Skilled Nursing Facility",
         "hstm_role": ["Clinical, Non-Medication Dispensing"],
-        "jurisdiction_role": "SNF Nurse Assistant",
+        "jurisdiction_role": "Certified Nursing Assistant (CNA)",
         "jurisdiction_setting": "skilled nursing facility",
     },
     {
@@ -38,7 +39,7 @@ STUDIES = [
         "sheet": "WR LVN_SNF",
         "hstm_setting": "Skilled Nursing Facility",
         "hstm_role": ["Clinical, Medication Dispensing"],
-        "jurisdiction_role": "licensed nurses",
+        "jurisdiction_role": "Licensed Vocational Nurse (LVN)",
         "jurisdiction_setting": "skilled nursing facility",
     },
     {
@@ -46,7 +47,7 @@ STUDIES = [
         "sheet": "WR RN_SNF",
         "hstm_setting": "Skilled Nursing Facility",
         "hstm_role": ["Clinical, Medication Dispensing"],
-        "jurisdiction_role": "registered nurse",
+        "jurisdiction_role": "Registered Nurse (RN)",
         "jurisdiction_setting": "skilled nursing facility",
     },
     {
@@ -54,7 +55,7 @@ STUDIES = [
         "sheet": "WR CNA_ALF",
         "hstm_setting": "Assisted Living Facility",
         "hstm_role": ["Clinical, Non-Medication Dispensing"],
-        "jurisdiction_role": "RCFE staff",
+        "jurisdiction_role": "Certified Nursing Assistant (CNA)",
         "jurisdiction_setting": "residential care facility for the elderly",
     },
     {
@@ -62,7 +63,7 @@ STUDIES = [
         "sheet": "WR LVN_ALF",
         "hstm_setting": "Assisted Living Facility",
         "hstm_role": ["Clinical, Medication Dispensing"],
-        "jurisdiction_role": "licensed nurses",
+        "jurisdiction_role": "Licensed Vocational Nurse (LVN)",
         "jurisdiction_setting": "residential care facility for the elderly",
     },
     {
@@ -70,7 +71,7 @@ STUDIES = [
         "sheet": "WR RN_ALF",
         "hstm_setting": "Assisted Living Facility",
         "hstm_role": ["Clinical, Medication Dispensing"],
-        "jurisdiction_role": "registered nurse",
+        "jurisdiction_role": "Registered Nurse (RN)",
         "jurisdiction_setting": "residential care facility for the elderly",
     },
     {
@@ -78,7 +79,7 @@ STUDIES = [
         "sheet": "WR HHA_HH",
         "hstm_setting": "Home Health",
         "hstm_role": ["Clinical, Non-Medication Dispensing"],
-        "jurisdiction_role": "HH Home Health Aide",
+        "jurisdiction_role": "Home Health Aide (HHA)",
         "jurisdiction_setting": "home health agency",
     },
     {
@@ -86,7 +87,7 @@ STUDIES = [
         "sheet": "WR LVN_HH",
         "hstm_setting": "Home Health",
         "hstm_role": ["Clinical, Medication Dispensing"],
-        "jurisdiction_role": "licensed nurses",
+        "jurisdiction_role": "Licensed Vocational Nurse (LVN)",
         "jurisdiction_setting": "home health agency",
     },
 ]
@@ -228,6 +229,25 @@ def make_record(study: dict, relationship: str, topic: str, review_date: str | N
     }
 
 
+def unique_records(records: list[dict]) -> list[dict]:
+    seen = set()
+    out = []
+    for rec in records:
+        key = (
+            rec.get("Citation"),
+            rec.get("Training Topic / Competency Item"),
+            rec.get("Jurisdiction"),
+            rec.get("HSTM Setting"),
+            rec.get("Jurisdiction Role"),
+            rec.get("Relationship"),
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(rec)
+    return out
+
+
 def csv_row(sheet: str, record: dict) -> dict:
     row = {"Sheet": sheet}
     for col in CSV_COLUMNS[1:]:
@@ -254,13 +274,15 @@ def main() -> None:
         children = sum(1 for rel, _ in items if rel == "Child")
         if not parents or not children:
             raise SystemExit(f"No Domain/KSA structure in {path.name} (parents={parents}, children={children})")
-        records = [
+        records = unique_records([
             make_record(study, rel, topic, review_date, path.name)
             for rel, topic in items
-        ]
+        ])
         wr[study["sheet"]] = records
         csv_rows.extend(csv_row(study["sheet"], rec) for rec in records)
-        print(f"  OK  {study['sheet']}: {parents} domains, {children} KSAs ({path.name})")
+        dropped = (parents + children) - len(records)
+        extra = f", dropped {dropped} duplicate(s)" if dropped else ""
+        print(f"  OK  {study['sheet']}: {parents} domains, {children} KSAs ({path.name}){extra}")
 
     json_path = ROOT / "wr.json"
     csv_path = ROOT / "wr.csv"

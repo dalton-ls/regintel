@@ -345,22 +345,6 @@
       border: 1px solid transparent;
       border-radius: 10px; padding: 1px 7px; flex-shrink: 0; white-space: nowrap;
     }
-    button.tree-count {
-      font-family: inherit; cursor: pointer;
-    }
-    button.tree-count:hover { background: #dce8fb; color: #2463eb; border-color: #c7d7f8; }
-    button.tree-count.selected { background: #2463eb; color: #fff; border-color: #2463eb; }
-    .export-scope-label {
-      display: inline-flex; align-items: center; gap: 6px;
-      font-size: 11px; font-weight: 600; color: #2463eb;
-      background: #eef3fb; border: 1px solid #c7d7f8; border-radius: 8px;
-      padding: 4px 8px; white-space: nowrap; max-width: 280px;
-    }
-    .export-scope-label span { overflow: hidden; text-overflow: ellipsis; }
-    .export-scope-clear {
-      border: none; background: none; color: #2463eb; cursor: pointer;
-      font: inherit; font-weight: 700; padding: 0; line-height: 1;
-    }
     .tree-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
     .tree-action {
       font-size: 11px; font-weight: 600; color: #2463eb;
@@ -369,6 +353,8 @@
       text-decoration: none; white-space: nowrap;
     }
     .tree-action:hover { background: #eef3fb; }
+    .tree-action.export { color: #16a34a; border-color: #86efac; background: #f0fdf4; }
+    .tree-action.export:hover { background: #dcfce7; }
     .tree-action.danger { color: #b91c1c; border-color: #f5b8b8; }
     .tree-action.danger:hover { background: #fef2f2; }
 
@@ -1097,14 +1083,38 @@ let selectedRole        = null;
 
   let openDropdown  = null;
 
-  let WF_ROLE_MATCH = {};
+  function wrJobStudyRole(r) {
+    return (r.jurisdictional_name || '').trim();
+  }
+
+  function wrSettingOptions() {
+    const rows = selectedWFRole
+      ? WR_DATA.filter(r => wrJobStudyRole(r) === selectedWFRole)
+      : WR_DATA;
+    return [...new Set(rows.map(r => r.hstm_setting).filter(Boolean))]
+      .sort()
+      .map(s => ({ value: s, label: s }));
+  }
+
+  function wrRoleOptions() {
+    const rows = selectedWFSetting
+      ? WR_DATA.filter(r => r.hstm_setting === selectedWFSetting)
+      : WR_DATA;
+    return [...new Set(rows.map(wrJobStudyRole).filter(Boolean))]
+      .sort()
+      .map(s => ({ value: s, label: s }));
+  }
+
+  function wrRowsForSelection(role, setting) {
+    return WR_DATA.filter(r => {
+      if (setting && r.hstm_setting !== setting) return false;
+      if (role && wrJobStudyRole(r) !== role) return false;
+      return true;
+    });
+  }
 
   function buildWFDomains(role, setting) {
-    const roleMatches = WF_ROLE_MATCH[role] || [];
-    const rows = WR_DATA.filter(r => {
-      const roles = Array.isArray(r.hstm_role) ? r.hstm_role : [r.hstm_role];
-      return roles.some(rr => roleMatches.includes(rr)) && r.hstm_setting === setting;
-    });
+    const rows = wrRowsForSelection(role, setting);
     if (!rows.length) return null;
 
     const domains = [];
@@ -1174,7 +1184,6 @@ let selectedRole        = null;
   let rowMap = {};
   let lastTree = [];
   let obligationParent = {};
-  let exportScope = null; // { level, key, label }
 
   const checkSvg = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`;
 
@@ -1350,15 +1359,26 @@ let selectedRole        = null;
     return parts.join(' · ') || countLabel(items.length, 'item', 'items');
   }
 
-  function rowActions(row, key) {
-    if (!row) return '';
+  function rowActions(row, key, leading) {
+    if (!row) return leading ? `<div class="tree-actions">${leading}</div>` : '';
     const src = row.source_url
       ? `<a class="tree-action" href="${esc(row.source_url)}" target="_blank" rel="noopener" data-tree-source="1">Source</a>`
       : '';
     return `<div class="tree-actions">
+      ${leading || ''}
       <button type="button" class="tree-action" data-open-drawer="${esc(key)}">Details</button>
       ${src}
     </div>`;
+  }
+
+  function exportBranchButton(level, key) {
+    const titles = {
+      jurisdiction: 'Export this state to Excel',
+      authority: 'Export this department to Excel',
+      module: 'Export this parent obligation to Excel'
+    };
+    if (!titles[level]) return '';
+    return `<button type="button" class="tree-action export" data-export-branch="${esc(level)}" data-export-key="${esc(key)}" title="${titles[level]}">Export</button>`;
   }
 
   function programActions(program) {
@@ -1449,13 +1469,16 @@ let selectedRole        = null;
     const isOpen = openTree[level] && openTree[level].has(key);
     const rowKey = row ? (row._mergedKey || cardKey(row)) : '';
     const selected = rowKey && selectedCardKey === rowKey;
-    const actions = extraActions || (row ? rowActions(row, rowKey) : '');
-    const scopeOn = !!(exportScope && exportScope.level === level && exportScope.key === key);
-    const countHtml = count
-      ? (adminMode
-        ? `<button type="button" class="tree-count${scopeOn ? ' selected' : ''}" data-export-scope="${esc(level)}" data-export-key="${esc(key)}" title="Select this branch, then Export .xlsx">${esc(count)}</button>`
-        : `<span class="tree-count">${esc(count)}</span>`)
-      : '';
+    const exportBtn = exportBranchButton(level, key);
+    let actions = extraActions;
+    if (!actions) {
+      actions = row
+        ? rowActions(row, rowKey, exportBtn)
+        : (exportBtn ? `<div class="tree-actions">${exportBtn}</div>` : '');
+    } else if (exportBtn) {
+      actions = extraActions.replace('<div class="tree-actions">', '<div class="tree-actions">' + exportBtn);
+    }
+    const countHtml = count ? `<span class="tree-count">${esc(count)}</span>` : '';
     return `<div class="tree-node level-${level} ${isOpen ? 'open' : 'closed'}" data-tree-level="${level}" data-tree-key="${esc(key)}">
   <div class="tree-head">
     <button type="button" class="tree-row${selected ? ' selected' : ''}" data-tree-toggle="${level}" data-tree-key="${esc(key)}"${rowKey ? ` data-card-key="${esc(rowKey)}"` : ''} aria-expanded="${isOpen ? 'true' : 'false'}">
@@ -2019,12 +2042,6 @@ let selectedRole        = null;
     return null;
   }
 
-  function exportScopeChip() {
-    if (!adminMode || !exportScope) return '';
-    return '<span class="export-scope-label" title="Export is limited to this tree branch"><span>' +
-      esc(exportScope.label) + '</span>' +
-      '<button type="button" class="export-scope-clear" id="exportScopeClear" aria-label="Clear export branch">×</button></span>';
-  }
 
   function sampleRowFromProgram(program) {
     if (!program || !program.items) return null;
@@ -2470,7 +2487,7 @@ let selectedRole        = null;
     return `<button type="button" class="export-btn" onclick="exportToExcel()" title="${esc(title)}">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       Export .xlsx
-    </button>${exportScopeChip()}`;
+    </button>`;
   }
 
   function renderProfileQueryBar() {
@@ -2589,8 +2606,8 @@ let selectedRole        = null;
 
   function renderWFFilterBar() {
     return `<div class="filter-bar">
-  ${renderWFSingleSelect('wf-setting', 'Care Setting', CARE_SETTINGS_LIST, selectedWFSetting, 'data-wf-setting-select')}
-  ${renderWFSingleSelect('wf-role',    'Role',         ROLES,              selectedWFRole,    'data-wf-role-select')}
+  ${renderWFSingleSelect('wf-setting', 'Care Setting', wrSettingOptions(), selectedWFSetting, 'data-wf-setting-select')}
+  ${renderWFSingleSelect('wf-role',    'Role',         wrRoleOptions(),    selectedWFRole,    'data-wf-role-select')}
   ${renderExportBtn('Export workforce rows to Excel')}
 </div>`;
   }
@@ -2598,7 +2615,7 @@ let selectedRole        = null;
   function renderWorkforce() {
     if (!selectedWFSetting || !selectedWFRole) {
       const missingBoth = !selectedWFSetting && !selectedWFRole;
-      const msg = missingBoth ? 'Select a care setting and role to view workforce intelligence.' : !selectedWFSetting ? 'Select a care setting above.' : 'Select a role above.';
+      const msg = missingBoth ? 'Select a job-study care setting and role to view workforce intelligence.' : !selectedWFSetting ? 'Select a care setting above.' : 'Select a role above.';
       return renderWFFilterBar() + `<div class="main-content"><div class="empty-state">
         <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
@@ -2610,28 +2627,25 @@ let selectedRole        = null;
 
     const domains = buildWFDomains(selectedWFRole, selectedWFSetting);
     if (!domains || !domains.length) {
-      const rolLabel = ROLES.find(r => r.value === selectedWFRole)?.label || selectedWFRole;
       return renderWFFilterBar() + `<div class="main-content"><div class="empty-state">
         <svg class="empty-state-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
         </svg>
         <p class="empty-state-title">Coming soon</p>
-        <p class="empty-state-text">Workforce intelligence for ${esc(rolLabel)} in ${esc(selectedWFSetting)} is being prepared.</p>
+        <p class="empty-state-text">Workforce intelligence for ${esc(selectedWFRole)} in ${esc(selectedWFSetting)} is being prepared.</p>
       </div></div>`;
     }
-
-    const rolLabel = ROLES.find(r => r.value === selectedWFRole)?.label || selectedWFRole;
 
     const contextBar = `<div class="wf-context-bar">
       <span class="wf-context-label">Viewing</span>
       <span class="wf-context-chip">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-        ${esc(rolLabel)}
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        ${esc(selectedWFSetting)}
       </span>
       <span class="wf-context-sep">→</span>
       <span class="wf-context-chip">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-        ${esc(selectedWFSetting)}
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        ${esc(selectedWFRole)}
       </span>
       <span class="wf-context-sep">·</span>
       <span class="wf-context-meta">${domains.length} domain${domains.length === 1 ? '' : 's'}</span>
@@ -2807,25 +2821,14 @@ let selectedRole        = null;
       deleteProgramBucket(lookupProgram(deleteProgram.dataset.deleteProgram));
       return;
     }
-    const exportPill = e.target.closest('[data-export-scope]');
-    if (exportPill) {
+    const exportBranch = e.target.closest('[data-export-branch]');
+    if (exportBranch) {
       e.stopPropagation();
       e.preventDefault();
-      const level = exportPill.dataset.exportScope;
-      const key = exportPill.dataset.exportKey;
-      if (exportScope && exportScope.level === level && exportScope.key === key) {
-        exportScope = null;
-      } else {
-        const found = lookupExportScope(level, key);
-        exportScope = found ? { level: found.level, key: found.key, label: found.label } : { level, key, label: key };
-      }
-      render();
-      return;
-    }
-    if (e.target.closest('#exportScopeClear')) {
-      e.stopPropagation();
-      exportScope = null;
-      render();
+      exportToExcel({
+        level: exportBranch.dataset.exportBranch,
+        key: exportBranch.dataset.exportKey
+      });
       return;
     }
     const openDrawer = e.target.closest('[data-open-drawer]');
@@ -2852,7 +2855,6 @@ let selectedRole        = null;
     const roleOpt = e.target.closest('[data-role-select]');
     if (roleOpt) {
       selectedRole = roleOpt.dataset.roleSelect;
-      exportScope = null;
       openDropdown = null;
       render();
       return;
@@ -2861,7 +2863,6 @@ let selectedRole        = null;
     const careOpt = e.target.closest('[data-care-select]');
     if (careOpt) {
       selectedCareSetting = careOpt.dataset.careSelect;
-      exportScope = null;
       openDropdown = null;
       render();
       return;
@@ -2886,18 +2887,24 @@ let selectedRole        = null;
       render();
       return;
     }
-    // Workforce role select
+    // Workforce role select (job-study occupation, not Intelligence roles)
     const wfRoleOpt = e.target.closest('[data-wf-role-select]');
     if (wfRoleOpt) {
       selectedWFRole = wfRoleOpt.dataset.wfRoleSelect;
+      if (selectedWFSetting && !wrSettingOptions().some(o => o.value === selectedWFSetting)) {
+        selectedWFSetting = null;
+      }
       openDropdown = null;
       render();
       return;
     }
-    // Workforce setting select
+    // Workforce setting select (job-study care setting, not Intelligence CS list)
     const wfSettingOpt = e.target.closest('[data-wf-setting-select]');
     if (wfSettingOpt) {
       selectedWFSetting = wfSettingOpt.dataset.wfSettingSelect;
+      if (selectedWFRole && !wrRoleOptions().some(o => o.value === selectedWFRole)) {
+        selectedWFRole = null;
+      }
       openDropdown = null;
       render();
       return;
@@ -2984,7 +2991,6 @@ let selectedRole        = null;
       const section = item.dataset.section;
       if (section === activeSection) return;
       activeSection = section;
-      exportScope = null;
       drawerTab = 'overview';
       selectedCardKey = null;
       history.replaceState(null, '', '#' + section);
@@ -3104,16 +3110,8 @@ let selectedRole        = null;
       }
     });
 
-    // Derive WF_ROLE_MATCH from Role records' HSTM Role values
-    WF_ROLE_MATCH = {};
-    Object.keys(ROLE_DATA).forEach(k => {
-      const hstmRoles = new Set();
-      ROLE_DATA[k].forEach(r => {
-        const arr = Array.isArray(r.hstm_role) ? r.hstm_role : [r.hstm_role];
-        arr.forEach(v => { if (v) hstmRoles.add(v); });
-      });
-      WF_ROLE_MATCH[k] = [...hstmRoles];
-    });
+    // Workforce Readiness filters are derived from WR rows (job-study
+    // Care Setting × Role), not from Intelligence Role / Care Setting tabs.
 
     // Seed filter state from loaded data (select all by default)
     ALL_JURISDICTIONS = [...new Set([...DATA, ...CARE_DATA].map(r => r.state).filter(Boolean))].sort();
@@ -3145,7 +3143,7 @@ let selectedRole        = null;
   // parseData() expects the legacy sheet-keyed shape ({ "R <role>": [...],
   // "CS <setting>": [...] }); requirements.json is instead a flat array of
   // unified records. This buckets it back into that shape so parseData's
-  // downstream derivations (ROLES, CARE_SETTINGS_LIST, WF_ROLE_MATCH, etc.)
+  // downstream derivations (ROLES, CARE_SETTINGS_LIST, etc.)
   // don't need to change.
   //
   // Research-view tabs route on Regulation Type only:
@@ -3303,7 +3301,6 @@ let selectedRole        = null;
   function toggleAdmin() {
     if (adminMode) {
       adminMode = false;
-      exportScope = null;
       document.getElementById('adminToggle').classList.remove('active');
       document.getElementById('adminLabel').textContent = 'Admin';
       document.getElementById('adminBar').classList.remove('visible');
@@ -3338,70 +3335,15 @@ let selectedRole        = null;
   }
 
   // ─── Excel Export ───
-  function exportToExcel() {
-    let rows = [];
-    let filename = 'regintel-export';
+  function exportFilenameSlug(s) {
+    return String(s || 'branch').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 48);
+  }
 
-    if (activeSection === 'roles') {
-      rows = filterData();
-      const roleLabel = ROLES.find(r => r.value === selectedRole)?.label || selectedRole || 'all';
-      filename = `regintel-roles-${roleLabel.replace(/\s+/g, '-').toLowerCase()}`;
-    } else if (activeSection === 'care-settings') {
-      rows = publicRecords(CARE_DATA).filter(r => {
-        if (selectedCareSetting && r.hstm_setting !== selectedCareSetting) return false;
-        if (!filterState.jurisdictions.has(r.state)) return false;
-        if (!filterState.requirementLevels.has(r.requirement_level)) return false;
-        if (!filterState.authorityLevels.has(r.authority_level)) return false;
-        if (filterState.impactTypes.size < ALL_IMPACT_TYPES.length) {
-          const tags = Array.isArray(r.impact_types) ? r.impact_types : [];
-          if (!tags.some(t => filterState.impactTypes.has(t))) return false;
-        }
-        return true;
-      });
-      filename = `regintel-care-settings-${(selectedCareSetting || 'all').replace(/\s+/g, '-').toLowerCase()}`;
-    } else if (activeSection === 'profile') {
-      rows = matchProfile(selectedProfileJurisdiction, selectedProfileSetting, selectedProfileRole, publicRecords([...DATA, ...CARE_DATA]));
-      const label = (selectedProfileSetting || selectedProfileRole || 'all').replace(/\s+/g, '-').toLowerCase();
-      filename = `regintel-facility-learner-${label}`;
-    } else if (activeSection === 'workforce') {
-      rows = WR_DATA.filter(r => {
-        if (selectedWFSetting && r.hstm_setting !== selectedWFSetting) return false;
-        const roleMatches = WF_ROLE_MATCH[selectedWFRole] || [];
-        const roles = Array.isArray(r.hstm_role) ? r.hstm_role : [r.hstm_role];
-        if (selectedWFRole && !roles.some(rr => roleMatches.includes(rr))) return false;
-        return true;
-      });
-      filename = `regintel-workforce`;
-    } else if (activeSection === 'quality-monitor') {
-      showToast('Quality Monitor has no obligation rows to export');
-      return;
-    } else if (activeSection === 'policy') {
-      rows = filterPolicyData();
-      filename = 'regintel-policy';
-    }
-
+  function writeExcelFile(rows, filename) {
     if (!rows.length) {
-      showToast('No data to export — adjust your filters');
+      showToast('No data to export');
       return;
     }
-
-    if (adminMode && exportScope) {
-      const scoped = lookupExportScope(exportScope.level, exportScope.key);
-      if (!scoped || !scoped.rows.length) {
-        showToast('That tree branch is no longer in view — clear the export selection or pick it again');
-        return;
-      }
-      const ids = new Set(scoped.rows.map(recordIdOf).filter(Boolean));
-      rows = rows.filter(r => ids.has(recordIdOf(r)));
-      const slug = String(exportScope.label || 'branch').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 48);
-      filename += '-' + (slug || exportScope.level);
-    }
-
-    if (!rows.length) {
-      showToast('No data to export in the selected branch');
-      return;
-    }
-
     const exportRows = rows.map(r => ({
       'Jurisdiction':              r.state,
       'HSTM Role':                 Array.isArray(r.hstm_role) ? r.hstm_role.join(' | ') : r.hstm_role,
@@ -3439,16 +3381,67 @@ let selectedRole        = null;
     const ws = XLSX.utils.json_to_sheet(exportRows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'RegIntel Export');
-
-    // Auto-size columns
     const colWidths = Object.keys(exportRows[0]).map(k => {
       const max = Math.max(k.length, ...exportRows.map(r => String(r[k] || '').length));
       return { wch: Math.min(max + 2, 60) };
     });
     ws['!cols'] = colWidths;
-
     XLSX.writeFile(wb, `${filename}-${new Date().toISOString().slice(0,10)}.xlsx`);
     showToast(`Exported ${exportRows.length} rows to Excel`);
+  }
+
+  function exportToExcel(branch) {
+    if (branch && branch.level && branch.key) {
+      const scoped = lookupExportScope(branch.level, branch.key);
+      if (!scoped || !scoped.rows.length) {
+        showToast('No data to export in this branch');
+        return;
+      }
+      const levelName = { jurisdiction: 'state', authority: 'department', module: 'parent' }[branch.level] || branch.level;
+      writeExcelFile(scoped.rows, `regintel-${levelName}-${exportFilenameSlug(scoped.label || branch.key)}`);
+      return;
+    }
+
+    let rows = [];
+    let filename = 'regintel-export';
+
+    if (activeSection === 'roles') {
+      rows = filterData();
+      const roleLabel = ROLES.find(r => r.value === selectedRole)?.label || selectedRole || 'all';
+      filename = `regintel-roles-${roleLabel.replace(/\s+/g, '-').toLowerCase()}`;
+    } else if (activeSection === 'care-settings') {
+      rows = publicRecords(CARE_DATA).filter(r => {
+        if (selectedCareSetting && r.hstm_setting !== selectedCareSetting) return false;
+        if (!filterState.jurisdictions.has(r.state)) return false;
+        if (!filterState.requirementLevels.has(r.requirement_level)) return false;
+        if (!filterState.authorityLevels.has(r.authority_level)) return false;
+        if (filterState.impactTypes.size < ALL_IMPACT_TYPES.length) {
+          const tags = Array.isArray(r.impact_types) ? r.impact_types : [];
+          if (!tags.some(t => filterState.impactTypes.has(t))) return false;
+        }
+        return true;
+      });
+      filename = `regintel-care-settings-${(selectedCareSetting || 'all').replace(/\s+/g, '-').toLowerCase()}`;
+    } else if (activeSection === 'profile') {
+      rows = matchProfile(selectedProfileJurisdiction, selectedProfileSetting, selectedProfileRole, publicRecords([...DATA, ...CARE_DATA]));
+      const label = (selectedProfileSetting || selectedProfileRole || 'all').replace(/\s+/g, '-').toLowerCase();
+      filename = `regintel-facility-learner-${label}`;
+    } else if (activeSection === 'workforce') {
+      rows = wrRowsForSelection(selectedWFRole, selectedWFSetting);
+      filename = `regintel-workforce`;
+    } else if (activeSection === 'quality-monitor') {
+      showToast('Quality Monitor has no obligation rows to export');
+      return;
+    } else if (activeSection === 'policy') {
+      rows = filterPolicyData();
+      filename = 'regintel-policy';
+    }
+
+    if (!rows.length) {
+      showToast('No data to export — adjust your filters');
+      return;
+    }
+    writeExcelFile(rows, filename);
   }
 
   // ─── JSON Export (Admin) ───
