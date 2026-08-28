@@ -3,6 +3,7 @@ import {
   ALLOWED_PATHS,
   checkAuth,
   getFile,
+  githubBranch,
   githubCredentialError,
   githubToken,
   putFile,
@@ -31,11 +32,11 @@ export async function onRequestPost(context) {
   const newContentStr = JSON.stringify(content, null, 2) + "\n";
 
   try {
-    const { sha } = await getFile(env, path, env.GITHUB_BRANCH);
+    const { sha } = await getFile(env, path, githubBranch(env));
     const commit = await putFile(
       env,
       path,
-      env.GITHUB_BRANCH,
+      githubBranch(env),
       message || "Admin edit via regintel Pages Function",
       newContentStr,
       sha,

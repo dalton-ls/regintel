@@ -2,8 +2,39 @@ const ALLOWED_PATHS = new Set(["requirements.json", "wr.json"]);
 
 export { ALLOWED_PATHS };
 
+export const DEFAULT_BRANCH = "claude/create-website-skeleton-hYJMa";
+
 export function githubToken(env) {
   return (env.GITHUB_TOKEN || "").trim();
+}
+
+export function githubBranch(env) {
+  return ((env && env.GITHUB_BRANCH) || DEFAULT_BRANCH).trim();
+}
+
+export async function githubAuthStatus(env) {
+  const token = githubToken(env);
+  if (!token) return "missing";
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 4000);
+  try {
+    const res = await fetch(`https://api.github.com/repos/${env.GITHUB_OWNER}/${env.GITHUB_REPO}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "User-Agent": "regintel-pages-api",
+        Accept: "application/vnd.github+json",
+      },
+      signal: ctrl.signal,
+    });
+    if (res.status === 401) return "bad_credentials";
+    if (res.status === 403) return "forbidden";
+    if (res.ok) return "ok";
+    return "http_" + res.status;
+  } catch (err) {
+    return err && err.name === "AbortError" ? "timeout" : "unreachable";
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export async function githubApiRequest(env, urlPath, init = {}, { forceAnonymous = false } = {}) {

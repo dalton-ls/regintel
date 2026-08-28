@@ -3,17 +3,24 @@ const ADMIN_PROXY_TIMEOUT_MS = 25000;
 const GITHUB_REPO_OWNER = 'dalton-ls';
 const GITHUB_REPO_NAME = 'regintel';
 const GITHUB_PROJECTION_BRANCH = 'claude/create-website-skeleton-hYJMa';
-const PAGES_ORIGIN = 'https://regintel.regintel.workers.dev';
+function canonicalOrigin() {
+  return (typeof window !== 'undefined' && window.REGINTEL_ORIGIN)
+    ? window.REGINTEL_ORIGIN
+    : 'https://regintel.regintel.workers.dev';
+}
 
 function adminApiBase() {
   try {
     const host = location.hostname;
-    if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]' ||
-        /\.pages\.dev$/i.test(host) || host === 'regintel.regintel.workers.dev') {
+    if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]') {
+      return location.origin + '/api';
+    }
+    if (/\.pages\.dev$/i.test(host)) return location.origin + '/api';
+    if (/\.workers\.dev$/i.test(host) && !/^regintel-admin-proxy\./i.test(host)) {
       return location.origin + '/api';
     }
   } catch (err) { /* file: or non-browser */ }
-  return PAGES_ORIGIN + '/api';
+  return canonicalOrigin() + '/api';
 }
 
 function unwrapRecordArray(raw) {
@@ -49,6 +56,18 @@ async function parseProjectionResponse(res, label) {
   const rows = unwrapRecordArray(content);
   if (!rows) throw new Error(label + ' did not return a record array');
   return rows;
+}
+
+async function loadJsonViaApi(workerUrl, path) {
+  const res = await fetchWithTimeout(workerUrl + '/file?path=' + encodeURIComponent(path), ADMIN_PROXY_TIMEOUT_MS);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error((body && body.error) ? body.error : ('HTTP ' + res.status));
+  }
+  const body = await res.json();
+  let content = body && Object.prototype.hasOwnProperty.call(body, 'content') ? body.content : body;
+  if (typeof content === 'string') content = JSON.parse(content);
+  return content;
 }
 
 async function loadRequirementsFromGithub() {

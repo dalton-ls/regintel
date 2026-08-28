@@ -1755,7 +1755,7 @@ let selectedRole        = null;
   async function fetchWorkerFile(path) {
     let res;
     try {
-      res = await fetch(WORKER_URL + '/file?path=' + encodeURIComponent(path));
+      res = await fetch(WORKER_URL + '/file?path=' + encodeURIComponent(path), { cache: 'no-store' });
     } catch (err) {
       throw new Error(proxyNetworkError(err, 'Load ' + path));
     }
@@ -2954,11 +2954,23 @@ let selectedRole        = null;
 
   async function loadData() {
     try {
-      const [reqRes, wrRes] = await Promise.all([fetch('requirements.json'), fetch('wr.json')]);
-      if (!reqRes.ok) throw new Error(`requirements.json HTTP ${reqRes.status}`);
-      const requirements = await reqRes.json();
+      let requirements;
+      try {
+        requirements = await fetchWorkerFile('requirements.json');
+      } catch (err) {
+        console.warn('Live projection unavailable, using bundled requirements.json', err);
+        const reqRes = await fetch('requirements.json', { cache: 'no-store' });
+        if (!reqRes.ok) throw new Error(`requirements.json HTTP ${reqRes.status}`);
+        requirements = await reqRes.json();
+      }
       const sheets = unifiedToSheetShape(requirements);
-      if (wrRes.ok) Object.assign(sheets, await wrRes.json());
+      try {
+        const wr = await fetchWorkerFile('wr.json');
+        if (wr && typeof wr === 'object') Object.assign(sheets, wr);
+      } catch (err) {
+        const wrRes = await fetch('wr.json', { cache: 'no-store' });
+        if (wrRes.ok) Object.assign(sheets, await wrRes.json());
+      }
 
       CURRENT_SHEETS = sheets;
       mergeUserImports(CURRENT_SHEETS);

@@ -144,9 +144,13 @@
     }
 
     try {
-      const res = await fetch('wr.json');
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      wrData = await res.json();
+      try {
+        wrData = await loadJsonViaApi(WORKER_URL, 'wr.json');
+      } catch (liveErr) {
+        const res = await fetch('wr.json', { cache: 'no-store' });
+        if (!res.ok) throw liveErr;
+        wrData = await res.json();
+      }
       const sheets = Object.keys(wrData).length;
       const rows = Object.values(wrData).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0);
       document.getElementById('wrMeta').textContent = rows + ' records across ' + sheets + ' sheet(s) · unchanged, separate dataset';

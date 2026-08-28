@@ -18,15 +18,3 @@ README.md
 wrangler.jsonc
 .dev.vars
 *.canvas.tsx
-
-*.pyc
-__pycache__
-ALF-normalized.json
-migration_18_to_20_warnings.txt
-DESIGN.md
-README.md
-.gitignore
-.assetsignore
-wrangler.jsonc
-.dev.vars
-*.canvas.tsx

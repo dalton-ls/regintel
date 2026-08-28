@@ -1,4 +1,4 @@
-# Deploy the site + admin API to Cloudflare Pages
+# Deploy the site + admin API
 
 on:
   push:
@@ -16,3 +16,12 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: af9d5fca4b1386360ed10ebc7e96c435
           command: deploy
+      - name: Smoke admin API
+        run: |
+          set -e
+          origin="https://regintel.regintel.workers.dev"
+          health="$(curl -fsS --max-time 20 "$origin/api/health")"
+          echo "$health"
+          echo "$health" | grep -q '"githubAuth":"ok"'
+          curl -fsS -o /dev/null --max-time 45 "$origin/api/file?path=requirements.json"
+          curl -fsS -o /dev/null --max-time 45 "$origin/requirements.json"
