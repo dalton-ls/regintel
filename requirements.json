@@ -13128,7 +13128,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -13175,7 +13175,13 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Completion of a Department approved training program as outlined in Section 74747 or its equivalent",
-    "Record ID": "req_c896c406d153"
+    "Record ID": "req_c896c406d153",
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -13238,7 +13244,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -13276,7 +13282,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "The aide shall demonstrate competency in any service the aide is to perform prior to providing patient care",
-    "Record ID": "req_e30d1fdfd326"
+    "Record ID": "req_e30d1fdfd326",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -13287,7 +13303,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -13327,7 +13343,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Introduction",
-    "Record ID": "req_e5ba2c7991ab"
+    "Record ID": "req_e5ba2c7991ab",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -13338,7 +13364,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -13378,7 +13404,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Introduction",
-    "Record ID": "req_56dfd2300c7a"
+    "Record ID": "req_56dfd2300c7a",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -13389,7 +13425,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -13429,7 +13465,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Introduction",
-    "Record ID": "req_047f6e9743e8"
+    "Record ID": "req_047f6e9743e8",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -13440,7 +13486,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -13480,7 +13526,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Introduction",
-    "Record ID": "req_670b3a9d8a69"
+    "Record ID": "req_670b3a9d8a69",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -13491,7 +13547,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -13531,7 +13587,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Introduction",
-    "Record ID": "req_139b0a17a57b"
+    "Record ID": "req_139b0a17a57b",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -13542,7 +13608,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -13582,7 +13648,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Introduction",
-    "Record ID": "req_2ebf6ccf6279"
+    "Record ID": "req_2ebf6ccf6279",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -13593,7 +13669,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -13633,7 +13709,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Interpretation of medical and social needs of people being served",
-    "Record ID": "req_c86ed330979f"
+    "Record ID": "req_c86ed330979f",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -13644,7 +13730,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -13684,7 +13770,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Interpretation of medical and social needs of people being served",
-    "Record ID": "req_fea9980dbfea"
+    "Record ID": "req_fea9980dbfea",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -13695,7 +13791,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -13735,7 +13831,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Interpretation of medical and social needs of people being served",
-    "Record ID": "req_d9c558c43321"
+    "Record ID": "req_d9c558c43321",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -13746,7 +13852,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -13786,7 +13892,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Personal care services",
-    "Record ID": "req_355389f51a7c"
+    "Record ID": "req_355389f51a7c",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -13797,7 +13913,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -13837,7 +13953,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Personal care services",
-    "Record ID": "req_cd69af2aec74"
+    "Record ID": "req_cd69af2aec74",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -13848,7 +13974,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -13888,7 +14014,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Personal care services",
-    "Record ID": "req_faeba6a5827e"
+    "Record ID": "req_faeba6a5827e",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -13899,7 +14035,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -13939,7 +14075,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Personal care services",
-    "Record ID": "req_1b8969cc8cf1"
+    "Record ID": "req_1b8969cc8cf1",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -13950,7 +14096,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -13990,7 +14136,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Personal care services",
-    "Record ID": "req_2b6c2e7f879c"
+    "Record ID": "req_2b6c2e7f879c",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -14001,7 +14157,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -14041,7 +14197,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Personal care services",
-    "Record ID": "req_fa00f96a5656"
+    "Record ID": "req_fa00f96a5656",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -14052,7 +14218,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -14092,7 +14258,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Personal care services",
-    "Record ID": "req_8169bed2f73e"
+    "Record ID": "req_8169bed2f73e",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -14103,7 +14279,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -14143,7 +14319,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Personal care services",
-    "Record ID": "req_88b84566a7f0"
+    "Record ID": "req_88b84566a7f0",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -14154,7 +14340,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -14194,7 +14380,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Personal care services",
-    "Record ID": "req_daee440dbfda"
+    "Record ID": "req_daee440dbfda",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -14205,7 +14401,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -14245,7 +14441,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Cleaning and care tasks in the home",
-    "Record ID": "req_183177c4eeab"
+    "Record ID": "req_183177c4eeab",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -14256,7 +14462,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -14296,7 +14502,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Cleaning and care tasks in the home",
-    "Record ID": "req_52b6dadcc2cf"
+    "Record ID": "req_52b6dadcc2cf",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -14307,7 +14523,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -14347,7 +14563,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Cleaning and care tasks in the home",
-    "Record ID": "req_e648763669df"
+    "Record ID": "req_e648763669df",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -14358,7 +14584,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -14398,7 +14624,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Cleaning and care tasks in the home",
-    "Record ID": "req_0284c19b06d1"
+    "Record ID": "req_0284c19b06d1",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -14409,7 +14645,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -14449,7 +14685,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Cleaning and care tasks in the home",
-    "Record ID": "req_98722a04dc83"
+    "Record ID": "req_98722a04dc83",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -14460,7 +14706,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -14500,7 +14746,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Cleaning and care tasks in the home",
-    "Record ID": "req_0d77abf6bb53"
+    "Record ID": "req_0d77abf6bb53",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -14511,7 +14767,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -14551,7 +14807,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Nutrition",
-    "Record ID": "req_026e860900c3"
+    "Record ID": "req_026e860900c3",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -14562,7 +14828,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -14602,7 +14868,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Nutrition",
-    "Record ID": "req_70187f4cc9b5"
+    "Record ID": "req_70187f4cc9b5",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -14613,7 +14889,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -14653,7 +14929,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Nutrition",
-    "Record ID": "req_2319ce97d99c"
+    "Record ID": "req_2319ce97d99c",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -14664,7 +14950,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -14704,7 +14990,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Nutrition",
-    "Record ID": "req_444c41b4c391"
+    "Record ID": "req_444c41b4c391",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
@@ -14715,7 +15011,7 @@
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
     ],
-    "Regulation Type": "Facility-Based/Organizational Training",
+    "Regulation Type": "Individual/Continuing Education",
     "Oversight / Professional Agency": "California Department of Public Health",
     "Requirement Level": "Explicit Training",
     "Authority Level": "State Floor",
@@ -14755,7 +15051,17 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "Nutrition",
-    "Record ID": "req_fff4d87eccc7"
+    "Record ID": "req_fff4d87eccc7",
+    "Related Regulatory Provisions": null,
+    "Change Type": null,
+    "Change Detected Date": null,
+    "Applicability Rules": null,
+    "Impact Basis": null,
+    "Impact Confidence": null,
+    "Impact Review": null,
+    "Provision Relationship Types": null,
+    "Interpretive Conditions": null,
+    "Prior Training Qualification": null
   },
   {
     "Source Dataset": "Care Setting",
