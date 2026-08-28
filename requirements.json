@@ -15222,9 +15222,7 @@
     "HSTM Setting": "Hospital",
     "HSTM Role": [
       "Clinical, Medication Dispensing",
-      "Clinical, Non-Medication Dispensing",
-      "Non-Clinical, Patient-Facing",
-      "Non-Clinical, Non-Patient Facing"
+      "Clinical, Non-Medication Dispensing"
     ],
     "Regulation Type": "Facility-Based/Organizational Training",
     "Oversight / Professional Agency": "California Department of Public Health",
@@ -15232,7 +15230,7 @@
     "Authority Level": "State Floor",
     "Explicit Training": "Yes",
     "Citation": "22 CCR § 70214(a)",
-    "Training Topic / Competency Item": "orientation",
+    "Training Topic / Competency Item": "orientation; topics vary by specialty",
     "Relationship": "Child",
     "Purpose": "Nursing Staff Development",
     "Approval Required": "No",
