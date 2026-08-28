@@ -25,7 +25,7 @@ npx wrangler secret put ADMIN_TOKEN
 npx wrangler deploy
 ```
 
-Or push to `claude/create-website-skeleton-hYJMa` after setting repo secret `CLOUDFLARE_API_TOKEN`.
+Or push to `claude/create-website-skeleton-hYJMa` after setting repo Actions secrets `CLOUDFLARE_API_TOKEN` (Edit Cloudflare Workers) and `CLOUDFLARE_ACCOUNT_ID` (`af9d5fca4b1386360ed10ebc7e96c435`).
 
 Local: `npx wrangler dev`
 
