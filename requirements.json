@@ -15620,6 +15620,7 @@
     "Jurisdiction Role": "emergency medicine physicians",
     "HSTM Setting": "Hospital",
     "HSTM Role": [
+      "Managerial Staff",
       "Physicians & Practitioners"
     ],
     "Regulation Type": "Facility-Based/Organizational Training",
