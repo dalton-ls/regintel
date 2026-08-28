@@ -311,6 +311,7 @@
 
     .tree-head { display: flex; align-items: center; gap: 4px; }
     .tree-head > .tree-row { flex: 1; width: auto; min-width: 0; }
+    .tree-head .tree-count { margin-right: 4px; }
     .tree-head .tree-actions { padding-right: 12px; }
 
     .tree-node.level-jurisdiction > .tree-head { background: #f0f2f5; }
@@ -341,7 +342,24 @@
 
     .tree-count {
       font-size: 11px; color: #6b7a99; background: #e8ecf0;
+      border: 1px solid transparent;
       border-radius: 10px; padding: 1px 7px; flex-shrink: 0; white-space: nowrap;
+    }
+    button.tree-count {
+      font-family: inherit; cursor: pointer;
+    }
+    button.tree-count:hover { background: #dce8fb; color: #2463eb; border-color: #c7d7f8; }
+    button.tree-count.selected { background: #2463eb; color: #fff; border-color: #2463eb; }
+    .export-scope-label {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; font-weight: 600; color: #2463eb;
+      background: #eef3fb; border: 1px solid #c7d7f8; border-radius: 8px;
+      padding: 4px 8px; white-space: nowrap; max-width: 280px;
+    }
+    .export-scope-label span { overflow: hidden; text-overflow: ellipsis; }
+    .export-scope-clear {
+      border: none; background: none; color: #2463eb; cursor: pointer;
+      font: inherit; font-weight: 700; padding: 0; line-height: 1;
     }
     .tree-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
     .tree-action {
@@ -1155,6 +1173,7 @@ let selectedRole        = null;
   let rowMap = {};
   let lastTree = [];
   let obligationParent = {};
+  let exportScope = null; // { level, key, label }
 
   const checkSvg = `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`;
 
@@ -1430,6 +1449,12 @@ let selectedRole        = null;
     const rowKey = row ? (row._mergedKey || cardKey(row)) : '';
     const selected = rowKey && selectedCardKey === rowKey;
     const actions = extraActions || (row ? rowActions(row, rowKey) : '');
+    const scopeOn = !!(exportScope && exportScope.level === level && exportScope.key === key);
+    const countHtml = count
+      ? (adminMode
+        ? `<button type="button" class="tree-count${scopeOn ? ' selected' : ''}" data-export-scope="${esc(level)}" data-export-key="${esc(key)}" title="Select this branch, then Export .xlsx">${esc(count)}</button>`
+        : `<span class="tree-count">${esc(count)}</span>`)
+      : '';
     return `<div class="tree-node level-${level} ${isOpen ? 'open' : 'closed'}" data-tree-level="${level}" data-tree-key="${esc(key)}">
   <div class="tree-head">
     <button type="button" class="tree-row${selected ? ' selected' : ''}" data-tree-toggle="${level}" data-tree-key="${esc(key)}"${rowKey ? ` data-card-key="${esc(rowKey)}"` : ''} aria-expanded="${isOpen ? 'true' : 'false'}">
@@ -1438,8 +1463,8 @@ let selectedRole        = null;
         <span class="tree-title ${level}">${esc(title)}</span>
         ${subtitle ? `<span class="tree-sub">${esc(subtitle)}</span>` : ''}
       </span>
-      ${count ? `<span class="tree-count">${esc(count)}</span>` : ''}
     </button>
+    ${countHtml}
     ${actions}
   </div>
   <div class="tree-body"><div class="tree-body-inner">${childrenHtml}</div></div>
@@ -1936,6 +1961,70 @@ let selectedRole        = null;
     return null;
   }
 
+  function collectRowsFromTreeItem(item) {
+    const out = [];
+    const add = r => {
+      if (!r) return;
+      if (Array.isArray(r.variants) && r.variants.length) r.variants.forEach(v => out.push(v));
+      else out.push(r);
+    };
+    if (!item) return out;
+    if (item.kind === 'module') {
+      add(item.parent || item.row);
+      (item.children || []).forEach(add);
+    } else {
+      add(item.row);
+    }
+    return out;
+  }
+
+  function collectRowsFromProgramNode(program) {
+    return (program && program.items ? program.items : []).flatMap(collectRowsFromTreeItem);
+  }
+
+  function lookupExportScope(level, key) {
+    if (!lastTree || !key) return null;
+    for (let j = 0; j < lastTree.length; j++) {
+      const juris = lastTree[j];
+      if (level === 'jurisdiction' && String(juris.state) === String(key)) {
+        const rows = (juris.authorities || []).flatMap(a => (a.programs || []).flatMap(collectRowsFromProgramNode));
+        return { level, key, label: juris.name || juris.state, rows };
+      }
+      const auths = juris.authorities || [];
+      for (let a = 0; a < auths.length; a++) {
+        const auth = auths[a];
+        if (level === 'authority' && auth._key === key) {
+          const rows = (auth.programs || []).flatMap(collectRowsFromProgramNode);
+          return { level, key, label: auth.agency, rows };
+        }
+        const programs = auth.programs || [];
+        for (let p = 0; p < programs.length; p++) {
+          const program = programs[p];
+          if (level === 'program' && program._key === key) {
+            return { level, key, label: program.program, rows: collectRowsFromProgramNode(program) };
+          }
+          if (level === 'module') {
+            const items = program.items || [];
+            for (let i = 0; i < items.length; i++) {
+              const item = items[i];
+              if (item.kind === 'module' && item.key === key) {
+                return { level, key, label: item.title, rows: collectRowsFromTreeItem(item) };
+              }
+            }
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  function exportScopeChip() {
+    if (!adminMode || !exportScope) return '';
+    return '<span class="export-scope-label" title="Export is limited to this tree branch"><span>' +
+      esc(exportScope.label) + '</span>' +
+      '<button type="button" class="export-scope-clear" id="exportScopeClear" aria-label="Clear export branch">×</button></span>';
+  }
+
   function sampleRowFromProgram(program) {
     if (!program || !program.items) return null;
     const first = program.items[0];
@@ -2396,7 +2485,7 @@ let selectedRole        = null;
     const exportBtn = `<button class="export-btn" onclick="exportToExcel()" title="Export filtered results to Excel">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       Export .xlsx
-    </button>`;
+    </button>${exportScopeChip()}`;
     if (settingOnly) return `<div class="filter-bar">${settingDD}</div>`;
     return `<div class="filter-bar">
     ${settingDD}
@@ -2413,7 +2502,7 @@ let selectedRole        = null;
     const exportBtn = `<button class="export-btn" onclick="exportToExcel()" title="Export filtered results to Excel">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       Export .xlsx
-    </button>`;
+    </button>${exportScopeChip()}`;
     return `<div class="filter-bar">
     ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
     ${ALL_POLICY_ACTIONS.length ? renderDropdown('policyActions', 'Policy action', ALL_POLICY_ACTIONS, filterState.policyActions) : ''}
@@ -2477,7 +2566,7 @@ let selectedRole        = null;
     const exportBtn = `<button class="export-btn" onclick="exportToExcel()" title="Export filtered results to Excel">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       Export .xlsx
-    </button>`;
+    </button>${exportScopeChip()}`;
     if (roleOnly) return `<div class="filter-bar">${roleDD}</div>`;
     return `<div class="filter-bar">
     ${roleDD}
@@ -2723,6 +2812,27 @@ let selectedRole        = null;
       deleteProgramBucket(lookupProgram(deleteProgram.dataset.deleteProgram));
       return;
     }
+    const exportPill = e.target.closest('[data-export-scope]');
+    if (exportPill) {
+      e.stopPropagation();
+      e.preventDefault();
+      const level = exportPill.dataset.exportScope;
+      const key = exportPill.dataset.exportKey;
+      if (exportScope && exportScope.level === level && exportScope.key === key) {
+        exportScope = null;
+      } else {
+        const found = lookupExportScope(level, key);
+        exportScope = found ? { level: found.level, key: found.key, label: found.label } : { level, key, label: key };
+      }
+      render();
+      return;
+    }
+    if (e.target.closest('#exportScopeClear')) {
+      e.stopPropagation();
+      exportScope = null;
+      render();
+      return;
+    }
     const openDrawer = e.target.closest('[data-open-drawer]');
     if (openDrawer) {
       e.stopPropagation();
@@ -2747,6 +2857,7 @@ let selectedRole        = null;
     const roleOpt = e.target.closest('[data-role-select]');
     if (roleOpt) {
       selectedRole = roleOpt.dataset.roleSelect;
+      exportScope = null;
       openDropdown = null;
       render();
       return;
@@ -2755,6 +2866,7 @@ let selectedRole        = null;
     const careOpt = e.target.closest('[data-care-select]');
     if (careOpt) {
       selectedCareSetting = careOpt.dataset.careSelect;
+      exportScope = null;
       openDropdown = null;
       render();
       return;
@@ -2877,6 +2989,7 @@ let selectedRole        = null;
       const section = item.dataset.section;
       if (section === activeSection) return;
       activeSection = section;
+      exportScope = null;
       drawerTab = 'overview';
       selectedCardKey = null;
       history.replaceState(null, '', '#' + section);
@@ -3195,6 +3308,7 @@ let selectedRole        = null;
   function toggleAdmin() {
     if (adminMode) {
       adminMode = false;
+      exportScope = null;
       document.getElementById('adminToggle').classList.remove('active');
       document.getElementById('adminLabel').textContent = 'Admin';
       document.getElementById('adminBar').classList.remove('visible');
@@ -3273,6 +3387,23 @@ let selectedRole        = null;
 
     if (!rows.length) {
       showToast('No data to export — adjust your filters');
+      return;
+    }
+
+    if (adminMode && exportScope) {
+      const scoped = lookupExportScope(exportScope.level, exportScope.key);
+      if (!scoped || !scoped.rows.length) {
+        showToast('That tree branch is no longer in view — clear the export selection or pick it again');
+        return;
+      }
+      const ids = new Set(scoped.rows.map(recordIdOf).filter(Boolean));
+      rows = rows.filter(r => ids.has(recordIdOf(r)));
+      const slug = String(exportScope.label || 'branch').replace(/[^\w]+/g, '-').replace(/^-|-$/g, '').toLowerCase().slice(0, 48);
+      filename += '-' + (slug || exportScope.level);
+    }
+
+    if (!rows.length) {
+      showToast('No data to export in the selected branch');
       return;
     }
 
