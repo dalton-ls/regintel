@@ -16868,7 +16868,6 @@
     "Jurisdiction Role": null,
     "HSTM Setting": "Hospital",
     "HSTM Role": [
-      "Clinical, Medication Dispensing",
       "Clinical, Non-Medication Dispensing",
       "Non-Clinical, Patient-Facing",
       "Non-Clinical, Non-Patient Facing"
