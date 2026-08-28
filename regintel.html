@@ -741,35 +741,6 @@
     }
     .admin-toast.show { opacity: 1; }
 
-    /* ── JSON import modal ── */
-    .modal-overlay {
-      position: fixed; inset: 0; z-index: 300;
-      background: rgba(0,0,0,0.4);
-      display: none; align-items: center; justify-content: center;
-    }
-    .modal-overlay.open { display: flex; }
-    .modal-box {
-      background: #fff; border-radius: 12px; padding: 24px;
-      width: 90%; max-width: 560px; max-height: 80vh;
-      box-shadow: 0 8px 40px rgba(0,0,0,0.2);
-      display: flex; flex-direction: column; gap: 16px;
-    }
-    .modal-title { font-size: 16px; font-weight: 700; color: #1a2332; }
-    .modal-subtitle { font-size: 13px; color: #6b7a99; line-height: 1.5; }
-    .modal-dropzone {
-      border: 2px dashed #dde1ea; border-radius: 10px;
-      padding: 32px; text-align: center;
-      color: #6b7a99; font-size: 13px;
-      cursor: pointer; transition: border-color 0.2s, background 0.2s;
-    }
-    .modal-dropzone:hover, .modal-dropzone.dragover { border-color: #2463eb; background: #eef3fb; }
-    .modal-preview { max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 11px; background: #f5f7fa; padding: 12px; border-radius: 8px; border: 1px solid #e8ecf0; white-space: pre-wrap; word-break: break-all; }
-    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
-    .modal-btn { height: 34px; padding: 0 16px; border-radius: 8px; font-size: 13px; font-weight: 600; font-family: inherit; cursor: pointer; border: 1px solid #dde1ea; background: #fff; color: #4a5568; transition: background 0.15s; }
-    .modal-btn:hover { background: #f5f7fa; }
-    .modal-btn.primary { background: #2463eb; color: #fff; border-color: #2463eb; }
-    .modal-btn.primary:hover { background: #1d4ed8; }
-
     /* ── Responsive ── */
     @media (max-width: 600px) {
       .header-subtitle { display: none; }
@@ -824,38 +795,12 @@
   <div class="admin-bar" id="adminBar">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 9v2m0 4h.01M3.262 16.243l7.188-12.82c.548-.978 1.552-.978 2.1 0l7.188 12.82c.548.978.053 1.757-1.05 1.757H4.312c-1.103 0-1.598-.779-1.05-1.757z"/></svg>
     <span class="admin-bar-label">Admin mode</span>
-    <span>You can import data, export JSON, and manage records.</span>
+    <span>You can export JSON and manage records.</span>
     <div class="admin-bar-actions">
-      <button class="admin-btn" onclick="showImportModal()">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Import JSON
-      </button>
       <button class="admin-btn" onclick="exportAllJSON()">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
         Export JSON
       </button>
-      <button class="admin-btn" id="clearImportsBtn" onclick="clearUserImports()" style="display:none">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
-        Clear imports (<span id="clearImportsCount">0</span>)
-      </button>
-    </div>
-  </div>
-
-  <!-- JSON Import Modal -->
-  <div class="modal-overlay" id="importModal">
-    <div class="modal-box">
-      <div class="modal-title">Import regulatory data</div>
-      <div class="modal-subtitle">Drop a <code>wr.json</code> file exported by <code>export_wr.py</code> (Workforce Readiness only). WR records merge into the research view — duplicates are skipped by citation + topic + jurisdiction. Role and Care Setting data enter through Pending Review, not this modal.</div>
-      <div class="modal-dropzone" id="importDropzone" onclick="document.getElementById('importFileInput').click()">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom:8px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        <div>Drop JSON file here or click to browse</div>
-        <input type="file" id="importFileInput" accept=".json" style="display:none" onchange="handleImportFile(this)">
-      </div>
-      <div class="modal-preview" id="importPreview" style="display:none"></div>
-      <div class="modal-actions">
-        <button class="modal-btn" onclick="closeImportModal()">Cancel</button>
-        <button class="modal-btn primary" id="importConfirmBtn" onclick="confirmImport()" disabled>Merge &amp; load</button>
-      </div>
     </div>
   </div>
 
@@ -1454,6 +1399,7 @@ let selectedRole        = null;
     const titles = {
       jurisdiction: 'Export this state to Excel',
       authority: 'Export this department to Excel',
+      program: 'Export this parent to Excel',
       module: 'Export this parent obligation to Excel'
     };
     if (!titles[level]) return '';
@@ -3271,52 +3217,6 @@ let selectedRole        = null;
     return sheets;
   }
 
-  const USER_IMPORTS_KEY = 'regintel_user_imports';
-
-  function mergeUserImports(target) {
-    let imports;
-    try { imports = JSON.parse(localStorage.getItem(USER_IMPORTS_KEY) || '{}'); }
-    catch { return 0; }
-    let added = 0;
-    Object.keys(imports).forEach(key => {
-      if (!target[key]) target[key] = [];
-      const existing = target[key];
-      const incoming = imports[key];
-      if (!Array.isArray(incoming)) return;
-      incoming.forEach(row => {
-        const isDupe = existing.some(e =>
-          e['Citation'] === row['Citation'] &&
-          e['Training Topic / Competency Item'] === row['Training Topic / Competency Item'] &&
-          e['Jurisdiction'] === row['Jurisdiction']
-        );
-        if (!isDupe) { existing.push(row); added++; }
-      });
-    });
-    return added;
-  }
-
-  function userImportsCount() {
-    try {
-      const imports = JSON.parse(localStorage.getItem(USER_IMPORTS_KEY) || '{}');
-      return Object.values(imports).reduce((n, rows) => n + (Array.isArray(rows) ? rows.length : 0), 0);
-    } catch { return 0; }
-  }
-
-  function refreshClearImportsBtn() {
-    const btn = document.getElementById('clearImportsBtn');
-    const count = userImportsCount();
-    if (!btn) return;
-    btn.style.display = count > 0 ? '' : 'none';
-    document.getElementById('clearImportsCount').textContent = count;
-  }
-
-  function clearUserImports() {
-    if (!adminMode) return;
-    if (!confirm('Clear all imported records? This will reload the page with the original dataset only.')) return;
-    localStorage.removeItem(USER_IMPORTS_KEY);
-    location.reload();
-  }
-
   async function loadData() {
     try {
       const loaded = await loadProjectionContent(WORKER_URL, 'requirements.json', { unwrapArray: true });
@@ -3341,7 +3241,6 @@ let selectedRole        = null;
       }
 
       CURRENT_SHEETS = sheets;
-      mergeUserImports(CURRENT_SHEETS);
       parseData(CURRENT_SHEETS);
       return;
     } catch (err) {
@@ -3352,7 +3251,6 @@ let selectedRole        = null;
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json = await res.json();
         CURRENT_SHEETS = json;
-        mergeUserImports(CURRENT_SHEETS);
         parseData(CURRENT_SHEETS);
         PROJECTION_META = { source: 'local', count: DATA.length + CARE_DATA.length, proxyError: err && err.message ? err.message : '' };
         updateProjectionBadge();
@@ -3380,7 +3278,6 @@ let selectedRole        = null;
   });
   // ─── Admin Mode ───
   let adminMode = false;
-  let pendingImportData = null;
 
   function toggleAdmin() {
     if (adminMode) {
@@ -3402,7 +3299,6 @@ let selectedRole        = null;
       document.getElementById('adminLabel').textContent = 'Active';
       document.getElementById('adminBar').classList.add('visible');
       document.body.classList.add('admin-on');
-      refreshClearImportsBtn();
       if (selectedCardKey) drawerTab = 'edit';
       showToast('Admin mode activated');
       render();
@@ -3481,7 +3377,7 @@ let selectedRole        = null;
         showToast('No data to export in this branch');
         return;
       }
-      const levelName = { jurisdiction: 'state', authority: 'department', module: 'parent' }[branch.level] || branch.level;
+      const levelName = { jurisdiction: 'state', authority: 'department', program: 'parent', module: 'parent' }[branch.level] || branch.level;
       writeExcelFile(scoped.rows, `regintel-${levelName}-${exportFilenameSlug(scoped.label || branch.key)}`);
       return;
     }
@@ -3539,117 +3435,6 @@ let selectedRole        = null;
     a.click();
     URL.revokeObjectURL(url);
     showToast('Full dataset exported as JSON');
-  }
-
-
-  // ─── JSON Import (Admin) ───
-  function showImportModal() {
-    if (!adminMode) return;
-    document.getElementById('importModal').classList.add('open');
-    document.getElementById('importPreview').style.display = 'none';
-    document.getElementById('importConfirmBtn').disabled = true;
-    pendingImportData = null;
-  }
-
-  function closeImportModal() {
-    document.getElementById('importModal').classList.remove('open');
-    pendingImportData = null;
-  }
-
-  function handleImportFile(input) {
-    const file = input.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = e => {
-      try {
-        const data = JSON.parse(e.target.result);
-        pendingImportData = data;
-        const preview = document.getElementById('importPreview');
-        const keys = Object.keys(data);
-        const totalRows = keys.reduce((sum, k) => sum + (Array.isArray(data[k]) ? data[k].length : 0), 0);
-        preview.textContent = `Sheets: ${keys.join(', ')}\nTotal records: ${totalRows}\n\nSample:\n${JSON.stringify(data[keys[0]]?.[0] || {}, null, 2).slice(0, 400)}`;
-        preview.style.display = 'block';
-        document.getElementById('importConfirmBtn').disabled = false;
-      } catch (err) {
-        showToast('Invalid JSON file');
-        pendingImportData = null;
-      }
-    };
-    reader.readAsText(file);
-    input.value = '';
-  }
-
-  // Drag-and-drop on dropzone
-  const dropzone = document.getElementById('importDropzone');
-  if (dropzone) {
-    dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
-    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
-    dropzone.addEventListener('drop', e => {
-      e.preventDefault(); dropzone.classList.remove('dragover');
-      const file = e.dataTransfer.files[0];
-      if (file && file.name.endsWith('.json')) {
-        const dt = new DataTransfer(); dt.items.add(file);
-        document.getElementById('importFileInput').files = dt.files;
-        handleImportFile(document.getElementById('importFileInput'));
-      }
-    });
-  }
-
-  function confirmImport() {
-    if (!pendingImportData) return;
-    // Persist to localStorage so the import survives reload
-    let userImports;
-    try { userImports = JSON.parse(localStorage.getItem(USER_IMPORTS_KEY) || '{}'); }
-    catch { userImports = {}; }
-    Object.keys(pendingImportData).forEach(key => {
-      if (!CURRENT_SHEETS[key]) CURRENT_SHEETS[key] = [];
-      if (!userImports[key]) userImports[key] = [];
-      const existing = CURRENT_SHEETS[key];
-      const stored = userImports[key];
-      const incoming = pendingImportData[key];
-      if (Array.isArray(incoming)) {
-        incoming.forEach(row => {
-          // Deduplicate by citation + topic + jurisdiction
-          const isDupe = existing.some(e =>
-            e['Citation'] === row['Citation'] &&
-            e['Training Topic / Competency Item'] === row['Training Topic / Competency Item'] &&
-            e['Jurisdiction'] === row['Jurisdiction']
-          );
-          if (!isDupe) {
-            existing.push(row);
-            stored.push(row);
-          }
-        });
-      }
-    });
-    localStorage.setItem(USER_IMPORTS_KEY, JSON.stringify(userImports));
-    refreshClearImportsBtn();
-    // Re-parse and re-render
-    parseData(CURRENT_SHEETS);
-    rowMap = {};
-    [...DATA, ...CARE_DATA, ...WR_DATA].forEach(r => { rowMap[cardKey(r)] = r; });
-    // Update dynamic lists
-    ALL_JURISDICTIONS = [...new Set([...DATA, ...CARE_DATA].map(r => r.state))].sort();
-    ALL_REQUIREMENT_LEVELS = [...new Set([...DATA, ...CARE_DATA].map(r => r.requirement_level).filter(Boolean))];
-    ALL_AUTHORITY_LEVELS   = [...new Set([...DATA, ...CARE_DATA].map(r => r.authority_level).filter(Boolean))];
-    ALL_APPLICABILITY_VALUES = [...new Set([...DATA, ...CARE_DATA].flatMap(r => applicabilityTokens(r.applicability_rules)))].sort();
-    ALL_IMPACT_TYPES = buildImpactTypeFacetValues([...DATA, ...CARE_DATA]);
-    ALL_POLICY_ACTIONS = [...new Set([...DATA, ...CARE_DATA].map(r => r.policy_action_relevance).filter(Boolean))];
-    ALL_PRODUCT_USE_CASES = [...new Set([...DATA, ...CARE_DATA].map(r => r.product_use_case).filter(Boolean))];
-    ALL_OPERATIONAL_DOMAINS = [...new Set([...DATA, ...CARE_DATA].map(r => r.operational_domain).filter(Boolean))];
-    filterState.jurisdictions = new Set(ALL_JURISDICTIONS);
-    filterState.requirementLevels = new Set(ALL_REQUIREMENT_LEVELS);
-    filterState.authorityLevels = new Set(ALL_AUTHORITY_LEVELS);
-    filterState.applicabilityValues = new Set(ALL_APPLICABILITY_VALUES);
-    filterState.impactTypes = new Set(ALL_IMPACT_TYPES);
-    filterState.policyActions = new Set(ALL_POLICY_ACTIONS);
-    filterState.productUseCases = new Set(ALL_PRODUCT_USE_CASES);
-    filterState.operationalDomains = new Set(ALL_OPERATIONAL_DOMAINS);
-    ALL_HSTM_SETTINGS = [...new Set([...DATA, ...CARE_DATA].map(r => r.hstm_setting).filter(Boolean))].sort();
-    ALL_HSTM_ROLES = [...new Set([...DATA, ...CARE_DATA].flatMap(r => Array.isArray(r.hstm_role) ? r.hstm_role : (r.hstm_role ? [r.hstm_role] : [])))].sort();
-    render();
-    closeImportModal();
-    showToast('Data merged successfully');
   }
 
   </script>
