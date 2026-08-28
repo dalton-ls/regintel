@@ -351,6 +351,8 @@
       text-decoration: none; white-space: nowrap;
     }
     .tree-action:hover { background: #eef3fb; }
+    .tree-action.danger { color: #b91c1c; border-color: #f5b8b8; }
+    .tree-action.danger:hover { background: #fef2f2; }
 
     /* ── Badges ── */
     .badge {
@@ -457,6 +459,8 @@
     .edit-impact-opt { font-size: 12px; color: #1a2332; font-weight: 500; display: inline-flex; align-items: center; gap: 5px; text-transform: none; letter-spacing: 0; }
     .drawer-edit-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 8px; border-top: 1px solid #f0f2f5; }
     .drawer-edit-actions .btn.primary { background: #2463eb; color: #fff; border-color: #2463eb; }
+    .drawer-edit-actions .btn.danger { background: #fff; color: #b91c1c; border-color: #f5b8b8; margin-left: auto; }
+    .drawer-edit-actions .btn.danger:hover { background: #fef2f2; }
     .drawer-edit-status { font-size: 12px; color: #6b7a99; }
     .validation-warning { background: #fef3e2; border: 1px solid #f5cd87; color: #92620a; border-radius: 8px; padding: 10px 14px; font-size: 12px; }
     .validation-advisory { background: #eef4fc; border: 1px solid #b8d0f5; color: #2b5aa1; border-radius: 8px; padding: 10px 14px; font-size: 12px; }
@@ -1337,6 +1341,13 @@ let selectedRole        = null;
     </div>`;
   }
 
+  function programActions(program) {
+    if (!adminMode || !program || !program._key) return '';
+    return `<div class="tree-actions">
+      <button type="button" class="tree-action danger" data-delete-program="${esc(program._key)}" title="Remove this program and every requirement under it from the live dataset">Delete</button>
+    </div>`;
+  }
+
   const chevronSvg = `<svg class="tree-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>`;
 
   function buildHierarchy(rows) {
@@ -1414,10 +1425,11 @@ let selectedRole        = null;
     });
   }
 
-  function renderTreeNode(level, key, title, subtitle, count, childrenHtml, row) {
+  function renderTreeNode(level, key, title, subtitle, count, childrenHtml, row, extraActions) {
     const isOpen = openTree[level] && openTree[level].has(key);
     const rowKey = row ? (row._mergedKey || cardKey(row)) : '';
     const selected = rowKey && selectedCardKey === rowKey;
+    const actions = extraActions || (row ? rowActions(row, rowKey) : '');
     return `<div class="tree-node level-${level} ${isOpen ? 'open' : 'closed'}" data-tree-level="${level}" data-tree-key="${esc(key)}">
   <div class="tree-head">
     <button type="button" class="tree-row${selected ? ' selected' : ''}" data-tree-toggle="${level}" data-tree-key="${esc(key)}"${rowKey ? ` data-card-key="${esc(rowKey)}"` : ''} aria-expanded="${isOpen ? 'true' : 'false'}">
@@ -1428,7 +1440,7 @@ let selectedRole        = null;
       </span>
       ${count ? `<span class="tree-count">${esc(count)}</span>` : ''}
     </button>
-    ${row ? rowActions(row, rowKey) : ''}
+    ${actions}
   </div>
   <div class="tree-body"><div class="tree-body-inner">${childrenHtml}</div></div>
 </div>`;
@@ -1475,7 +1487,7 @@ let selectedRole        = null;
   function renderProgram(program) {
     const key = program._key;
     const children = program.items.map(item => item.kind === 'module' ? renderModule(item) : renderLeaf(item)).join('');
-    return renderTreeNode('program', key, program.program, '', programChildLabel(program.items), children, null);
+    return renderTreeNode('program', key, program.program, '', programChildLabel(program.items), children, null, programActions(program));
   }
 
   function renderAuthority(auth) {
@@ -1687,6 +1699,7 @@ let selectedRole        = null;
       '<div class="drawer-edit-actions">' +
         '<button type="button" class="btn primary" id="drawerSaveBtn">Save to dataset</button>' +
         '<button type="button" class="btn" id="drawerDiscardBtn">Discard</button>' +
+        '<button type="button" class="btn danger" id="drawerDeleteProgramBtn">Delete program</button>' +
         '<span class="drawer-edit-status" id="drawerSaveStatus"></span>' +
       '</div>' +
     '</div>';
@@ -1902,6 +1915,115 @@ let selectedRole        = null;
 
   function valuesMatchSaved(saved, values) {
     return Object.keys(values).every(k => JSON.stringify(saved[k] ?? null) === JSON.stringify(values[k] ?? null));
+  }
+
+  function recordIdOf(row) {
+    if (!row) return '';
+    return row.record_id || (row._raw && row._raw['Record ID']) || '';
+  }
+
+  function lookupProgram(key) {
+    if (!lastTree || !key) return null;
+    for (let j = 0; j < lastTree.length; j++) {
+      const auths = lastTree[j].authorities || [];
+      for (let a = 0; a < auths.length; a++) {
+        const programs = auths[a].programs || [];
+        for (let p = 0; p < programs.length; p++) {
+          if (programs[p]._key === key) return programs[p];
+        }
+      }
+    }
+    return null;
+  }
+
+  function sampleRowFromProgram(program) {
+    if (!program || !program.items) return null;
+    const first = program.items[0];
+    if (!first) return null;
+    if (first.kind === 'module') return first.parent || first.row || (first.children && first.children[0]) || null;
+    return first.row || null;
+  }
+
+  function programBucketRows(sample) {
+    if (!sample) return [];
+    let src = publicRecords([...DATA, ...CARE_DATA]);
+    if (activeSection === 'care-settings') src = publicRecords(CARE_DATA);
+    else if (activeSection === 'roles') src = publicRecords(selectedRole ? (ROLE_DATA[selectedRole] || []) : DATA);
+    return src.filter(r => {
+      if (r.state !== sample.state) return false;
+      if ((r.oversight_agency || '') !== (sample.oversight_agency || '')) return false;
+      if ((r.type || '') !== (sample.type || '')) return false;
+      if (activeSection === 'care-settings' && selectedCareSetting && r.hstm_setting !== selectedCareSetting) return false;
+      return true;
+    });
+  }
+
+  function expandWithObligationFamily(rows) {
+    const ids = new Set();
+    const oids = new Set();
+    rows.forEach(r => {
+      const id = recordIdOf(r);
+      if (id) ids.add(id);
+      if (r.obligation_id) oids.add(r.obligation_id);
+    });
+    [...DATA, ...CARE_DATA].forEach(r => {
+      if (r.obligation_id && oids.has(r.obligation_id)) {
+        const id = recordIdOf(r);
+        if (id) ids.add(id);
+      }
+    });
+    return [...ids];
+  }
+
+  async function deleteRecordsById(ids, message) {
+    const unique = [...new Set((ids || []).filter(Boolean))];
+    if (!unique.length) throw new Error('Nothing to delete');
+    const idSet = new Set(unique);
+    const latest = await fetchWorkerFile('requirements.json');
+    if (!Array.isArray(latest)) throw new Error('requirements.json is not a record array');
+    const remaining = latest.filter(r => !idSet.has(r && r['Record ID']));
+    if (remaining.length === latest.length) throw new Error('Those records were not found in requirements.json');
+    const result = await commitWorkerFile('requirements.json', remaining, message);
+    Object.keys(CURRENT_SHEETS).forEach(k => {
+      if (!Array.isArray(CURRENT_SHEETS[k])) return;
+      CURRENT_SHEETS[k] = CURRENT_SHEETS[k].filter(r => !idSet.has(r['Record ID']));
+    });
+    parseData(CURRENT_SHEETS);
+    selectedCardKey = null;
+    drawerTab = 'overview';
+    render();
+    return { removed: latest.length - remaining.length, result };
+  }
+
+  async function deleteProgramBucket(program) {
+    if (!adminMode) return;
+    const sample = sampleRowFromProgram(program);
+    const label = (program && program.program) || (sample && sample.type) || 'this program';
+    const rows = programBucketRows(sample);
+    const ids = expandWithObligationFamily(rows);
+    if (!ids.length) {
+      showToast('No records found in ' + label);
+      return;
+    }
+    const ok = confirm('Delete “' + label + '” and ' + ids.length + ' record' + (ids.length === 1 ? '' : 's') + ' under it from the live dataset?\n\nThis removes the parent program accordion and every requirement inside it. It cannot be undone from this screen.');
+    if (!ok) return;
+    try {
+      const out = await deleteRecordsById(ids, 'Delete program "' + label + '" (' + ids.length + ' record(s)) via research view');
+      showToast('Deleted ' + out.removed + ' record(s) from ' + label + (out.result && out.result.commitUrl ? ' — ' + out.result.commitUrl : ''));
+    } catch (err) {
+      showToast(err.message);
+    }
+  }
+
+  async function deleteDrawerProgram() {
+    const row = selectedCardKey ? lookupRow(selectedCardKey) : null;
+    if (!row || !adminMode) return;
+    if (row._lane === 'wr') {
+      showToast('Workforce Readiness rows are not deleted from this drawer.');
+      return;
+    }
+    const fakeProgram = { program: row.type || 'this program', items: [{ kind: 'leaf', row }] };
+    await deleteProgramBucket(fakeProgram);
   }
 
   async function saveDrawerRecord() {
@@ -2594,6 +2716,13 @@ let selectedRole        = null;
       e.stopPropagation();
       return;
     }
+    const deleteProgram = e.target.closest('[data-delete-program]');
+    if (deleteProgram) {
+      e.stopPropagation();
+      e.preventDefault();
+      deleteProgramBucket(lookupProgram(deleteProgram.dataset.deleteProgram));
+      return;
+    }
     const openDrawer = e.target.closest('[data-open-drawer]');
     if (openDrawer) {
       e.stopPropagation();
@@ -2721,6 +2850,7 @@ let selectedRole        = null;
     if (tab) { drawerTab = tab.dataset.drawerTab; updateDrawer(); return; }
     if (e.target.closest('#drawerSaveBtn')) { e.preventDefault(); saveDrawerRecord(); return; }
     if (e.target.closest('#drawerDiscardBtn')) { e.preventDefault(); updateDrawer(); return; }
+    if (e.target.closest('#drawerDeleteProgramBtn')) { e.preventDefault(); deleteDrawerProgram(); return; }
     if (openDropdown !== null && !e.target.closest('.filter-group') && !e.target.closest('#drawerPanel')) {
       openDropdown = null;
       render();
