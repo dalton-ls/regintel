@@ -17108,7 +17108,13 @@
     "Jurisdiction Role": "emergency medical service personnel",
     "HSTM Setting": "Hospital",
     "HSTM Role": [
-      "Non-Clinical, Patient-Facing"
+      "Non-Clinical",
+      "Patient-Facing",
+      "Clinical",
+      "Medication Dispensing",
+      "Clinical",
+      "Non-medication Dispensing",
+      "Physicians and Practitioners"
     ],
     "Regulation Type": "Facility-Based/Organizational Training",
     "Oversight / Professional Agency": "California Department of Public Health",
