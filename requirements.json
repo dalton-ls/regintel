@@ -15987,7 +15987,8 @@
       "Clinical, Non-Medication Dispensing",
       "Non-Clinical, Patient-Facing",
       "Non-Clinical, Non-Patient Facing",
-      "Managerial Staff"
+      "Managerial Staff",
+      "Physicians & Practitioners"
     ],
     "Regulation Type": "Facility-Based/Organizational Training",
     "Oversight / Professional Agency": "California Department of Public Health",
