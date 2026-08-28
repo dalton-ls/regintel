@@ -16039,7 +16039,8 @@
       "Clinical, Non-Medication Dispensing",
       "Non-Clinical, Patient-Facing",
       "Non-Clinical, Non-Patient Facing",
-      "Managerial Staff"
+      "Managerial Staff",
+      "Physicians & Practitioners"
     ],
     "Regulation Type": "Facility-Based/Organizational Training",
     "Oversight / Professional Agency": "California Department of Public Health",
@@ -16063,6 +16064,7 @@
     "Obligation ID": "CA CCR 22::22 CCR § 70721(e)",
     "Change Source Path": "title_22.division_5.chapter_1.article_7.section_70721",
     "Impact Types": [
+      "Policy",
       "Training",
       "Competency"
     ],
