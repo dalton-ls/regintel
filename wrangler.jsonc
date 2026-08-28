@@ -1,0 +1,19 @@
+{
+  "name": "regintel",
+  "main": "src/site-worker.js",
+  "compatibility_date": "2026-08-27",
+  "workers_dev": true,
+  "preview_urls": true,
+  "assets": {
+    "directory": ".",
+    "binding": "ASSETS",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/api/*"]
+  },
+  "vars": {
+    "GITHUB_OWNER": "dalton-ls",
+    "GITHUB_REPO": "regintel",
+    "GITHUB_BRANCH": "claude/create-website-skeleton-hYJMa"
+  }
+}

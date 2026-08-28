@@ -185,9 +185,9 @@ GitHub — no browser localStorage, usable from any computer:
 
 **How writes work**: each screen re-fetches the latest `requirements.json`
 immediately before saving, then commits via the Cloudflare Worker
-(`worker/regintel-admin-proxy/`). The Worker holds the GitHub write token
-server-side and is gated by a shared bearer token (entered once per
-browser session, `sessionStorage` only). Setup:
+**https://regintel.regintel.workers.dev/api**. The Worker holds the GitHub
+write token server-side and is gated by a shared bearer token (entered once
+per browser session, `sessionStorage` only). Setup:
 [worker/regintel-admin-proxy/README.md](worker/regintel-admin-proxy/README.md).
 
 Export is a convenience backup, not a required write path.
@@ -224,7 +224,9 @@ is).
 | `impact-types.js` | Phase 4 Impact Type closed taxonomy (shared by admin + research UI) |
 | `index.html` | Research Services home (pipeline + tool navigation) |
 | `DESIGN.md` | Site boundary, projection schema, admin workflow |
-| `worker/regintel-admin-proxy/` | Cloudflare Worker that commits `requirements.json` |
+| `src/site-worker.js` + `functions/api/` | Same-origin admin API: `GET /api/file`, `POST /api/commit` |
+| `worker/regintel-admin-proxy/` | Frozen 410 stub on the old workers.dev hostname |
+| `worker/regintel-quality-monitor/` | Quality Monitor RSS/FR API (cron + KV) |
 | `ingest.html` | WR ingest only |
 | `export_wr.py` / `export_role.py` / `export_caresetting.py` | Excel → JSON converters |
 | `data.json` | Legacy fallback if `requirements.json` / `wr.json` can't be fetched |
@@ -244,6 +246,6 @@ controls. Unrelated to the Worker admin token, which gates GitHub writes.
 
 | Branch | Role |
 |---|---|
-| `claude/create-website-skeleton-hYJMa` | **Default — GitHub Pages deployment.** Unified projection, `requirements.json`, and admin tools live here. |
+| `claude/create-website-skeleton-hYJMa` | **Default.** Cloudflare Worker `regintel` (site + `/api`) plus GitHub source. GitHub Pages bookmarks redirect to the Worker origin. |
 | `admin-workflow-redesign` | Feature branch the unified-schema work was developed on; merged. Safe to delete. |
 | `archive/ai-ingest-tools` | Frozen snapshot of in-browser AI ingest tools — parsing does **not** belong on the live site; see that branch’s README if you need the archive. |

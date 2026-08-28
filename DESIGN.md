@@ -8,7 +8,8 @@
 > in `PHASE 1/Metadata Summary v3.xlsx`. The broader ontology lives in
 > `RegIntel Knowledge Architecture v3.docx` (document title: Version 5.0).
 > How admin writes actually commit:
-> [worker/regintel-admin-proxy/README.md](worker/regintel-admin-proxy/README.md).
+> [worker/regintel-admin-proxy/README.md](worker/regintel-admin-proxy/README.md)
+> (site + `/api` on `https://regintel.regintel.workers.dev`).
 
 ## 1. What this site is
 

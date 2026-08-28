@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RegIntel — Export</title>
+  <script src="canonical-host.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -94,10 +95,7 @@
 
   <script src="admin-proxy.js"></script>
   <script>
-  // Set this to the deployed Worker URL from worker/regintel-admin-proxy (see its README).
-  // Export still works without it configured — it just falls back to a plain
-  // relative fetch of requirements.json as served by whatever's hosting this page.
-  const WORKER_URL = 'https://regintel-admin-proxy.regintel.workers.dev';
+  const WORKER_URL = adminApiBase();
 
   let baseRecords = [];
   let wrData = null;

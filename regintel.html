@@ -7,6 +7,7 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>Regulatory Intelligence Research</title>
+  <script src="canonical-host.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -949,6 +950,7 @@
 
   <script src="impact-types.js"></script>
   <script src="schema.js"></script>
+  <script src="admin-proxy.js"></script>
   <script>
   // ─── Shared note for all NALPN rows ───
   const NALPN_NOTE = 'NALPN is a membership association; these standards are not mandated by any state or federal body and carry no enforcement mechanism. Content built against these rows is competency-positioned, not compliance-driven. Standards applicable across all states.';
@@ -972,7 +974,7 @@
   // legacy Import/Export JSON tools and re-parse-on-import logic read/write.
   let CURRENT_SHEETS = {};
 
-  const WORKER_URL = 'https://regintel-admin-proxy.regintel.workers.dev';
+  const WORKER_URL = adminApiBase();
   const TOKEN_KEY = 'regintel_admin_token';
 
   const EDIT_FIELDS = [
@@ -1745,7 +1747,7 @@ let selectedRole        = null;
   function proxyNetworkError(err, action) {
     const msg = err && err.message ? err.message : String(err);
     if (err && (err.name === 'TypeError' || /Failed to fetch|NetworkError|Load failed/i.test(msg))) {
-      return (action || 'Admin proxy request') + ' failed — the Worker at ' + WORKER_URL + ' is unreachable.';
+      return (action || 'Admin API request') + ' failed — ' + WORKER_URL + ' is unreachable.';
     }
     return msg;
   }

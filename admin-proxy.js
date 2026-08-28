@@ -1,8 +1,20 @@
-/** Shared loader for admin screens: Cloudflare proxy, then public GitHub, then local file. */
+/** Shared loader for admin screens: same-origin /api, then public GitHub, then local file. */
 const ADMIN_PROXY_TIMEOUT_MS = 25000;
 const GITHUB_REPO_OWNER = 'dalton-ls';
 const GITHUB_REPO_NAME = 'regintel';
 const GITHUB_PROJECTION_BRANCH = 'claude/create-website-skeleton-hYJMa';
+const PAGES_ORIGIN = 'https://regintel.regintel.workers.dev';
+
+function adminApiBase() {
+  try {
+    const host = location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]' ||
+        /\.pages\.dev$/i.test(host) || host === 'regintel.regintel.workers.dev') {
+      return location.origin + '/api';
+    }
+  } catch (err) { /* file: or non-browser */ }
+  return PAGES_ORIGIN + '/api';
+}
 
 function unwrapRecordArray(raw) {
   if (Array.isArray(raw)) return raw;
@@ -88,6 +100,6 @@ async function loadRequirementsProjection(workerUrl) {
 
 function proxyUnavailableNote(recordCount, proxyError) {
   const detail = proxyError ? ' (' + proxyError + ')' : '';
-  return '<div class="warn-note">Admin proxy is unreachable' + detail + ', so this screen loaded local <code>requirements.json</code> (' +
-    recordCount + ' records). You can review and preview. Apply/save still needs a deployed <code>regintel-admin-proxy</code> Worker with a working <code>GET /file</code> route — from <code>worker/regintel-admin-proxy</code> run <code>npx wrangler deploy</code>.</div>';
+  return '<div class="warn-note">Admin API is unreachable' + detail + ', so this screen loaded local <code>requirements.json</code> (' +
+    recordCount + ' records). You can review and preview. Apply/save needs the admin API at <code>/api</code> on the Cloudflare site (not the old <code>regintel-admin-proxy</code> hostname).</div>';
 }

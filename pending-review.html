@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RegIntel — Pending Review</title>
+  <script src="canonical-host.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -154,8 +155,7 @@
   <script src="schema.js"></script>
   <script src="admin-proxy.js"></script>
   <script>
-  // Set this to the deployed Worker URL from worker/regintel-admin-proxy (see its README).
-  const WORKER_URL = 'https://regintel-admin-proxy.regintel.workers.dev';
+  const WORKER_URL = adminApiBase();
   const TOKEN_KEY = 'regintel_admin_token'; // sessionStorage only — never written into this file
 
   const UNIFIED_FIELDS = [
@@ -536,7 +536,7 @@
     } catch (err) {
       const msg = err && err.message ? err.message : String(err);
       throw new Error(/Failed to fetch|NetworkError|Load failed/i.test(msg)
-        ? 'Apply failed — the admin proxy at ' + WORKER_URL + ' is unreachable.'
+        ? 'Apply failed — the admin API at ' + WORKER_URL + ' is unreachable.'
         : msg);
     }
     if (res.status === 401) {
