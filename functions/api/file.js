@@ -1,4 +1,4 @@
-import { json } from "../_lib/cors.js";
+import { json, jsonWrappedContent } from "../_lib/cors.js";
 import { ALLOWED_PATHS, getFileRaw, githubBranch } from "../_lib/github.js";
 
 export async function onRequestGet(context) {
@@ -9,12 +9,12 @@ export async function onRequestGet(context) {
   if (!ALLOWED_PATHS.has(path)) return json({ error: "path not allowed" }, 400, origin);
   try {
     const raw = await getFileRaw(env, path, githubBranch(env));
-    return json({ sha: null, content: JSON.parse(raw) }, 200, origin);
+    return jsonWrappedContent(raw, origin);
   } catch (err) {
     try {
       const assetRes = await env.ASSETS.fetch(new Request(new URL("/" + path, context.request.url)));
       if (assetRes.ok) {
-        return json({ sha: null, content: JSON.parse(await assetRes.text()) }, 200, origin);
+        return jsonWrappedContent(await assetRes.text(), origin);
       }
     } catch (_) { /* keep the GitHub error */ }
     return json({ error: err.message }, 502, origin);

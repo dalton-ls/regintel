@@ -1896,7 +1896,7 @@ let selectedRole        = null;
     if (PROJECTION_META.source === 'worker') {
       el.className = 'projection-badge live';
       el.textContent = 'Live · ' + n + ' records';
-      el.title = 'Loaded requirements.json via the admin API (GitHub HEAD).' + err;
+      el.title = 'Loaded live requirements.json from this origin (GitHub HEAD via the site Worker).' + err;
       return;
     }
     if (PROJECTION_META.source === 'github') {
@@ -3219,25 +3219,21 @@ let selectedRole        = null;
 
   async function loadData() {
     try {
-      const loaded = await loadProjectionContent(WORKER_URL, 'requirements.json', { unwrapArray: true });
-      const requirements = loaded.content;
+      const bundled = await loadRequirementsAndWr(WORKER_URL, { preferSameOrigin: true });
+      const requirements = bundled.requirements.content;
       PROJECTION_META = {
-        source: loaded.source,
+        source: bundled.requirements.source,
         count: Array.isArray(requirements) ? requirements.length : 0,
-        proxyError: loaded.proxyError || ''
+        proxyError: bundled.requirements.proxyError || ''
       };
       updateProjectionBadge();
       const sheets = unifiedToSheetShape(requirements);
-      try {
-        const wrLoaded = await loadProjectionContent(WORKER_URL, 'wr.json');
-        const wr = wrLoaded.content;
-        if (wr && typeof wr === 'object' && !Array.isArray(wr)) {
-          Object.keys(wr).forEach(key => {
-            if (key.startsWith('WR ') && Array.isArray(wr[key])) sheets[key] = wr[key];
-          });
-        }
-      } catch (err) {
-        console.warn('wr.json unavailable', err);
+      if (bundled.wr && bundled.wr.content && typeof bundled.wr.content === 'object' && !Array.isArray(bundled.wr.content)) {
+        Object.keys(bundled.wr.content).forEach(key => {
+          if (key.startsWith('WR ') && Array.isArray(bundled.wr.content[key])) sheets[key] = bundled.wr.content[key];
+        });
+      } else if (bundled.wrError) {
+        console.warn('wr.json unavailable', bundled.wrError);
       }
 
       CURRENT_SHEETS = sheets;

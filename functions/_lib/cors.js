@@ -18,13 +18,28 @@ export function corsHeaders(requestOrigin) {
   };
 }
 
+export function jsonHeaders(origin) {
+  return {
+    "Content-Type": "application/json",
+    "Cache-Control": "no-store, no-cache, max-age=0, must-revalidate",
+    ...corsHeaders(origin),
+  };
+}
+
 export function json(data, status, origin) {
   return new Response(JSON.stringify(data), {
     status,
-    headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": "no-store, no-cache, max-age=0, must-revalidate",
-      ...corsHeaders(origin),
-    },
+    headers: jsonHeaders(origin),
+  });
+}
+
+/** Wrap an already-serialized JSON value as `{ sha, content }` without parse/stringify. */
+export function jsonWrappedContent(rawJson, origin, sha = null) {
+  let raw = rawJson == null ? "" : String(rawJson);
+  if (raw.charCodeAt(0) === 0xFEFF) raw = raw.slice(1);
+  const shaPart = sha == null ? "null" : JSON.stringify(sha);
+  return new Response(`{"sha":${shaPart},"content":${raw}}`, {
+    status: 200,
+    headers: jsonHeaders(origin),
   });
 }

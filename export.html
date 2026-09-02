@@ -129,7 +129,10 @@
 
   async function init() {
     try {
-      baseRecords = await fetchLatestRequirements();
+      const bundled = await loadRequirementsAndWr(WORKER_URL);
+      baseRecords = bundled.requirements.content;
+      window.__projectionSource = bundled.requirements.source;
+      window.__proxyError = bundled.requirements.proxyError || '';
       const from = window.__projectionSource === 'worker'
         ? 'loaded fresh from GitHub via admin proxy'
         : (window.__projectionSource === 'github' ? 'loaded fresh from GitHub' : 'loaded from local file (admin proxy unreachable)');
@@ -137,26 +140,20 @@
       if (window.__projectionSource === 'local') {
         document.getElementById('globalError').innerHTML = proxyUnavailableNote(baseRecords.length, window.__proxyError);
       }
+      if (bundled.wr) {
+        wrData = bundled.wr.content;
+        const sheets = Object.keys(wrData).length;
+        const rows = Object.values(wrData).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0);
+        document.getElementById('wrMeta').textContent = rows + ' records across ' + sheets + ' sheet(s) · unchanged, separate dataset';
+      } else {
+        const wrMsg = bundled.wrError && bundled.wrError.message ? bundled.wrError.message : String(bundled.wrError || 'unavailable');
+        document.getElementById('wrMeta').textContent = 'Could not load wr.json: ' + wrMsg;
+        document.getElementById('chkWr').disabled = true;
+      }
     } catch (err) {
       document.getElementById('reqMeta').textContent = 'Could not load requirements.json: ' + err.message;
       document.getElementById('chkReq').checked = false;
       document.getElementById('chkReq').disabled = true;
-    }
-
-    try {
-      try {
-        wrData = await loadJsonViaApi(WORKER_URL, 'wr.json');
-      } catch (liveErr) {
-        const res = await fetch('wr.json', { cache: 'no-store' });
-        if (!res.ok) throw liveErr;
-        wrData = await res.json();
-      }
-      const sheets = Object.keys(wrData).length;
-      const rows = Object.values(wrData).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0);
-      document.getElementById('wrMeta').textContent = rows + ' records across ' + sheets + ' sheet(s) · unchanged, separate dataset';
-    } catch (err) {
-      document.getElementById('wrMeta').textContent = 'Could not load wr.json: ' + err.message;
-      document.getElementById('chkWr').disabled = true;
     }
 
     document.getElementById('downloadBtn').addEventListener('click', doDownload);

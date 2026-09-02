@@ -1,5 +1,6 @@
 /** Shared loader for admin screens: same-origin /api, then public GitHub, then local file. */
-const ADMIN_PROXY_TIMEOUT_MS = 25000;
+const ADMIN_PROXY_TIMEOUT_MS = 12000;
+const SAME_ORIGIN_TIMEOUT_MS = 8000;
 const GITHUB_REPO_OWNER = 'dalton-ls';
 const GITHUB_REPO_NAME = 'regintel';
 const GITHUB_PROJECTION_BRANCH = 'claude/create-website-skeleton-hYJMa';
@@ -58,6 +59,29 @@ async function parseProjectionResponse(res, label) {
   return rows;
 }
 
+function sameOriginProjectionSource() {
+  try {
+    const host = location.hostname;
+    if (/\.workers\.dev$/i.test(host) || /\.pages\.dev$/i.test(host)) return 'worker';
+  } catch (err) { /* file: or non-browser */ }
+  return 'local';
+}
+
+async function loadSameOriginJson(path) {
+  const res = await fetchWithTimeout(path, SAME_ORIGIN_TIMEOUT_MS);
+  if (!res.ok) throw new Error('same-origin HTTP ' + res.status);
+  return res.json();
+}
+
+function wrapProjection(content, path, unwrap, source, proxyError) {
+  if (unwrap) {
+    const rows = unwrapRecordArray(content);
+    if (!rows) throw new Error(path + ' did not return a record array');
+    return { content: rows, source, proxyError: proxyError || '' };
+  }
+  return { content, source, proxyError: proxyError || '' };
+}
+
 async function loadJsonViaApi(workerUrl, path) {
   const res = await fetchWithTimeout(workerUrl + '/file?path=' + encodeURIComponent(path), ADMIN_PROXY_TIMEOUT_MS);
   if (!res.ok) {
@@ -92,53 +116,56 @@ function abortOrMessage(err) {
 
 // Worker /api/file, then public GitHub, then the deployed/local file.
 // unwrapArray:true returns { content: record[] } for requirements.json.
+// preferSameOrigin:true tries GET /path first (the site Worker already serves GitHub JSON there).
 async function loadProjectionContent(workerUrl, path, opts) {
   const unwrap = !!(opts && opts.unwrapArray);
+  const preferSameOrigin = !!(opts && opts.preferSameOrigin);
   let proxyError = '';
-  if (workerUrl && workerUrl !== 'REPLACE_WITH_WORKER_URL') {
+  if (preferSameOrigin && typeof location !== 'undefined' && location.protocol !== 'file:') {
     try {
-      const content = await loadJsonViaApi(workerUrl, path);
-      if (unwrap) {
-        const rows = unwrapRecordArray(content);
-        if (!rows) throw new Error(path + ' did not return a record array');
-        return { content: rows, source: 'worker' };
-      }
-      return { content, source: 'worker' };
+      return wrapProjection(await loadSameOriginJson(path), path, unwrap, sameOriginProjectionSource(), '');
     } catch (err) {
       proxyError = abortOrMessage(err);
+      console.warn('Same-origin ' + path + ' unavailable', err);
+    }
+  }
+  if (workerUrl && workerUrl !== 'REPLACE_WITH_WORKER_URL') {
+    try {
+      return wrapProjection(await loadJsonViaApi(workerUrl, path), path, unwrap, 'worker', proxyError);
+    } catch (err) {
+      proxyError = proxyError || abortOrMessage(err);
       console.warn('Admin proxy unavailable for ' + path, err);
     }
   }
   try {
-    const content = await loadGithubFile(path);
-    if (unwrap) {
-      const rows = unwrapRecordArray(content);
-      if (!rows) throw new Error('GitHub did not return a record array');
-      return { content: rows, source: 'github', proxyError };
-    }
-    return { content, source: 'github', proxyError };
+    return wrapProjection(await loadGithubFile(path), path, unwrap, 'github', proxyError);
   } catch (err) {
     console.warn('GitHub projection unavailable for ' + path, err);
     if (!proxyError) proxyError = abortOrMessage(err);
   }
   try {
-    const local = await fetch(path, { cache: 'no-store' });
-    if (!local.ok) {
-      throw new Error('Failed to load ' + path + ' (admin proxy unavailable, local HTTP ' + local.status + ')');
-    }
-    const parsed = await local.json();
-    if (unwrap) {
-      const rows = unwrapRecordArray(parsed);
-      if (!rows) throw new Error(path + ' is not a JSON array of records');
-      return { content: rows, source: 'local', proxyError };
-    }
-    return { content: parsed, source: 'local', proxyError };
+    return wrapProjection(await loadSameOriginJson(path), path, unwrap, 'local', proxyError);
   } catch (err) {
-    if (location.protocol === 'file:') {
+    if (typeof location !== 'undefined' && location.protocol === 'file:') {
       throw new Error('Cannot load ' + path + ' from a file:// URL. Open the site over http(s) (GitHub Pages or a local server).');
     }
     throw err;
   }
+}
+
+async function loadRequirementsAndWr(workerUrl, opts) {
+  const reqOpts = Object.assign({ unwrapArray: true }, opts || {});
+  const wrOpts = Object.assign({}, opts || {});
+  const [reqResult, wrResult] = await Promise.allSettled([
+    loadProjectionContent(workerUrl, 'requirements.json', reqOpts),
+    loadProjectionContent(workerUrl, 'wr.json', wrOpts)
+  ]);
+  if (reqResult.status !== 'fulfilled') throw reqResult.reason;
+  return {
+    requirements: reqResult.value,
+    wr: wrResult.status === 'fulfilled' ? wrResult.value : null,
+    wrError: wrResult.status === 'rejected' ? wrResult.reason : null
+  };
 }
 
 async function loadRequirementsProjection(workerUrl) {
