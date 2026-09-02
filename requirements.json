@@ -9480,7 +9480,7 @@
     "Source Dataset": "Care Setting",
     "Jurisdiction": "CA",
     "Jurisdiction Setting": "nursing facility",
-    "Jurisdiction Role": "Certified Nurse Assistant",
+    "Jurisdiction Role": "SNF Nurse Assistant",
     "HSTM Setting": "Skilled Nursing Facility",
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
