@@ -12,6 +12,9 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
+      - name: Validate data files
+        run: |
+          node -e "for (const f of ['requirements.json','wr.json']) { JSON.parse(require('fs').readFileSync(f,'utf8')); console.log('ok', f); }"
       - uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -20,10 +23,29 @@ jobs:
           command: deploy
       - name: Smoke admin API
         run: |
-          set -e
+          set -euo pipefail
           origin="https://regintel.regintel.workers.dev"
-          health="$(curl -fsS --max-time 20 "$origin/api/health")"
-          echo "$health"
-          echo "$health" | grep -q '"githubAuth":"ok"'
-          curl -fsS -o /dev/null --max-time 45 "$origin/api/file?path=requirements.json"
-          curl -fsS -o /dev/null --max-time 45 "$origin/requirements.json"
+          curl_ok() {
+            local url="$1" max="$2" out="$3"
+            local code
+            code="$(curl -sS -o "$out" -w "%{http_code}" --max-time "$max" "$url" || true)"
+            echo "$url -> HTTP $code"
+            if [ -z "$code" ] || [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
+              head -c 800 "$out"; echo
+              return 1
+            fi
+          }
+          health="$(mktemp)"
+          curl_ok "$origin/api/health" 20 "$health"
+          grep -q '"githubAuth":"ok"' "$health"
+          fileout="$(mktemp)"
+          ok=0
+          for i in 1 2 3 4 5; do
+            if curl_ok "$origin/api/file?path=requirements.json" 45 "$fileout"; then
+              ok=1
+              break
+            fi
+            sleep 5
+          done
+          [ "$ok" -eq 1 ]
+          curl_ok "$origin/requirements.json" 45 /dev/null
