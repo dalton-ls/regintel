@@ -100,8 +100,12 @@ async function loadGithubFile(path) {
   const res = await fetchWithTimeout(apiUrl, ADMIN_PROXY_TIMEOUT_MS, {
     headers: { Accept: 'application/vnd.github.raw' }
   });
-  if (!res.ok) throw new Error('GitHub HTTP ' + res.status);
-  return JSON.parse(await res.text());
+  if (res.ok) return JSON.parse(await res.text());
+  const rawUrl = 'https://raw.githubusercontent.com/' + GITHUB_REPO_OWNER + '/' + GITHUB_REPO_NAME +
+    '/' + GITHUB_PROJECTION_BRANCH + '/' + path;
+  const rawRes = await fetchWithTimeout(rawUrl, ADMIN_PROXY_TIMEOUT_MS);
+  if (!rawRes.ok) throw new Error('GitHub HTTP ' + res.status);
+  return JSON.parse(await rawRes.text());
 }
 
 async function loadRequirementsFromGithub() {

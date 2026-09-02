@@ -2198,14 +2198,25 @@ let selectedRole        = null;
       const existing = findJsonByRecordId(latest, id);
       if (!existing) throw new Error('Record ' + id + ' was not found in ' + path);
       const updated = patchJsonByRecordId(latest, id, values);
+      const committed = findJsonByRecordId(updated, id);
+      if (!committed || !valuesMatchSaved(committed, values)) {
+        throw new Error('Local patch did not apply all fields to ' + id);
+      }
       const result = await commitWorkerFile(path, updated, 'Edit ' + id + ' via research view');
-      const verified = await fetchWorkerFile(path);
-      const saved = findJsonByRecordId(verified, id);
-      if (!saved) throw new Error('Save did not persist ' + id + ' to ' + path);
-      if (!valuesMatchSaved(saved, values)) throw new Error('Save did not persist all fields to ' + path);
+      let saved = committed;
+      let staleReadback = false;
+      try {
+        const verified = await fetchWorkerFile(path);
+        const remote = findJsonByRecordId(verified, id);
+        if (remote && valuesMatchSaved(remote, values)) saved = remote;
+        else staleReadback = true;
+      } catch (err) {
+        staleReadback = true;
+      }
       applySavedRaw(id, saved, row._sheet, row._lane || (path === 'wr.json' ? 'wr' : 'requirements'));
       render();
-      showToast('Saved ' + id + (result.commitUrl ? ' — ' + result.commitUrl : ''));
+      showToast('Saved ' + id + (result.commitUrl ? ' — ' + result.commitUrl : '') +
+        (staleReadback ? ' (catalog reload may lag until GitHub cache catches up)' : ''));
     } catch (err) {
       if (warnEl) warnEl.innerHTML = '<div class="error-banner">' + esc(err.message) + '</div>';
       showToast(err.message);

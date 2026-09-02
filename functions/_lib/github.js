@@ -52,7 +52,10 @@ export async function githubApiRequest(env, urlPath, init = {}, { forceAnonymous
 function utf8ToBase64(str) {
   const bytes = new TextEncoder().encode(str);
   let binary = "";
-  bytes.forEach((b) => { binary += String.fromCharCode(b); });
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+  }
   return btoa(binary);
 }
 

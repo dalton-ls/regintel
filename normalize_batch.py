@@ -64,7 +64,9 @@ credit, provision relationship types, interpretive layers, product routing
 (Product Use Case, Policy Action Relevance, Quality Manager Relevance,
 Operational Domain), and identity/change fields. None of those extra
 columns participates in Record ID. `Change Source path` (parser spelling)
-is accepted interchangeably with `Change Source Path`.
+is accepted interchangeably with `Change Source Path`. Current parser
+skill batches put 5b-4 evidence in Notes, not Impact Basis/Confidence/Review;
+those three remain optional for older classified sheets.
 
 Drift warnings raised (never blocking, never silently rewritten)
 ---------------------------------------------------------------------------
@@ -497,10 +499,18 @@ def validate(records, known_values):
             )
         impact_types = record.get("Impact Types")
         if isinstance(impact_types, list) and impact_types and not record.get("Impact Basis"):
-            warnings.append(
-                record_id + ": Impact Types is tagged but Impact Basis is empty — "
-                "parser judgments should carry a short evidence rationale"
-            )
+            notes = record.get("Notes / Research Flags") or ""
+            if record.get("Impact Confidence") is not None or record.get("Impact Review") is not None:
+                warnings.append(
+                    record_id + ": Impact Types is tagged but Impact Basis is empty — "
+                    "legacy classified batches that carry Impact Confidence/Review "
+                    "should also carry the evidence column"
+                )
+            elif not notes:
+                warnings.append(
+                    record_id + ": Impact Types is tagged with empty Notes / Research Flags — "
+                    "the current parser skill stores 5b-4 evidence in Notes, not Impact Basis"
+                )
 
         if known_values.get("Jurisdiction") and record.get("Jurisdiction") not in known_values["Jurisdiction"]:
             warnings.append(

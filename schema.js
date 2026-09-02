@@ -6,6 +6,9 @@
 // so v2 IDs remain valid. Headers must match the parser byte-for-byte.
 // `Change Source path` is the parser spelling; the site also accepts the
 // earlier `Change Source Path`.
+// Impact Basis / Confidence / Review are not in this 47-column list. The
+// current skill keeps 5b-4 evidence in Notes / Research Flags. Ingest still
+// copies those three fields through when an older batch includes them.
 
 const EXTRACTION_COLUMNS = [
   "Jurisdiction",

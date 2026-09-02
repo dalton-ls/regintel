@@ -243,11 +243,16 @@
     if (judgment.confidence && !isKnownImpactConfidence(judgment.confidence)) {
       warnings.push('Impact Confidence: ' + JSON.stringify(judgment.confidence) + ' is not one of High, Medium, Low.');
     }
+    const notes = resolved['Notes / Research Flags'] || resolved.notes || '';
     if (judgment.hasTypesField && !judgment.basis) {
-      if (!judgment.types.length) {
-        warnings.push('Impact Types is an empty list with no Impact Basis — empty is only valid when the classifier reasoned that no supported response is present.');
-      } else {
-        warnings.push('Impact Basis is empty — parser judgments should carry a short evidence rationale.');
+      if (judgment.confidence || judgment.review === true || judgment.review === false) {
+        if (!judgment.types.length) {
+          warnings.push('Impact Types is an empty list with no Impact Basis — empty is only valid when the classifier reasoned that no supported response is present.');
+        } else {
+          warnings.push('Impact Basis is empty on a legacy classified batch that still carries Impact Confidence/Review.');
+        }
+      } else if (!notes && judgment.types.length) {
+        warnings.push('Impact Types is tagged with empty Notes / Research Flags — the current parser skill stores 5b-4 evidence in Notes, not Impact Basis.');
       }
     }
     if (judgment.review === true) {

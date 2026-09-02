@@ -100,7 +100,9 @@ function initImpactTypeCounts() {
   return counts;
 }
 
-// Parser judgment metadata that travels with Impact Types (v4).
+// Parser judgment metadata that may travel with Impact Types on older
+// classified batches. The current 47-column parser skill does not emit
+// these as columns; 5b-4 evidence is in Notes / Research Flags.
 const IMPACT_CONFIDENCE_VALUES = ["High", "Medium", "Low"];
 
 function isKnownImpactConfidence(value) {

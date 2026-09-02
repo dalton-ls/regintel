@@ -48,7 +48,10 @@ write to it.
 ### Batch columns (47), in parser emission order
 
 The parser skill emits 47 columns. `normalize_batch.py` still reads by
-**exact header name**. The original 20 extraction columns are required
+**exact header name**. Parser `--source-dataset` is the corpus label hashed
+inside the skill (`CA CCR 22`); this script's `--source-dataset` is the
+legacy site lane (`Role` / `Care Setting`) inferred from Regulation Type.
+The original 20 extraction columns are required
 for identity; the rest are optional enrichment (absent = no opinion):
 
 ```
@@ -108,9 +111,10 @@ Review. Absence = “this batch has no opinion,” not “clear the field.”
   primary tagger. This is the **terminal implementation signal in
   RegIntel** — use it with care-setting / role / jurisdiction to infer
   affected downstream products outside this site.
-- `Impact Basis`, `Impact Confidence` (`High` / `Medium` / `Low`),
-  `Impact Review` (`true` = needs QA) — parser evidence that travels with
-  Impact Types. First-class fields; not folded into Notes.
+- Parser 5b-4 evidence (basis / confidence / review) is **not** a 47-column
+  field in the current skill. It lands in `Notes / Research Flags`. Older
+  batches may still carry `Impact Basis`, `Impact Confidence`, and
+  `Impact Review`; ingest still copies those through when present.
 
 Legacy `Other` values may appear on older rows; prefer specific types when
 reviewing new batches.
@@ -234,7 +238,8 @@ is).
 | `.nojekyll` | GitHub Pages: serve files as-is |
 
 Pre-site OpenLaws diff / change-tag scripts live in the sibling
-`PHASE 2 DIFF/` folder, not this repo.
+`PHASE 2 DIFF/` folder. The current parser skill package lives in the
+operator workspace (`RegIntel_Work/01_Tooling/Parser Skill/`), not this repo.
 
 ## Admin passphrase
 

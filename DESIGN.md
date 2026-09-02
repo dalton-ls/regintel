@@ -60,8 +60,8 @@ Incoming files are already-classified batches (extraction sheets, change
 tags, applicability/impact tags). `normalize_batch.py` only
 normalizes an already-extracted 20-column sheet for Pending Review.
 
-The pre-site pipeline lives beside this repo (`PHASE 1/`, `PHASE 2 DIFF/`),
-not inside it.
+The pre-site pipeline lives beside this repo (`PHASE 1/`, `PHASE 2 DIFF/`, and
+the operator workspace parser skill). This site never runs those stages.
 
 ## 3. Normalized core → product projection
 
@@ -168,23 +168,23 @@ supported organizational response is present.
 |---|---|---|---|
 | Change Type | string | New, Amended, Removed, Administrative-non-material | Pre-site diff → Pending Review tag batch |
 | Change Detected Date | ISO date | — | Diff run timestamp |
-| Change Source Path | string | — | OpenLaws path that triggered the match |
+| Change Source Path | string | — | OpenLaws path that triggered the match (`Change Source path` is the parser spelling) |
 | Applicability Rules | array of objects | Anchor: setting / role / organization_type / profession / activity | Human-authored via Pending Review |
-| Impact Types | array of strings | **Policy, Procedure, Training, Competency, Credential, Documentation, Workflow, Staffing, Reporting, Audit, Physical Environment** | Parser first-pass (stage 5b); human QA/override in Pending Review |
-| Impact Basis | string | — | Parser evidence rationale; required with a classified Impact Types value |
-| Impact Confidence | string | High, Medium, Low | Parser confidence |
-| Impact Review | boolean | true = needs QA | Parser review flag |
+| Impact Types | array of strings | **Policy, Procedure, Training, Competency, Credential, Documentation, Workflow, Staffing, Reporting, Audit, Physical Environment** | Parser first-pass (stage 5b-4); human QA/override in Pending Review |
+| Impact Basis | string | — | **Optional / legacy.** Current parser skill does not emit this column; 5b-4 evidence is kept in the classification artifact and copied into `Notes / Research Flags`. Older batches may still carry the field. |
+| Impact Confidence | string | High, Medium, Low | **Optional / legacy.** Same as Impact Basis. |
+| Impact Review | boolean | true = needs QA | **Optional / legacy.** Same as Impact Basis. |
 
 Impact Type is a **closed taxonomy** (Phase 4). One obligation may carry
 **multiple** tags. Impact Type names **what kind** of organizational
 response is required — not a specific policy ID or training module.
 Definitions live in [`impact-types.js`](impact-types.js).
 
-`Impact Basis`, `Impact Confidence`, and `Impact Review` are first-class
-classification metadata on the same row. They are not stored in
-`Notes / Research Flags`. Downstream product impact is **inferred** from
-Impact Type + care-setting / role / jurisdiction applicability, not stored
-as catalog references.
+When a classified batch still carries `Impact Basis`, `Impact Confidence`,
+and `Impact Review`, treat them as first-class metadata. The current 47-column
+parser contract folds that rationale into `Notes / Research Flags` instead.
+Downstream product impact is **inferred** from Impact Type + care-setting /
+role / jurisdiction applicability, not stored as catalog references.
 
 Legacy rows may still carry `Other` from an earlier product-routing pass;
 the site displays it but advises replacing it with specific types.
