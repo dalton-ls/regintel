@@ -247,6 +247,8 @@
     }
     .role-select-option:hover { background: #f5f7fa; }
     .role-select-option.selected { background: #eef3fb; color: #2463eb; font-weight: 600; }
+    .role-select-option.role-placeholder-value { cursor: default; color: #8b95a5; }
+    .role-select-option.role-placeholder-value:hover { background: transparent; }
 
     /* ── Main content ── */
     .main-content { padding: 24px; flex: 1; }
@@ -1291,6 +1293,22 @@ let selectedRole        = null;
 
   function publicRecords(records) {
     return records.filter(r => !isHiddenFromPublicView(r));
+  }
+
+  function rolesForSelectedJurisdictions() {
+    if (!filterState.jurisdictions.size) return [];
+    return ROLES.filter(role =>
+      (ROLE_DATA[role.value] || []).some(r =>
+        !isHiddenFromPublicView(r) && filterState.jurisdictions.has(r.state)
+      )
+    );
+  }
+
+  function syncSelectedRoleToJurisdictions() {
+    if (!selectedRole) return;
+    if (!rolesForSelectedJurisdictions().some(r => r.value === selectedRole)) {
+      selectedRole = null;
+    }
   }
 
   function filterData() {
@@ -2469,8 +2487,11 @@ let selectedRole        = null;
 
   function renderRoleDropdown() {
     const isOpen   = openDropdown === 'role';
-    const selLabel = selectedRole ? ROLES.find(r => r.value === selectedRole)?.label : null;
-    const options  = ROLES.map(r => `<div class="role-select-option${selectedRole === r.value ? ' selected' : ''}" data-role-select="${esc(r.value)}">${esc(r.label)}</div>`).join('');
+    const available = rolesForSelectedJurisdictions();
+    const selLabel = selectedRole ? available.find(r => r.value === selectedRole)?.label : null;
+    const options  = available.length
+      ? available.map(r => `<div class="role-select-option${selectedRole === r.value ? ' selected' : ''}" data-role-select="${esc(r.value)}">${esc(r.label)}</div>`).join('')
+      : `<div class="role-select-option role-placeholder-value">No roles for selected jurisdictions</div>`;
     return `<div class="filter-group">
   <button type="button" class="multi-select-trigger${isOpen ? ' open' : ''}" data-dropdown-trigger="role">
     <span class="trigger-label">Role</span>
@@ -2612,12 +2633,13 @@ let selectedRole        = null;
 
   // ─── Filter bar ─── 
   function renderFilterBar(roleOnly = false) {
+    const jurisDD = renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions);
     const roleDD = renderRoleDropdown();
     const exportBtn = renderExportBtn('Export filtered results to Excel');
-    if (roleOnly) return `<div class="filter-bar">${roleDD}${exportBtn}</div>`;
+    if (roleOnly) return `<div class="filter-bar">${jurisDD}${roleDD}${exportBtn}</div>`;
     return `<div class="filter-bar">
+    ${jurisDD}
     ${roleDD}
-    ${renderDropdown('jurisdictions', 'Jurisdiction', ALL_JURISDICTIONS, filterState.jurisdictions)}
     ${renderDropdown('requirementLevels', 'Requirement', ALL_REQUIREMENT_LEVELS, filterState.requirementLevels)}
     ${renderDropdown('authorityLevels', 'Authority', ALL_AUTHORITY_LEVELS, filterState.authorityLevels)}
     ${ALL_APPLICABILITY_VALUES.length ? renderDropdown('applicabilityValues', 'Applicability', ALL_APPLICABILITY_VALUES, filterState.applicabilityValues) : ''}
@@ -2824,7 +2846,7 @@ let selectedRole        = null;
           <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
         </svg>
         <p class="empty-state-title">Select a role to get started</p>
-        <p class="empty-state-text">Choose a role from the dropdown above to view regulatory requirements.</p>
+        <p class="empty-state-text">Choose jurisdiction(s), then a role, to view regulatory requirements.</p>
       </div></div>`;
       updateDrawer();
       return;
@@ -2954,6 +2976,7 @@ let selectedRole        = null;
       const s = filterState[dim];
       if (s.has(val)) s.delete(val);
       else s.add(val);
+      if (dim === 'jurisdictions') syncSelectedRoleToJurisdictions();
       render();
       return;
     }
@@ -2963,6 +2986,7 @@ let selectedRole        = null;
       const dim = allBtn.dataset.dropdownAll;
       const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS, applicabilityValues: ALL_APPLICABILITY_VALUES, impactTypes: ALL_IMPACT_TYPES, policyActions: ALL_POLICY_ACTIONS, productUseCases: ALL_PRODUCT_USE_CASES, operationalDomains: ALL_OPERATIONAL_DOMAINS };
       allMap[dim].forEach(v => filterState[dim].add(v));
+      if (dim === 'jurisdictions') syncSelectedRoleToJurisdictions();
       render();
       e.stopPropagation();
       return;
@@ -2973,6 +2997,7 @@ let selectedRole        = null;
       const dim = clearBtn.dataset.dropdownClear;
       const allMap = { jurisdictions: ALL_JURISDICTIONS, requirementLevels: ALL_REQUIREMENT_LEVELS, authorityLevels: ALL_AUTHORITY_LEVELS, applicabilityValues: ALL_APPLICABILITY_VALUES, impactTypes: ALL_IMPACT_TYPES, policyActions: ALL_POLICY_ACTIONS, productUseCases: ALL_PRODUCT_USE_CASES, operationalDomains: ALL_OPERATIONAL_DOMAINS };
       filterState[dim].clear();
+      if (dim === 'jurisdictions') syncSelectedRoleToJurisdictions();
       render();
       e.stopPropagation();
       return;
