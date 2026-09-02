@@ -16,6 +16,7 @@ function liveJsonPath(pathname) {
 async function serveGithubJson(env, path, request) {
   try {
     const raw = await getFileRaw(env, path, githubBranch(env));
+    JSON.parse(raw);
     return new Response(raw, {
       status: 200,
       headers: {
