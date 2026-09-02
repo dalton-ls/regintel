@@ -85,6 +85,10 @@ export async function getFileRaw(env, path, branch) {
   if (res.ok) return res.text();
   const apiStatus = res.status;
   const apiBody = await res.text();
+  if (apiStatus === 403 || /too large/i.test(apiBody)) {
+    const viaBlob = await getFile(env, path, branch);
+    return viaBlob.content;
+  }
   const rawUrl = `https://raw.githubusercontent.com/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/${branch}/${path}`;
   const rawRes = await fetch(rawUrl, { headers: { "User-Agent": "regintel-pages-api" } });
   if (!rawRes.ok) throw new Error(`GitHub GET ${path} failed: ${apiStatus} ${apiBody}`);
