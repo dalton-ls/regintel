@@ -9480,7 +9480,7 @@
     "Source Dataset": "Care Setting",
     "Jurisdiction": "CA",
     "Jurisdiction Setting": "nursing facility",
-    "Jurisdiction Role": "Certified Nurse Assistant",
+    "Jurisdiction Role": "SNF Nurse Assistant",
     "HSTM Setting": "Skilled Nursing Facility",
     "HSTM Role": [
       "Clinical, Non-Medication Dispensing"
@@ -9523,8 +9523,7 @@
     "Operational Domain": "Unknown",
     "Human Interpretation / SME Review": "Not needed",
     "Source Change Context": "the accompanying documentation verifies completion of required twenty-four (24) hours of in-service training or continuing education per year for a total of forty-eight (48) hours within the two (2) year renewal period",
-    "Record ID": "req_9438eff080ac"
-  },
+    "Record ID": "req_9438eff080ac"  },
   {
     "Source Dataset": "Care Setting",
     "Jurisdiction": "CA",
