@@ -10,8 +10,8 @@ populated. What you upload here is already-classified JSON (or an Excel
 sheet already in the 20-column extraction template). See
 [DESIGN.md](DESIGN.md) for the site boundary and the three-taxonomy split.
 
-Canonical field definitions: `PHASE 1/Metadata Summary v3.xlsx` (sibling
-folder, not this git repo). Broader ontology:
+Canonical field definitions: `PHASE 1/Metadata Summary v4.xlsx` (sibling
+folder / Research Services catalog, not this git repo). Broader ontology:
 `RegIntel Knowledge Architecture v3.docx`.
 
 ## Live site
