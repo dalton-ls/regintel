@@ -3228,14 +3228,11 @@ let selectedRole        = null;
     return roles.flatMap(v => String(v).split('|')).map(v => v.trim()).filter(Boolean);
   }
 
-  // Obligations-by-Role dropdown buckets by customer-facing Display Role
-  // when present. Jurisdiction Role stays on the record; it is only the
-  // fallback for Needs Classification / unlabeled rows.
+  // Obligations-by-Role dropdown publishes Display Role only (Metadata v4
+  // CANONICAL ROLE: do not emit Unlabeled / unresolved source strings).
+  // Jurisdiction Role stays on the record and is never a published label.
   function researchRoleLabels(r) {
-    const display = splitRoleLabels(r['Display Role']);
-    if (display.length) return display;
-    const juris = splitRoleLabels(r['Jurisdiction Role']);
-    return juris.length ? juris : ['Unlabeled'];
+    return splitRoleLabels(r['Display Role']);
   }
 
   function routesToRoleTab(r) {
@@ -3258,7 +3255,9 @@ let selectedRole        = null;
     const sheets = {};
     requirements.forEach(r => {
       if (routesToRoleTab(r)) {
-        researchRoleLabels(r).forEach(label => {
+        const labels = researchRoleLabels(r);
+        if (!labels.length) return;
+        labels.forEach(label => {
           const key = 'R ' + label;
           (sheets[key] || (sheets[key] = [])).push(r);
         });
