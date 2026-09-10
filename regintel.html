@@ -3156,10 +3156,10 @@ let selectedRole        = null;
     DATA      = uniqueNormalizedRows(Object.values(ROLE_DATA).flat());
     CARE_DATA = uniqueNormalizedRows(Object.values(CS_DATA).flat());
 
-    // Derive ROLES from loaded R * sheets
+    // Derive ROLES from loaded R * sheets. Bucket keys are Display Role
+    // when classified ("R Home Health Aide"), otherwise Jurisdiction Role.
     const seenRoles = new Set();
     ROLES = Object.keys(ROLE_DATA).sort().flatMap(k => {
-      // Bucket key is Jurisdiction Role ("R nurse assistant").
       const label = k.slice(2);
       if (seenRoles.has(label)) return [];
       seenRoles.add(label);
@@ -3223,11 +3223,19 @@ let selectedRole        = null;
   // Source Dataset is a legacy Record ID identity field, not a tab router.
   // Policy Manager still pulls Organizational Policy (and other policy signals)
   // via isPolicyRelevant().
-  function jurisdictionRoleLabels(r) {
-    const raw = r['Jurisdiction Role'];
+  function splitRoleLabels(raw) {
     const roles = Array.isArray(raw) ? raw : (raw ? [raw] : []);
-    const labels = roles.map(v => String(v).trim()).filter(Boolean);
-    return labels.length ? labels : ['Unlabeled'];
+    return roles.flatMap(v => String(v).split('|')).map(v => v.trim()).filter(Boolean);
+  }
+
+  // Obligations-by-Role dropdown buckets by customer-facing Display Role
+  // when present. Jurisdiction Role stays on the record; it is only the
+  // fallback for Needs Classification / unlabeled rows.
+  function researchRoleLabels(r) {
+    const display = splitRoleLabels(r['Display Role']);
+    if (display.length) return display;
+    const juris = splitRoleLabels(r['Jurisdiction Role']);
+    return juris.length ? juris : ['Unlabeled'];
   }
 
   function routesToRoleTab(r) {
@@ -3250,7 +3258,7 @@ let selectedRole        = null;
     const sheets = {};
     requirements.forEach(r => {
       if (routesToRoleTab(r)) {
-        jurisdictionRoleLabels(r).forEach(label => {
+        researchRoleLabels(r).forEach(label => {
           const key = 'R ' + label;
           (sheets[key] || (sheets[key] = [])).push(r);
         });
