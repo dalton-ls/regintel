@@ -949,7 +949,9 @@
   const EDIT_FIELDS = [
     "Obligation ID",
     "Jurisdiction", "Jurisdiction Setting", "Jurisdiction Role",
-    "HSTM Setting", "HSTM Role", "Regulation Type",
+    "HSTM Setting", "HSTM Role",
+    "Canonical Role", "Role Qualifier", "Display Role", "Role Classification Status",
+    "Regulation Type",
     "Oversight / Professional Agency", "Requirement Level", "Authority Level",
     "Explicit Training",
     "Citation", "Related Regulatory Provisions",
@@ -991,6 +993,7 @@
     "Approval Timing": SCHEMA_VOCAB["Approval Timing"].slice(),
     "Instructor/SME Qualification Required": SCHEMA_VOCAB["Instructor/SME Qualification Required"].slice(),
     "Prior Training Credit / Exemption": SCHEMA_VOCAB["Prior Training Credit / Exemption"].slice(),
+    "Role Classification Status": SCHEMA_VOCAB["Role Classification Status"].slice(),
     "Interpretive Review Status": SCHEMA_VOCAB["Interpretive Review Status"].slice(),
     "Regulatory Lifecycle Stage": SCHEMA_VOCAB["Regulatory Lifecycle Stage"].slice(),
     "Product Use Case": SCHEMA_VOCAB["Product Use Case"].slice(),
@@ -1031,8 +1034,8 @@ let selectedRole        = null;
   let openDropdown  = null;
 
   const WR_SHEET_META = {
-    'WR CNA_SNF': { role: 'Certified Nursing Assistant (CNA)', setting: 'Skilled Nursing Facility' },
-    'WR CNA_ALF': { role: 'Certified Nursing Assistant (CNA)', setting: 'Assisted Living Facility' },
+    'WR CNA_SNF': { role: 'Certified Nurse Assistant (CNA)', setting: 'Skilled Nursing Facility' },
+    'WR CNA_ALF': { role: 'Certified Nurse Assistant (CNA)', setting: 'Assisted Living Facility' },
     'WR LVN_SNF': { role: 'Licensed Vocational Nurse (LVN)', setting: 'Skilled Nursing Facility' },
     'WR LVN_ALF': { role: 'Licensed Vocational Nurse (LVN)', setting: 'Assisted Living Facility' },
     'WR LVN_HH':  { role: 'Licensed Vocational Nurse (LVN)', setting: 'Home Health' },
@@ -1041,7 +1044,7 @@ let selectedRole        = null;
     'WR HHA_HH':  { role: 'Home Health Aide (HHA)', setting: 'Home Health' }
   };
   const WR_ROLE_ORDER = [
-    'Certified Nursing Assistant (CNA)',
+    'Certified Nurse Assistant (CNA)',
     'Licensed Vocational Nurse (LVN)',
     'Registered Nurse (RN)',
     'Home Health Aide (HHA)'
@@ -1052,13 +1055,14 @@ let selectedRole        = null;
     'Home Health'
   ];
   const WR_ROLE_ALIASES = {
-    'cna': 'Certified Nursing Assistant (CNA)',
-    'certified nursing assistant': 'Certified Nursing Assistant (CNA)',
-    'certified nursing assistant (cna)': 'Certified Nursing Assistant (CNA)',
-    'snf nurse assistant': 'Certified Nursing Assistant (CNA)',
-    'certified nurse assistant': 'Certified Nursing Assistant (CNA)',
-    'certified and noncertified nurse assistants': 'Certified Nursing Assistant (CNA)',
-    'rcfe staff': 'Certified Nursing Assistant (CNA)',
+    'cna': 'Certified Nurse Assistant (CNA)',
+    'certified nursing assistant': 'Certified Nurse Assistant (CNA)',
+    'certified nursing assistant (cna)': 'Certified Nurse Assistant (CNA)',
+    'certified nurse assistant (cna)': 'Certified Nurse Assistant (CNA)',
+    'snf nurse assistant': 'Certified Nurse Assistant (CNA)',
+    'certified nurse assistant': 'Certified Nurse Assistant (CNA)',
+    'certified and noncertified nurse assistants': 'Certified Nurse Assistant (CNA)',
+    'rcfe staff': 'Certified Nurse Assistant (CNA)',
     'lvn': 'Licensed Vocational Nurse (LVN)',
     'lpn': 'Licensed Vocational Nurse (LVN)',
     'licensed vocational nurse': 'Licensed Vocational Nurse (LVN)',
@@ -1981,6 +1985,65 @@ let selectedRole        = null;
     return out;
   }
 
+  function normalizeRow(r) {
+    return {
+      state:               r['Jurisdiction'],
+      hstm_role:           splitPipeList(r['HSTM Role']),
+      hstm_setting:        r['HSTM Setting'],
+      jurisdictional_name: r['Jurisdiction Role'],
+      canonical_role:     r['Canonical Role'] || '',
+      role_qualifier:     r['Role Qualifier'] || '',
+      display_role:       r['Display Role'] || '',
+      jurisdiction_setting: r['Jurisdiction Setting'] || '',
+      oversight_agency:    r['Oversight / Professional Agency'],
+      requirement_level:   r['Requirement Level'],
+      authority_level:     r['Authority Level'],
+      citation:            r['Citation'],
+      type:                r['Purpose'],
+      training_topic:      r['Training Topic / Competency Item'],
+      approval_required:   r['Approval Required'],
+      approval_basis:      r['Approval Basis'] || '',
+      approval_scope:      r['Approval Scope'] || '',
+      approval_responsibility: r['Approval Responsibility'] || '',
+      approval_timing:     r['Approval Timing'] || '',
+      instructor_qualification: r['Instructor/SME Qualification Required'] || '',
+      hours_required:      Number(r['Hours Required']) || 0,
+      hours_raw:           String(r['Hours Required'] || ''),
+      frequency:           r['Frequency'],
+      notes:               r['Notes / Research Flags'] === 'None' ? '' : (r['Notes / Research Flags'] || ''),
+      source_url:          r['Source URL'],
+      row_type:            r['Relationship'] || '',
+      record_id:           r['Record ID'] || '',
+      obligation_id:       r['Obligation ID'] || '',
+      change_type:         r['Change Type'] || '',
+      change_detected_date:r['Change Detected Date'] || '',
+      change_source_path:  readChangeSourcePath(r),
+      regulation_type:     r['Regulation Type'] || '',
+      related_provisions:  splitPipeList(r['Related Regulatory Provisions']),
+      provision_relationship_types: splitPipeList(r['Provision Relationship Types']),
+      interpretive_conditions: r['Interpretive Conditions'] || '',
+      prior_training_credit: r['Prior Training Credit / Exemption'] || '',
+      prior_training_qualification: r['Prior Training Qualification'] || '',
+      interpretive_review_status: r['Interpretive Review Status'] || '',
+      lifecycle_stage:     r['Regulatory Lifecycle Stage'] || '',
+      product_use_case:    r['Product Use Case'] || '',
+      regulated_competency: r['Regulated Competency'] || '',
+      regulatory_change_summary: r['Regulatory Change Summary'] || '',
+      interpretive_summary: r['Interpretive Summary'] || '',
+      policy_action_relevance: r['Policy Action Relevance'] || '',
+      quality_manager_relevance: r['Quality Manager Relevance'] || '',
+      operational_domain:  r['Operational Domain'] || '',
+      sme_review:          r['Human Interpretation / SME Review'] || '',
+      source_change_context: r['Source Change Context'] || '',
+      applicability_rules: Array.isArray(r['Applicability Rules']) ? r['Applicability Rules'] : [],
+      impact_types:        splitPipeList(r['Impact Types']),
+      impact_types_present: Object.prototype.hasOwnProperty.call(r, 'Impact Types'),
+      impact_basis:        r['Impact Basis'] || '',
+      impact_confidence:   r['Impact Confidence'] || '',
+      impact_review:       Object.prototype.hasOwnProperty.call(r, 'Impact Review') ? r['Impact Review'] : null
+    };
+  }
+
   function applySavedRaw(id, savedRaw, sheet, lane) {
     const n = normalizeRow(savedRaw);
     n._raw = savedRaw;
@@ -2285,7 +2348,7 @@ let selectedRole        = null;
     const applicabilityHtml = row ? [
       drawerChips('Care setting', settings),
       drawerChips('Role', roles),
-      drawerText('Facility / learner', row.jurisdictional_name),
+      drawerText('Facility / learner', row.display_role || row.jurisdictional_name),
       drawerChips('Applicability', applicabilitySummariesList)
     ].filter(Boolean).join('') : '';
 
@@ -3074,59 +3137,6 @@ let selectedRole        = null;
 
   // ─── Data loader ───
   function parseData(json) {
-    const normalizeRow = r => ({
-      state:               r['Jurisdiction'],
-      hstm_role:           splitPipeList(r['HSTM Role']),
-      hstm_setting:        r['HSTM Setting'],
-      jurisdictional_name: r['Jurisdiction Role'],
-      jurisdiction_setting: r['Jurisdiction Setting'] || '',
-      oversight_agency:    r['Oversight / Professional Agency'],
-      requirement_level:   r['Requirement Level'],
-      authority_level:     r['Authority Level'],
-      citation:            r['Citation'],
-      type:                r['Purpose'],
-      training_topic:      r['Training Topic / Competency Item'],
-      approval_required:   r['Approval Required'],
-      approval_basis:      r['Approval Basis'] || '',
-      approval_scope:      r['Approval Scope'] || '',
-      approval_responsibility: r['Approval Responsibility'] || '',
-      approval_timing:     r['Approval Timing'] || '',
-      instructor_qualification: r['Instructor/SME Qualification Required'] || '',
-      hours_required:      Number(r['Hours Required']) || 0,
-      hours_raw:           String(r['Hours Required'] || ''),
-      frequency:           r['Frequency'],
-      notes:               r['Notes / Research Flags'] === 'None' ? '' : (r['Notes / Research Flags'] || ''),
-      source_url:          r['Source URL'],
-      row_type:            r['Relationship'] || '',
-      record_id:           r['Record ID'] || '',
-      obligation_id:       r['Obligation ID'] || '',
-      change_type:         r['Change Type'] || '',
-      change_detected_date:r['Change Detected Date'] || '',
-      change_source_path:  readChangeSourcePath(r),
-      regulation_type:     r['Regulation Type'] || '',
-      related_provisions:  splitPipeList(r['Related Regulatory Provisions']),
-      provision_relationship_types: splitPipeList(r['Provision Relationship Types']),
-      interpretive_conditions: r['Interpretive Conditions'] || '',
-      prior_training_credit: r['Prior Training Credit / Exemption'] || '',
-      prior_training_qualification: r['Prior Training Qualification'] || '',
-      interpretive_review_status: r['Interpretive Review Status'] || '',
-      lifecycle_stage:     r['Regulatory Lifecycle Stage'] || '',
-      product_use_case:    r['Product Use Case'] || '',
-      regulated_competency: r['Regulated Competency'] || '',
-      regulatory_change_summary: r['Regulatory Change Summary'] || '',
-      interpretive_summary: r['Interpretive Summary'] || '',
-      policy_action_relevance: r['Policy Action Relevance'] || '',
-      quality_manager_relevance: r['Quality Manager Relevance'] || '',
-      operational_domain:  r['Operational Domain'] || '',
-      sme_review:          r['Human Interpretation / SME Review'] || '',
-      source_change_context: r['Source Change Context'] || '',
-      applicability_rules: Array.isArray(r['Applicability Rules']) ? r['Applicability Rules'] : [],
-      impact_types:        splitPipeList(r['Impact Types']),
-      impact_types_present: Object.prototype.hasOwnProperty.call(r, 'Impact Types'),
-      impact_basis:        r['Impact Basis'] || '',
-      impact_confidence:   r['Impact Confidence'] || '',
-      impact_review:       Object.prototype.hasOwnProperty.call(r, 'Impact Review') ? r['Impact Review'] : null
-    });
     ROLE_DATA = {};
     CS_DATA   = {};
     WR_DATA   = [];

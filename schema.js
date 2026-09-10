@@ -83,10 +83,17 @@ const PARSER_COLUMNS = [
   "Source Change Context"
 ];
 
+const ROLE_NOMENCLATURE_FIELDS = [
+  "Canonical Role",
+  "Role Qualifier",
+  "Display Role",
+  "Role Classification Status"
+];
+
 const SCHEMA_VOCAB = {
   "Jurisdiction": ["US"],
   "Authority Level": ["Federal Floor", "State Floor", "Competency"],
-  "HSTM Role": [
+    "HSTM Role": [
     "Clinical, Medication Dispensing",
     "Clinical, Non-Medication Dispensing",
     "Non-Clinical, Patient-Facing",
@@ -94,6 +101,7 @@ const SCHEMA_VOCAB = {
     "Managerial Staff",
     "Physicians & Practitioners"
   ],
+  "Role Classification Status": ["Classified", "Needs Classification"],
   "Regulation Type": [
     "Facility-Based/Organizational Training",
     "Individual/Continuing Education",
@@ -235,7 +243,11 @@ const V3_ADDITIVE_FIELDS = [
   "Quality Manager Relevance",
   "Operational Domain",
   "Human Interpretation / SME Review",
-  "Source Change Context"
+  "Source Change Context",
+  "Canonical Role",
+  "Role Qualifier",
+  "Display Role",
+  "Role Classification Status"
 ];
 
 const POLICY_ACTION_VALUES = SCHEMA_VOCAB["Policy Action Relevance"];

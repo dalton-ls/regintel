@@ -119,7 +119,7 @@ stays valid.
 
 ### 5.1 Extraction columns (the original 20)
 
-Canonical definitions: Metadata Summary v3, FIELDS tab. Emission order:
+Canonical definitions: Metadata Summary v4, FIELDS tab. Emission order:
 
 Jurisdiction, Jurisdiction Setting, Jurisdiction Role, HSTM Setting,
 HSTM Role, Regulation Type, Oversight / Professional Agency,
@@ -127,6 +127,11 @@ Requirement Level, Authority Level, Explicit Training, Citation,
 Training Topic / Competency Item, Relationship, Purpose, Approval
 Required, Approval Basis, Hours Required, Frequency, Source URL,
 Notes / Research Flags.
+
+Customer-facing occupation labels (`Canonical Role`, `Role Qualifier`,
+`Display Role`) are additive nomenclature metadata. They do not replace
+`Jurisdiction Role` and they are not Record ID inputs. See Metadata
+Summary v4, CANONICAL ROLE tab.
 
 Invariants enforced at every write path (`migrate_to_unified.py`,
 Bulk-Apply, Pending Review):
