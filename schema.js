@@ -1,4 +1,4 @@
-// Parser skill output contract (47 columns). Shared by the research view,
+// Parser skill output contract (50 columns). Shared by the research view,
 // admin screens, and normalize_batch.py's JS counterparts.
 //
 // Extraction columns (1–20, plus Record ID / Obligation ID) are the original
@@ -6,9 +6,11 @@
 // so v2 IDs remain valid. Headers must match the parser byte-for-byte.
 // `Change Source path` is the parser spelling; the site also accepts the
 // earlier `Change Source Path`.
-// Impact Basis / Confidence / Review are not in this 47-column list. The
+// Impact Basis / Confidence / Review are not in the parser emit list. The
 // current skill keeps 5b-4 evidence in Notes / Research Flags. Ingest still
 // copies those three fields through when an older batch includes them.
+// Canonical Role / Role Qualifier / Display Role are columns 48–50.
+// Role Classification Status is live-only (not emitted by the parser).
 
 const EXTRACTION_COLUMNS = [
   "Jurisdiction",

@@ -101,7 +101,7 @@ function initImpactTypeCounts() {
 }
 
 // Parser judgment metadata that may travel with Impact Types on older
-// classified batches. The current 47-column parser skill does not emit
+// classified batches. The current parser skill does not emit
 // these as columns; 5b-4 evidence is in Notes / Research Flags.
 const IMPACT_CONFIDENCE_VALUES = ["High", "Medium", "Low"];
 

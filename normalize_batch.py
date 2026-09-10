@@ -2,7 +2,7 @@
 normalize_batch.py
 
 Converts one **already-extracted** incoming sheet (Excel workbook, one or more
-tabs) using the 20-column extraction template — or a 47-column classified
+tabs) using the 20-column extraction template — or a 50-column classified
 parser batch — into a flat JSON array, ready to upload into the Pending
 Review Queue (pending-review.html) -- NOT a drop-in replacement for
 requirements.json the way migrate_to_unified.py is.
@@ -58,7 +58,7 @@ Expected headers (20 extraction columns, read by exact header name)
     Approval Required, Approval Basis, Hours Required, Frequency,
     Source URL, Notes / Research Flags
 
-A 47-column parser batch adds Related Regulatory Provisions, the approval
+A 50-column parser batch adds Related Regulatory Provisions, the approval
 family (Scope / Responsibility / Timing / Instructor), prior-training
 credit, provision relationship types, interpretive layers, product routing
 (Product Use Case, Policy Action Relevance, Quality Manager Relevance,
@@ -164,6 +164,10 @@ OPTIONAL_ENRICHMENT_FIELDS = [
     "Operational Domain",
     "Human Interpretation / SME Review",
     "Source Change Context",
+    "Canonical Role",
+    "Role Qualifier",
+    "Display Role",
+    "Role Classification Status",
 ]
 
 ARRAY_FIELDS = {
@@ -584,7 +588,7 @@ def load_json_array(input_path, cli_source_dataset):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("input", help="Excel workbook (.xlsx) or JSON array (.json) using the 20-column extraction template or the 47-column parser batch")
+    parser.add_argument("input", help="Excel workbook (.xlsx) or JSON array (.json) using the 20-column extraction template or the 50-column parser batch")
     parser.add_argument("--source-dataset", choices=["Role", "Care Setting"], default=None,
                          help="Force the Source Dataset identity field. If omitted, inferred per row from Regulation Type (Individual/Continuing Education → Role; Facility-Based/Organizational Policy → Care Setting). Sheet prefix R / CS is fallback only.")
     parser.add_argument("--reference", default="requirements.json",

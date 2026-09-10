@@ -6,9 +6,9 @@ classified batches before they land in the live dataset.
 
 This site does **not** parse OpenLaws. AI-facilitated extraction, monthly
 diffs, and temporal versioning happen **before** `requirements.json` is
-populated. What you upload here is already-classified JSON (or an Excel
-sheet already in the 20-column extraction template). See
-[DESIGN.md](DESIGN.md) for the site boundary and the three-taxonomy split.
+populated. Monthly apply from `RegIntel_Work` writes this file after
+`complete-review` (backup first). SME QA can still enter through Pending
+Review. See [DESIGN.md](DESIGN.md) for the site boundary and the three-taxonomy split.
 
 Canonical field definitions: `PHASE 1/Metadata Summary v4.xlsx` (sibling
 folder / Research Services catalog, not this git repo). Broader ontology:
@@ -45,14 +45,17 @@ projection — internally authored Domain/KSA framework, not
 jurisdiction-driven regulatory content. None of the unified admin tools
 write to it.
 
-### Batch columns (47), in parser emission order
+### Batch columns (50 parser + live occupation status)
 
-The parser skill emits 47 columns. `normalize_batch.py` still reads by
+The parser skill emits 50 columns. `normalize_batch.py` still reads by
 **exact header name**. Parser `--source-dataset` is the corpus label hashed
 inside the skill (`CA CCR 22`); this script's `--source-dataset` is the
 legacy site lane (`Role` / `Care Setting`) inferred from Regulation Type.
 The original 20 extraction columns are required
-for identity; the rest are optional enrichment (absent = no opinion):
+for identity; the rest are optional enrichment (absent = no opinion).
+`Canonical Role`, `Role Qualifier`, and `Display Role` are columns 48–50.
+The live file also stores `Role Classification Status` (`Classified` /
+`Needs Classification`). That status field is not a parser emit column.
 
 ```
 Jurisdiction, Jurisdiction Setting, Jurisdiction Role, HSTM Setting, HSTM Role,
@@ -67,8 +70,12 @@ Prior Training Credit / Exemption, Prior Training Qualification,
 Interpretive Review Status, Regulatory Lifecycle Stage, Product Use Case,
 Regulated Competency, Regulatory Change Summary, Interpretive Summary,
 Policy Action Relevance, Quality Manager Relevance, Operational Domain,
-Human Interpretation / SME Review, Source Change Context
+Human Interpretation / SME Review, Source Change Context,
+Canonical Role, Role Qualifier, Display Role
 ```
+
+`Role Classification Status` is stored on live rows after apply/mapping; it is
+not in the parser emission list.
 
 `Change Source path` (parser spelling) is accepted interchangeably with
 the earlier `Change Source Path`. `Approval Required` is `Yes` / `No` /
@@ -111,8 +118,8 @@ Review. Absence = “this batch has no opinion,” not “clear the field.”
   primary tagger. This is the **terminal implementation signal in
   RegIntel** — use it with care-setting / role / jurisdiction to infer
   affected downstream products outside this site.
-- Parser 5b-4 evidence (basis / confidence / review) is **not** a 47-column
-  field in the current skill. It lands in `Notes / Research Flags`. Older
+- Parser 5b-4 evidence (basis / confidence / review) is **not** a parser
+  emit field in the current skill. It lands in `Notes / Research Flags`. Older
   batches may still carry `Impact Basis`, `Impact Confidence`, and
   `Impact Review`; ingest still copies those through when present.
 
@@ -218,7 +225,7 @@ is).
 |---|---|
 | `regintel.html` | Research view (Quality Monitor, Roles, Care Settings, Policy, WR, Facility/Learner) |
 | `quality-monitor.html` | Quality Manager RSS monitor (embedded in research view) |
-| `schema.js` | 47-column parser contract, closed vocabularies, Policy-relevance helper |
+| `schema.js` | 50-column parser contract plus live `Role Classification Status`, closed vocabularies, Policy-relevance helper |
 | `bulk-apply.html` / `pending-review.html` / `export.html` | Unified admin tools |
 | `requirements.json` | Live output-row projection — source of truth for Role + Care Setting |
 | `wr.json` | Workforce Readiness (`WR *` sheets) |
@@ -237,9 +244,10 @@ is).
 | `export_data.py` | Legacy: `RegIntel_PoC.xlsx` → `data.json` |
 | `.nojekyll` | GitHub Pages: serve files as-is |
 
-Pre-site OpenLaws diff / change-tag scripts live in the sibling
-`PHASE 2 DIFF/` folder. The current parser skill package lives in the
-operator workspace (`RegIntel_Work/01_Tooling/Parser Skill/`), not this repo.
+Pre-site OpenLaws diff / change-tag scripts and the current parser skill live
+in the operator workspace (`RegIntel_Work/01_Tooling/`), not this repo.
+Approved monthly packages are applied into `requirements.json` from that
+workspace after `complete-review`.
 
 ## Admin passphrase
 

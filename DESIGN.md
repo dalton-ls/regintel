@@ -5,7 +5,7 @@
 > **permanently out of scope**. This document describes what the **site**
 > is, what happens before it is populated, and how the current flattened
 > projection maps to that architecture. Field-level extraction rules live
-> in `PHASE 1/Metadata Summary v3.xlsx`. The broader ontology lives in
+> in `PHASE 1/Metadata Summary v4.xlsx`. The broader ontology lives in
 > `RegIntel Knowledge Architecture v3.docx` (document title: Version 5.0).
 > How admin writes actually commit:
 > [worker/regintel-admin-proxy/README.md](worker/regintel-admin-proxy/README.md)
@@ -57,11 +57,14 @@ Output JSON  ──────────────────────�
 The site **never parses OpenLaws JSON**. Monthly snapshots, diffs, and
 AI-facilitated extraction run before `requirements.json` is populated.
 Incoming files are already-classified batches (extraction sheets, change
-tags, applicability/impact tags). `normalize_batch.py` only
-normalizes an already-extracted 20-column sheet for Pending Review.
+tags, applicability/impact tags). `normalize_batch.py` normalizes an
+already-extracted sheet (20-column, 47-column, or current 50-column) for
+Pending Review or a monthly apply.
 
-The pre-site pipeline lives beside this repo (`PHASE 1/`, `PHASE 2 DIFF/`, and
-the operator workspace parser skill). This site never runs those stages.
+The pre-site pipeline lives in the operator workspace (`RegIntel_Work`):
+catalog, snapshots, Diff Generator, parser skill, reviews, and Applied
+packages. This site never runs those stages. After human `complete-review`,
+approved records are written into `requirements.json` with a backup.
 
 ## 3. Normalized core → product projection
 
@@ -112,10 +115,11 @@ workforce product. It is not the ontology. Impact Type is.
 ## 5. Current projection schema
 
 The live file is still a flat output-row projection. The parser skill now
-emits **47 columns**. The original 20 extraction columns plus Record ID
-remain the identity core. The other 27 are additive — none participates
-in the Record ID hash — so every ID minted under the 20-column schema
-stays valid.
+emits **50 columns**. The original 20 extraction columns plus Record ID
+remain the identity core. Occupation labels (`Canonical Role`,
+`Role Qualifier`, `Display Role`) are additive and do not participate in
+the Record ID hash. The live projection also stores
+`Role Classification Status`.
 
 ### 5.1 Extraction columns (the original 20)
 
@@ -186,7 +190,7 @@ response is required — not a specific policy ID or training module.
 Definitions live in [`impact-types.js`](impact-types.js).
 
 When a classified batch still carries `Impact Basis`, `Impact Confidence`,
-and `Impact Review`, treat them as first-class metadata. The current 47-column
+and `Impact Review`, treat them as first-class metadata. The current 50-column
 parser contract folds that rationale into `Notes / Research Flags` instead.
 Downstream product impact is **inferred** from Impact Type + care-setting /
 role / jurisdiction applicability, not stored as catalog references.
@@ -198,7 +202,7 @@ Applicability Rule is a parallel, additive check. It does **not** replace
 the output-row anchor (Setting OR Role). A rule with only
 jurisdiction/authority/circumstance set has no target.
 
-### 5.3 Parser routing and interpretation (47-column batch)
+### 5.3 Parser routing and interpretation (50-column batch)
 
 A classified parser batch also carries product-routing and interpretation
 fields. Vocabularies live in [`schema.js`](schema.js). Empty still means
@@ -249,6 +253,12 @@ Three screens, all reading/writing the projection file
    auto-overwrites.** This is also how change tags and applicability/impact
    tags enter the projection.
 3. **Export** — convenience snapshot, not the write path.
+
+4. **Monthly apply from RegIntel_Work** — after `complete-review`, approved
+   records may be written into `requirements.json` from the operator
+   workspace (backup first). That path uses the same pending-review
+   semantics as this queue (append new IDs; valued fields update; blank
+   means no opinion). Occupation mapping is a separate post-apply pass.
 
 Human QA is part of the architecture: the site does not parse source
 text. It reviews already-classified output. For Impact Types, humans
