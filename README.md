@@ -1,8 +1,11 @@
 # RegIntel
 
-Static GitHub Pages site for **regulatory intelligence**: browse healthcare
-regulatory obligations as a flattened product projection, and QA incoming
-classified batches before they land in the live dataset.
+Cloudflare Worker plus static HTML/JS for **regulatory intelligence**:
+browse healthcare regulatory obligations as a flattened product projection,
+and QA incoming classified batches before they land in the live dataset.
+
+Day-1 setup (clone, `npm install`, local Worker, secrets, Python tools) is
+in [CONTRIBUTING.md](CONTRIBUTING.md). This file is the product map.
 
 This site does **not** parse OpenLaws. AI-facilitated extraction, monthly
 diffs, and temporal versioning happen **before** `requirements.json` is
@@ -14,7 +17,18 @@ Canonical field definitions: `PHASE 1/Metadata Summary v4.xlsx` (sibling
 folder / Research Services catalog, not this git repo). Broader ontology:
 `RegIntel Knowledge Architecture v3.docx`.
 
-## Live site
+## Live origins
+
+| Surface | URL |
+|---|---|
+| Site + admin API | https://regintel.regintel.workers.dev |
+| Quality Monitor API | https://regintel-quality-monitor.regintel.workers.dev |
+
+Local: `npm install` then `npm run dev` (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+Opening HTML from disk works for browsing; admin writes need the Worker and
+`ADMIN_TOKEN`.
+
+## Site pages
 
 - **Knowledge home**: `index.html` — Research Services home. Orients
   users to the Signal → Horizon → Codified pipeline and links into the
@@ -47,7 +61,7 @@ write to it.
 
 ### Batch columns (50 parser + live occupation status)
 
-The parser skill emits 50 columns. `normalize_batch.py` still reads by
+The parser skill emits 50 columns. `scripts/normalize_batch.py` still reads by
 **exact header name**. Parser `--source-dataset` is the corpus label hashed
 inside the skill (`CA CCR 22`); this script's `--source-dataset` is the
 legacy site lane (`Role` / `Care Setting`) inferred from Regulation Type.
@@ -129,7 +143,7 @@ reviewing new batches.
 ### Operator notes
 
 - **`Jurisdiction` must be `US` for federal, never `Federal`.** A batch
-  using `Federal` silently adds a duplicate filter option. `normalize_batch.py`
+  using `Federal` silently adds a duplicate filter option. `scripts/normalize_batch.py`
   raises a hard warning.
 - **`Hours Required` should be `NR` when the regulation doesn't state a
   number, not `0`.** Existing `0` values have not been bulk-converted:
@@ -138,21 +152,22 @@ reviewing new batches.
   `req_` + sha1(Source Dataset | Citation | Training Topic | Jurisdiction |
   Jurisdiction Role | Jurisdiction Setting)[:12] — not the Excel tab name.
 
-`role.json` / `caresetting.json` are the original per-type source files.
-`migrate_to_unified.py` is a **one-time / full-regeneration** tool; do not
-use it for ongoing batches (it bypasses Pending Review):
+`role.json` / `caresetting.json` are empty legacy stubs kept for the
+one-time regenerator. `scripts/legacy/migrate_to_unified.py` is a
+**full-regeneration** tool; do not use it for ongoing batches (it bypasses
+Pending Review):
 
 ```
-python3 migrate_to_unified.py
+python scripts/legacy/migrate_to_unified.py
 ```
 
-### Ongoing bulk ingestion: `normalize_batch.py`
+### Ongoing bulk ingestion: `scripts/normalize_batch.py`
 
 For a new already-extracted sheet — not OpenLaws raw, not a full
 regeneration — normalize it and feed Pending Review:
 
 ```
-python3 normalize_batch.py incoming_sheet.xlsx --source-dataset Role
+python scripts/normalize_batch.py incoming_sheet.xlsx --source-dataset Role
 ```
 
 This computes the same Record IDs as `migrate_to_unified.py`, validates
@@ -198,8 +213,8 @@ GitHub — no browser localStorage, usable from any computer:
 immediately before saving, then commits via the Cloudflare Worker
 **https://regintel.regintel.workers.dev/api**. The Worker holds the GitHub
 write token server-side and is gated by a shared bearer token (entered once
-per browser session, `sessionStorage` only). Setup:
-[worker/regintel-admin-proxy/README.md](worker/regintel-admin-proxy/README.md).
+per browser session, `sessionStorage` only). Setup is in
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 Export is a convenience backup, not a required write path.
 
@@ -210,7 +225,7 @@ per-sheet JSON shape and a `localStorage` overlay (`regintel_user_imports`):
 
 | Tab | Upload file | Source script |
 |---|---|---|
-| WR Ingest (`ingest.html`) | `wr.json` | `export_wr.py` |
+| WR Ingest (`ingest.html`) | `wr.json` | `scripts/export_wr.py` |
 
 **WR Ingest is still the primary way to get Workforce Readiness content
 in.** Role and Care Setting data go through Pending Review + Bulk-Apply.
@@ -221,44 +236,39 @@ is).
 
 ## Files
 
-| File | Purpose |
+| Path | Purpose |
 |---|---|
+| `index.html` | Research Services home (pipeline + tool navigation) |
 | `regintel.html` | Research view (Quality Monitor, Roles, Care Settings, Policy, WR, Facility/Learner) |
 | `quality-monitor.html` | Quality Manager RSS monitor (embedded in research view) |
-| `schema.js` | 50-column parser contract plus live `Role Classification Status`, closed vocabularies, Policy-relevance helper |
+| `schema.js` | 50-column parser contract plus live `Role Classification Status` |
 | `bulk-apply.html` / `pending-review.html` / `export.html` | Unified admin tools |
+| `ingest.html` | WR ingest only |
 | `requirements.json` | Live output-row projection — source of truth for Role + Care Setting |
 | `wr.json` | Workforce Readiness (`WR *` sheets) |
-| `role.json` / `caresetting.json` | Legacy per-type files consumed by `migrate_to_unified.py` |
-| `migrate_to_unified.py` | One-time / full regeneration of `requirements.json` |
-| `normalize_batch.py` | Normalize one already-extracted sheet for Pending Review |
-| `impact-types.js` | Phase 4 Impact Type closed taxonomy (shared by admin + research UI) |
-| `index.html` | Research Services home (pipeline + tool navigation) |
+| `data.json` | Last-resort fetch fallback if `requirements.json` / `wr.json` fail |
+| `role.json` / `caresetting.json` | Empty stubs for `scripts/legacy/migrate_to_unified.py` |
+| `scripts/normalize_batch.py` | Normalize one already-extracted sheet for Pending Review |
+| `scripts/export_*.py` | Excel → JSON converters (run from repo root) |
+| `scripts/legacy/` | One-time migrations — not day-to-day |
+| `impact-types.js` | Phase 4 Impact Type closed taxonomy |
 | `DESIGN.md` | Site boundary, projection schema, admin workflow |
 | `src/site-worker.js` + `functions/api/` | Same-origin admin API: `GET /api/file`, `POST /api/commit` |
-| `worker/regintel-admin-proxy/` | Frozen 410 stub on the old workers.dev hostname |
 | `worker/regintel-quality-monitor/` | Quality Monitor RSS/FR API (cron + KV) |
-| `ingest.html` | WR ingest only |
-| `export_wr.py` / `export_role.py` / `export_caresetting.py` | Excel → JSON converters |
-| `data.json` | Legacy fallback if `requirements.json` / `wr.json` can't be fetched |
-| `export_data.py` | Legacy: `RegIntel_PoC.xlsx` → `data.json` |
-| `.nojekyll` | GitHub Pages: serve files as-is |
+| `worker/regintel-admin-proxy/` | Frozen 410 stub on the old workers.dev hostname |
 
 Pre-site OpenLaws diff / change-tag scripts and the current parser skill live
 in the operator workspace (`RegIntel_Work/01_Tooling/`), not this repo.
 Approved monthly packages are applied into `requirements.json` from that
 workspace after `complete-review`.
 
-## Admin passphrase
-
-Unlocked from the toggle in the top-right of `regintel.html`
-(passphrase: `regintel2025`). Gates sidebar links and legacy admin-bar
-controls. Unrelated to the Worker admin token, which gates GitHub writes.
+Admin sidebar links are a UI gate only (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+GitHub writes require `ADMIN_TOKEN`.
 
 ## Branches
 
 | Branch | Role |
 |---|---|
-| `claude/create-website-skeleton-hYJMa` | **Default.** Cloudflare Worker `regintel` (site + `/api`) plus GitHub source. GitHub Pages bookmarks redirect to the Worker origin. |
-| `admin-workflow-redesign` | Feature branch the unified-schema work was developed on; merged. Safe to delete. |
-| `archive/ai-ingest-tools` | Frozen snapshot of in-browser AI ingest tools — parsing does **not** belong on the live site; see that branch’s README if you need the archive. |
+| `main` | **Default.** Cloudflare Worker `regintel` (site + `/api`) plus GitHub source. |
+| `admin-workflow-redesign` | Merged feature branch. Archive-only. |
+| `archive/ai-ingest-tools` | Frozen snapshot of in-browser AI ingest tools — parsing does **not** belong on the live site. |

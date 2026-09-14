@@ -1,24 +1,20 @@
 """
-export_role.py
---------------
-Converts RegIntel_POC_Role.xlsx → role.json for the RegIntel web tool.
+export_caresetting.py
+---------------------
+Converts RegIntel_POC_CareSetting.xlsx → caresetting.json for the RegIntel web tool.
 
-Sheets exported:  R LVN  (extend SHEETS list as new role tabs are added)
+Sheets exported:  CS SNF, CS ALF
 Columns:          17 (no Tier / Tier Priority — use export_wr.py for tier-classified data)
 
-Note: Jurisdiction Setting and HSTM Setting are intentionally null for role-only sheets.
-      Role sheets are not scoped to a care setting; setting context lives in CareSetting
-      and WR files.
-
 Usage:
-    python export_role.py                                    # defaults below
-    python export_role.py my_file.xlsx                       # custom input
-    python export_role.py my_file.xlsx out.json              # custom input + output
+    python scripts/export_caresetting.py                                    # defaults below
+    python scripts/export_caresetting.py my_file.xlsx                       # custom input
+    python scripts/export_caresetting.py my_file.xlsx out.json              # custom input + output
 
 HSTM Role handling:
     Pipe-delimited values are split into arrays.
-    "Licensed Vocational Nurse | Licensed Practical Nurse"
-    → ["Licensed Vocational Nurse", "Licensed Practical Nurse"]
+    "Clinical, Non-Medication Dispensing | Managerial Staff"
+    → ["Clinical, Non-Medication Dispensing", "Managerial Staff"]
 """
 
 import sys
@@ -26,20 +22,20 @@ import json
 import pandas as pd
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
 # ── Config ─────────────────────────────────────────────────────────────────────
-DEFAULT_INPUT  = "RegIntel_POC_Role.xlsx"
-DEFAULT_OUTPUT = "role.json"
+DEFAULT_INPUT  = "RegIntel_POC_CareSetting.xlsx"
+DEFAULT_OUTPUT = REPO_ROOT / "caresetting.json"
 
 SHEETS = [
-    "R LVN",
-    # Add new role sheets here as they are built out, e.g.:
-    # "R RN",
-    # "R CNA",
+    "CS SNF",
+    "CS ALF",
 ]
 
 NULLABLE_COLUMNS = [
-    "Jurisdiction Setting",   # always null in role-only sheets (by design)
-    "HSTM Setting",           # always null in role-only sheets (by design)
+    "Jurisdiction Setting",
+    "HSTM Setting",
     "Jurisdiction Role",
     "HSTM Role",
     "Approval Required",

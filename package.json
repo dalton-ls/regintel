@@ -1,0 +1,16 @@
+{
+  "name": "regintel",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "test": "npm test --prefix worker/regintel-quality-monitor"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}

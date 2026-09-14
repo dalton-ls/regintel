@@ -83,14 +83,14 @@ Drift warnings raised (never blocking, never silently rewritten)
 
 Usage
 ---------------------------------------------------------------------------
-    python3 normalize_batch.py <input.xlsx> --source-dataset Role
-    python3 normalize_batch.py <input.xlsx> --source-dataset "Care Setting" -o batch.json
-    python3 normalize_batch.py <input.xlsx>          # per row from Regulation Type
-                                                      # (Individual/Continuing Education → Role;
-                                                      #  Facility-Based / Organizational Policy → Care Setting).
+    python scripts/normalize_batch.py <input.xlsx> --source-dataset Role
+    python scripts/normalize_batch.py <input.xlsx> --source-dataset "Care Setting" -o batch.json
+    python scripts/normalize_batch.py <input.xlsx>          # per row from Regulation Type
+                                                      # (Individual/Continuing Education -> Role;
+                                                      #  Facility-Based / Organizational Policy -> Care Setting).
                                                       # Sheet prefix R / CS is fallback only.
 
-    python3 normalize_batch.py <input.json>          # JSON array input instead of Excel
+    python scripts/normalize_batch.py <input.json>          # JSON array input instead of Excel
 
 Reads (optional):
     requirements.json in the current directory, or --reference <path> --
@@ -110,6 +110,8 @@ import json
 import hashlib
 import argparse
 from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 try:
     import pandas as pd
@@ -590,9 +592,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("input", help="Excel workbook (.xlsx) or JSON array (.json) using the 20-column extraction template or the 50-column parser batch")
     parser.add_argument("--source-dataset", choices=["Role", "Care Setting"], default=None,
-                         help="Force the Source Dataset identity field. If omitted, inferred per row from Regulation Type (Individual/Continuing Education → Role; Facility-Based/Organizational Policy → Care Setting). Sheet prefix R / CS is fallback only.")
-    parser.add_argument("--reference", default="requirements.json",
-                         help="Existing requirements.json to check incoming Jurisdiction/HSTM values against (default: requirements.json in the current directory; pass '' to skip)")
+                         help="Force the Source Dataset identity field. If omitted, inferred per row from Regulation Type (Individual/Continuing Education -> Role; Facility-Based/Organizational Policy -> Care Setting). Sheet prefix R / CS is fallback only.")
+    parser.add_argument("--reference", default=str(REPO_ROOT / "requirements.json"),
+                         help="Existing requirements.json to check incoming Jurisdiction/HSTM values against (default: repo-root requirements.json; pass '' to skip)")
     parser.add_argument("-o", "--output", default=None, help="Output path (default: <input>-normalized.json)")
     args = parser.parse_args()
 

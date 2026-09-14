@@ -1,20 +1,21 @@
 """
-export_caresetting.py
----------------------
-Converts RegIntel_POC_CareSetting.xlsx → caresetting.json for the RegIntel web tool.
-
-Sheets exported:  CS SNF, CS ALF
-Columns:          17 (no Tier / Tier Priority — use export_wr.py for tier-classified data)
+export_data.py
+--------------
+Converts RegIntel_PoC.xlsx → data.json for the RegIntel web tool.
 
 Usage:
-    python export_caresetting.py                                    # defaults below
-    python export_caresetting.py my_file.xlsx                       # custom input
-    python export_caresetting.py my_file.xlsx out.json              # custom input + output
+    python scripts/export_data.py                          # uses default filename below
+    python scripts/export_data.py my_matrix.xlsx           # specify a different file
+    python scripts/export_data.py my_matrix.xlsx out.json  # specify both
+
+Run this script any time you update the Excel file.
+The website reads data.json automatically — no other changes needed.
 
 HSTM Role handling:
-    Pipe-delimited values are split into arrays.
-    "Clinical, Non-Medication Dispensing | Managerial Staff"
-    → ["Clinical, Non-Medication Dispensing", "Managerial Staff"]
+    The "HSTM Role" column now supports multiple audiences separated by " | ".
+    In the JSON output, HSTM Role is always an array (even for single values).
+    Example: "Clinical, Non-Medication Dispensing | Managerial Staff"
+         →   ["Clinical, Non-Medication Dispensing", "Managerial Staff"]
 """
 
 import sys
@@ -22,39 +23,51 @@ import json
 import pandas as pd
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
 # ── Config ─────────────────────────────────────────────────────────────────────
-DEFAULT_INPUT  = "RegIntel_POC_CareSetting.xlsx"
-DEFAULT_OUTPUT = "caresetting.json"
+DEFAULT_INPUT  = "RegIntel_PoC.xlsx"
+DEFAULT_OUTPUT = REPO_ROOT / "data.json"
 
 SHEETS = [
-    "CS SNF",
+    "R LPN",
     "CS ALF",
+    "CS SNF",
+    "WR LVN_ALF",
+    "WR LVN_SNF",
+    "Home Health",
+    "Hospice",
+    "CAH",
 ]
 
+# Columns where blank cells should export as null
 NULLABLE_COLUMNS = [
     "Jurisdiction Setting",
     "HSTM Setting",
     "Jurisdiction Role",
-    "HSTM Role",
+    "HSTM Role",          # still nullable if completely empty
     "Approval Required",
     "Notes / Research Flags",
     "Citation",
     "Purpose",
 ]
 
+# Columns that export as integers when non-null
 INTEGER_COLUMNS = [
+    "Tier",
     "Hours Required",
-    # No Tier / Tier Priority in this file
 ]
 
+# Columns that export as arrays (pipe-delimited in Excel)
 ARRAY_COLUMNS = [
-    "HSTM Role",
+    "HSTM Role",          # may contain "Audience A | Audience B | Audience C"
 ]
 
 PIPE_NULL = {"nan", "NaN", "None", "none", ""}
 
 
 def clean_value(val):
+    """Convert a single cell value to a JSON-safe Python type."""
     if pd.isna(val):
         return None
     if hasattr(val, "item"):
@@ -63,6 +76,12 @@ def clean_value(val):
 
 
 def to_array(raw):
+    """
+    Parse a pipe-delimited string into a cleaned array.
+    'Clinical, Non-Medication Dispensing | Managerial Staff'
+    → ['Clinical, Non-Medication Dispensing', 'Managerial Staff']
+    Returns None if value is empty/null.
+    """
     if raw is None:
         return None
     s = str(raw).strip()
@@ -73,6 +92,7 @@ def to_array(raw):
 
 
 def export_sheet(df, sheet_name):
+    """Clean and serialize one sheet to a list of row dicts."""
     if df.empty:
         return []
 
@@ -84,15 +104,18 @@ def export_sheet(df, sheet_name):
         for col in df.columns:
             val = row[col]
 
+            # Array columns — parse pipe-delimited into list
             if col in ARRAY_COLUMNS:
                 record[col] = to_array(val)
                 continue
 
+            # Nullable string columns
             if col in NULLABLE_COLUMNS:
                 s = str(val).strip() if val is not None else None
                 record[col] = None if s in (None,) or s in PIPE_NULL else s
                 continue
 
+            # Integer columns
             if col in INTEGER_COLUMNS:
                 try:
                     record[col] = None if val is None else int(float(val))
@@ -114,7 +137,7 @@ def main():
 
     if not input_path.exists():
         print(f"\nERROR: File not found -- {input_path}")
-        print(f"       Place the Excel file in the same folder as this script,")
+        print(f"       Put the Excel file in the same folder as this script,")
         print(f"       or pass the full path as an argument.")
         sys.exit(1)
 
@@ -142,14 +165,34 @@ def main():
     for sheet_name in SHEETS:
         if sheet_name not in workbook:
             continue
-        output[sheet_name] = export_sheet(workbook[sheet_name].copy(), sheet_name)
+        df = workbook[sheet_name].copy()
+        output[sheet_name] = export_sheet(df, sheet_name)
 
     with open(output_path, "w", encoding="utf-8") as f:
         json.dump(output, f, indent=2, ensure_ascii=False, default=str)
 
     total_rows = sum(len(v) for v in output.values())
     print(f"\nWritten:  {output_path}")
-    print(f"Summary:  {len(output)} sheet(s), {total_rows} total rows\n")
+    print(f"Summary:  {len(output)} sheet(s), {total_rows} total rows")
+
+    # Embed data inline in regintel.html so it works without a web server
+    html_path = Path("regintel.html")
+    if html_path.exists():
+        html = html_path.read_text(encoding="utf-8")
+        begin_marker = "/* DATA_BEGIN */"
+        end_marker   = "/* DATA_END */"
+        start = html.find(begin_marker)
+        end   = html.find(end_marker)
+        if start != -1 and end != -1:
+            json_str = json.dumps(output, indent=2, ensure_ascii=False, default=str)
+            new_block = f"{begin_marker}\n  const RAW_DATA = {json_str};\n  {end_marker}"
+            html = html[:start] + new_block + html[end + len(end_marker):]
+            html_path.write_text(html, encoding="utf-8")
+            print(f"Updated:  {html_path} (RAW_DATA block refreshed)\n")
+        else:
+            print(f"NOTE: DATA_BEGIN/DATA_END markers not found in {html_path} — inline embed skipped\n")
+    else:
+        print()
 
 
 if __name__ == "__main__":

@@ -1,8 +1,8 @@
 /**
  * regintel-quality-monitor
  *
- * Public Quality Monitor API. Independent of regintel-admin-proxy so
- * admin-proxy deploys cannot 404 this hostname. GET /monitor always
+ * Public Quality Monitor API. Independent of the site+admin `regintel`
+ * Worker so that hostname cannot 404 this feed. GET /monitor always
  * returns CORS JSON: last-good KV first, live ingest in the background.
  */
 
@@ -12,8 +12,8 @@ import {
   ingestMonitorWithBudget,
   jsonResponse,
   markAsFallback,
-} from "../../regintel-admin-proxy/src/monitor/ingest.js";
-import { corsHeaders } from "../../regintel-admin-proxy/src/monitor/cors.js";
+} from "./monitor/ingest.js";
+import { corsHeaders } from "./monitor/cors.js";
 
 const KV_KEY = "qm-monitor-v1";
 const MIN_REFRESH_MS = 45 * 1000;

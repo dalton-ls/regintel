@@ -7,8 +7,7 @@
 > projection maps to that architecture. Field-level extraction rules live
 > in `PHASE 1/Metadata Summary v4.xlsx`. The broader ontology lives in
 > `RegIntel Knowledge Architecture v3.docx` (document title: Version 5.0).
-> How admin writes actually commit:
-> [worker/regintel-admin-proxy/README.md](worker/regintel-admin-proxy/README.md)
+> How admin writes actually commit: [CONTRIBUTING.md](CONTRIBUTING.md)
 > (site + `/api` on `https://regintel.regintel.workers.dev`).
 
 ## 1. What this site is
@@ -22,7 +21,7 @@ on one engine:
 | Policy | What kinds of organizational / product change may be required? |
 | Workforce | Who needs to know or do something differently? |
 
-This GitHub Pages app is the **Intelligence + Policy + Workforce research view**,
+This Worker-hosted app is the **Intelligence + Policy + Workforce research view**,
 plus human-QA admin, over a flattened **output-row projection**. It is
 not the parser, not the source corpus, and not the ontology.
 
@@ -57,7 +56,7 @@ Output JSON  ──────────────────────�
 The site **never parses OpenLaws JSON**. Monthly snapshots, diffs, and
 AI-facilitated extraction run before `requirements.json` is populated.
 Incoming files are already-classified batches (extraction sheets, change
-tags, applicability/impact tags). `normalize_batch.py` normalizes an
+tags, applicability/impact tags). `scripts/normalize_batch.py` normalizes an
 already-extracted sheet (20-column, 47-column, or current 50-column) for
 Pending Review or a monthly apply.
 
@@ -137,7 +136,7 @@ Customer-facing occupation labels (`Canonical Role`, `Role Qualifier`,
 `Jurisdiction Role` and they are not Record ID inputs. See Metadata
 Summary v4, CANONICAL ROLE tab.
 
-Invariants enforced at every write path (`migrate_to_unified.py`,
+Invariants enforced at every write path (`scripts/legacy/migrate_to_unified.py`,
 Bulk-Apply, Pending Review):
 
 - Anchor: at least one of Jurisdiction Setting or Jurisdiction Role.

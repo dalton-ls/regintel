@@ -3,7 +3,7 @@ const ADMIN_PROXY_TIMEOUT_MS = 12000;
 const SAME_ORIGIN_TIMEOUT_MS = 8000;
 const GITHUB_REPO_OWNER = 'dalton-ls';
 const GITHUB_REPO_NAME = 'regintel';
-const GITHUB_PROJECTION_BRANCH = 'claude/create-website-skeleton-hYJMa';
+const GITHUB_PROJECTION_BRANCH = 'main';
 function canonicalOrigin() {
   return (typeof window !== 'undefined' && window.REGINTEL_ORIGIN)
     ? window.REGINTEL_ORIGIN
@@ -151,7 +151,7 @@ async function loadProjectionContent(workerUrl, path, opts) {
     return wrapProjection(await loadSameOriginJson(path), path, unwrap, 'local', proxyError);
   } catch (err) {
     if (typeof location !== 'undefined' && location.protocol === 'file:') {
-      throw new Error('Cannot load ' + path + ' from a file:// URL. Open the site over http(s) (GitHub Pages or a local server).');
+      throw new Error('Cannot load ' + path + ' from a file:// URL. Open the site over http(s) (the Cloudflare Worker origin or npm run dev).');
     }
     throw err;
   }

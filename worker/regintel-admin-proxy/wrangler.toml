@@ -12,4 +12,4 @@ workers_dev = true
 [vars]
 GITHUB_OWNER = "dalton-ls"
 GITHUB_REPO = "regintel"
-GITHUB_BRANCH = "claude/create-website-skeleton-hYJMa"
+GITHUB_BRANCH = "main"

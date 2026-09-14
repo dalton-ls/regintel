@@ -12,9 +12,9 @@ Sheets exported (WR * only; job-study Domain/KSA rows):
     WR HHA_HH / WR LVN_HH
 
 Usage:
-    python export_wr.py                                    # defaults below
-    python export_wr.py my_file.xlsx                       # custom input
-    python export_wr.py my_file.xlsx out.json              # custom input + output
+    python scripts/export_wr.py                                    # defaults below
+    python scripts/export_wr.py my_file.xlsx                       # custom input
+    python scripts/export_wr.py my_file.xlsx out.json              # custom input + output
 
 HSTM Role handling:
     Pipe-delimited values are split into arrays.
@@ -27,9 +27,11 @@ import json
 import pandas as pd
 from pathlib import Path
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
 # ── Config ─────────────────────────────────────────────────────────────────────
 DEFAULT_INPUT  = "RegIntel_POC_WR.xlsx"
-DEFAULT_OUTPUT = "wr.json"
+DEFAULT_OUTPUT = REPO_ROOT / "wr.json"
 
 SHEETS = [
     "WR CNA_SNF",
@@ -173,7 +175,7 @@ def main():
     print(f"Summary:  {len(output)} sheet(s), {total_rows} total rows")
 
     # Embed data inline in regintel.html so it works without a web server
-    html_path = Path("regintel.html")
+    html_path = REPO_ROOT / "regintel.html"
     if html_path.exists():
         html = html_path.read_text(encoding="utf-8")
         begin_marker = "/* DATA_BEGIN */"

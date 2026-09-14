@@ -3,7 +3,7 @@ name: Deploy Cloudflare Worker
 on:
   push:
     branches:
-      - claude/create-website-skeleton-hYJMa
+      - main
   workflow_dispatch:
 
 jobs:
@@ -12,6 +12,12 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
       - name: Validate data files
         run: |
           node <<'NODE'

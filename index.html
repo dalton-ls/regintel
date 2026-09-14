@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>RegIntel | Home</title>
   <script src="canonical-host.js"></script>
+  <script src="admin-gate.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -466,7 +467,7 @@
       }
       const pass = prompt('Enter admin passphrase:');
       if (pass === null) return;
-      if (pass === 'regintel2025') {
+      if (pass === REGINTEL_ADMIN_PASSPHRASE) {
         adminMode = true;
         document.getElementById('adminToggle').classList.add('active');
         document.getElementById('adminLabel').textContent = 'Active';

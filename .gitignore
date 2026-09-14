@@ -1,3 +1,28 @@
+# Python
 __pycache__/
 *.pyc
+.venv/
+venv/
+
+# Wrangler / Node
+.wrangler/
+.wrangler-dry-run/
+node_modules/
 .dev.vars
+*.log
+
+# Editor / OS
+.cursor/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Local batch dumps (do not commit operator Excel/Word)
+incoming/*
+!incoming/.gitkeep
+*.xlsx
+*.xlsm
+*.docx
+
+# Duplicate WR export — wr.json is the source of truth
+wr.csv

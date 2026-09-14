@@ -1,14 +1,25 @@
 """
-Convert FINAL job-study Word docs into wr.json / wr.csv for WR Ingest.
+Convert FINAL job-study Word docs into wr.json (and optionally wr.csv) for WR Ingest.
 
 Only *_FINAL.docx files are converted. Parent rows are Domain headings;
 Child rows are Knowledge / Skill / Ability items.
+
+Job-study root (first match wins):
+  --jobstudy-root PATH
+  JOBSTUDY_ROOT environment variable
+  incoming/ at the repo root
+
+Usage (from repo root):
+  python scripts/convert_jobstudies_wr.py
+  python scripts/convert_jobstudies_wr.py --jobstudy-root "D:\\jobstudies"
 """
 
 from __future__ import annotations
 
+import argparse
 import csv
 import json
+import os
 import re
 import subprocess
 import tempfile
@@ -18,16 +29,13 @@ from pathlib import Path
 
 W_NS = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
 
-ROOT = Path(__file__).resolve().parent
-JOBSTUDY_ROOT = Path(
-    r"C:\Users\dascott\OneDrive - HealthStream, Inc\Research Services - Documents\e_jobstudies"
-)
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 # Filename stem → WR sheet. Care Setting / Role labels come from the job
 # study (not from Intelligence jurisdiction roles).
 STUDIES = [
     {
-        "path": JOBSTUDY_ROOT / "Skilled Nursing Facilities" / "JobStudy_CNA_SNF_FINAL.docx",
+        "relpath": Path("Skilled Nursing Facilities") / "JobStudy_CNA_SNF_FINAL.docx",
         "sheet": "WR CNA_SNF",
         "hstm_setting": "Skilled Nursing Facility",
         "hstm_role": ["Clinical, Non-Medication Dispensing"],
@@ -35,7 +43,7 @@ STUDIES = [
         "jurisdiction_setting": "skilled nursing facility",
     },
     {
-        "path": JOBSTUDY_ROOT / "Skilled Nursing Facilities" / "JobStudy_LVN_SNF_FINAL.docx",
+        "relpath": Path("Skilled Nursing Facilities") / "JobStudy_LVN_SNF_FINAL.docx",
         "sheet": "WR LVN_SNF",
         "hstm_setting": "Skilled Nursing Facility",
         "hstm_role": ["Clinical, Medication Dispensing"],
@@ -43,7 +51,7 @@ STUDIES = [
         "jurisdiction_setting": "skilled nursing facility",
     },
     {
-        "path": JOBSTUDY_ROOT / "Skilled Nursing Facilities" / "JobStudy_RN_SNF_FINAL.docx",
+        "relpath": Path("Skilled Nursing Facilities") / "JobStudy_RN_SNF_FINAL.docx",
         "sheet": "WR RN_SNF",
         "hstm_setting": "Skilled Nursing Facility",
         "hstm_role": ["Clinical, Medication Dispensing"],
@@ -51,7 +59,7 @@ STUDIES = [
         "jurisdiction_setting": "skilled nursing facility",
     },
     {
-        "path": JOBSTUDY_ROOT / "Assisted Living Facilities" / "JobStudy_CNA_ALF_FINAL.docx",
+        "relpath": Path("Assisted Living Facilities") / "JobStudy_CNA_ALF_FINAL.docx",
         "sheet": "WR CNA_ALF",
         "hstm_setting": "Assisted Living Facility",
         "hstm_role": ["Clinical, Non-Medication Dispensing"],
@@ -59,7 +67,7 @@ STUDIES = [
         "jurisdiction_setting": "residential care facility for the elderly",
     },
     {
-        "path": JOBSTUDY_ROOT / "Assisted Living Facilities" / "JobStudy_LVN_ALF_FINAL.docx",
+        "relpath": Path("Assisted Living Facilities") / "JobStudy_LVN_ALF_FINAL.docx",
         "sheet": "WR LVN_ALF",
         "hstm_setting": "Assisted Living Facility",
         "hstm_role": ["Clinical, Medication Dispensing"],
@@ -67,7 +75,7 @@ STUDIES = [
         "jurisdiction_setting": "residential care facility for the elderly",
     },
     {
-        "path": JOBSTUDY_ROOT / "Assisted Living Facilities" / "JobStudy_RN_ALF_FINAL.docx",
+        "relpath": Path("Assisted Living Facilities") / "JobStudy_RN_ALF_FINAL.docx",
         "sheet": "WR RN_ALF",
         "hstm_setting": "Assisted Living Facility",
         "hstm_role": ["Clinical, Medication Dispensing"],
@@ -75,7 +83,7 @@ STUDIES = [
         "jurisdiction_setting": "residential care facility for the elderly",
     },
     {
-        "path": JOBSTUDY_ROOT / "Home Health Agencies" / "JobStudy_HHA_HH_FINAL.docx",
+        "relpath": Path("Home Health Agencies") / "JobStudy_HHA_HH_FINAL.docx",
         "sheet": "WR HHA_HH",
         "hstm_setting": "Home Health",
         "hstm_role": ["Clinical, Non-Medication Dispensing"],
@@ -83,7 +91,7 @@ STUDIES = [
         "jurisdiction_setting": "home health agency",
     },
     {
-        "path": JOBSTUDY_ROOT / "Home Health Agencies" / "JobStudy_LVN_HH_FINAL.docx",
+        "relpath": Path("Home Health Agencies") / "JobStudy_LVN_HH_FINAL.docx",
         "sheet": "WR LVN_HH",
         "hstm_setting": "Home Health",
         "hstm_role": ["Clinical, Medication Dispensing"],
@@ -259,14 +267,42 @@ def csv_row(sheet: str, record: dict) -> dict:
     return row
 
 
+def resolve_jobstudy_root(cli_value: str | None) -> Path:
+    if cli_value:
+        return Path(cli_value)
+    env = os.environ.get("JOBSTUDY_ROOT", "").strip()
+    if env:
+        return Path(env)
+    return REPO_ROOT / "incoming"
+
+
 def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument(
+        "--jobstudy-root",
+        default=None,
+        help="Directory that contains the job-study folders (default: JOBSTUDY_ROOT or incoming/)",
+    )
+    parser.add_argument(
+        "--no-csv",
+        action="store_true",
+        help="Write wr.json only; skip the local wr.csv dump",
+    )
+    args = parser.parse_args()
+
+    jobstudy_root = resolve_jobstudy_root(args.jobstudy_root)
     wr: dict[str, list[dict]] = {}
     csv_rows: list[dict] = []
     print()
+    print(f"Job studies: {jobstudy_root}")
     for study in STUDIES:
-        path: Path = study["path"]
+        path: Path = jobstudy_root / study["relpath"]
         if not path.exists():
-            raise SystemExit(f"Missing FINAL job study: {path}")
+            raise SystemExit(
+                f"Missing FINAL job study: {path}\n"
+                "Set JOBSTUDY_ROOT or pass --jobstudy-root to the folder that contains "
+                "Skilled Nursing Facilities / Assisted Living Facilities / Home Health Agencies."
+            )
         paras = docx_paragraphs(path)
         review_date = meta_value(paras, "Date of Review")
         items = parse_ksas(paras)
@@ -284,17 +320,18 @@ def main() -> None:
         extra = f", dropped {dropped} duplicate(s)" if dropped else ""
         print(f"  OK  {study['sheet']}: {parents} domains, {children} KSAs ({path.name}){extra}")
 
-    json_path = ROOT / "wr.json"
-    csv_path = ROOT / "wr.csv"
+    json_path = REPO_ROOT / "wr.json"
     json_path.write_text(json.dumps(wr, indent=2, ensure_ascii=False), encoding="utf-8")
-    with csv_path.open("w", encoding="utf-8-sig", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS)
-        writer.writeheader()
-        writer.writerows(csv_rows)
 
     total = sum(len(v) for v in wr.values())
     print(f"\nWritten:  {json_path}")
-    print(f"Written:  {csv_path}")
+    if not args.no_csv:
+        csv_path = REPO_ROOT / "wr.csv"
+        with csv_path.open("w", encoding="utf-8-sig", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS)
+            writer.writeheader()
+            writer.writerows(csv_rows)
+        print(f"Written:  {csv_path} (local dump; not tracked in git)")
     print(f"Summary:  {len(wr)} sheet(s), {total} total rows\n")
 
 

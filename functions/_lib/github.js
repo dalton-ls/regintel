@@ -2,7 +2,7 @@ const ALLOWED_PATHS = new Set(["requirements.json", "wr.json"]);
 
 export { ALLOWED_PATHS };
 
-export const DEFAULT_BRANCH = "claude/create-website-skeleton-hYJMa";
+export const DEFAULT_BRANCH = "main";
 
 export function githubToken(env) {
   return (env.GITHUB_TOKEN || "").trim();

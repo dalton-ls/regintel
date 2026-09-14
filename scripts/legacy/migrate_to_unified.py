@@ -23,9 +23,9 @@ separate dataset per the locked design.
 
 Usage
 -----
-    python migrate_to_unified.py
+    python scripts/legacy/migrate_to_unified.py
 
-Reads:
+Reads (repo root):
     role.json
     caresetting.json
 
@@ -50,6 +50,9 @@ IDs, so downstream admin edits keyed by Record ID are not invalidated.
 import json
 import os
 import hashlib
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
 UNIFIED_FIELDS = [
     "Jurisdiction",
@@ -189,22 +192,22 @@ def validate(unified):
 def migrate():
     unified = []
 
-    role_data = load("role.json")
+    role_data = load(REPO_ROOT / "role.json")
     for records in role_data.values():
         for record in records:
             unified.append(normalize_record("Role", record))
 
-    cs_data = load("caresetting.json")
+    cs_data = load(REPO_ROOT / "caresetting.json")
     for records in cs_data.values():
         for record in records:
             unified.append(normalize_record("Care Setting", record))
 
     warnings = validate(unified)
 
-    with open("requirements.json", "w", encoding="utf-8") as f:
+    with open(REPO_ROOT / "requirements.json", "w", encoding="utf-8") as f:
         json.dump(unified, f, indent=2, ensure_ascii=False)
 
-    warnings_path = "migration_warnings.txt"
+    warnings_path = str(REPO_ROOT / "migration_warnings.txt")
     if warnings:
         with open(warnings_path, "w", encoding="utf-8") as f:
             f.write("\n".join(warnings) + "\n")

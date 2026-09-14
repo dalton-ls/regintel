@@ -82,7 +82,7 @@
     <main class="content-panel">
   <div class="page-wrap">
     <h1 class="page-title">Workforce Readiness ingest</h1>
-    <p class="page-desc">Upload the <code>wr.json</code> file exported by <code>export_wr.py</code>. Only the Workforce Readiness sheets (<code>WR *</code>) are shown here. Review the domains and KSAs, then click <strong>Apply to RegIntel</strong> to merge them into the live site (or download the filtered JSON for offline use).</p>
+    <p class="page-desc">Upload the <code>wr.json</code> file exported by <code>scripts/export_wr.py</code>. Only the Workforce Readiness sheets (<code>WR *</code>) are shown here. Review the domains and KSAs, then click <strong>Apply to RegIntel</strong> to merge them into the live site (or download the filtered JSON for offline use).</p>
 
     <div class="upload-zone" id="uploadZone">
       <div class="upload-icon">
@@ -90,7 +90,7 @@
       </div>
       <p>Drop <strong>wr.json</strong> here, or click to browse</p>
       <button class="btn primary" onclick="document.getElementById('fileInput').click();event.stopPropagation()">Choose file</button>
-      <p class="hint">Accepts wr.json produced by export_wr.py</p>
+      <p class="hint">Accepts wr.json produced by scripts/export_wr.py</p>
       <input type="file" id="fileInput" accept=".json" style="display:none">
     </div>
 

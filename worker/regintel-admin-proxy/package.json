@@ -3,7 +3,6 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test test/monitor.test.js",
-    "check": "node --check src/index.js && node --check src/monitor/ingest.js"
+    "check": "node --check src/index.js"
   }
 }

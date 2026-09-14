@@ -30,8 +30,8 @@ After the split:
 
 Usage
 -----
-    python migrate_18_to_20.py            # migrate in place
-    python migrate_18_to_20.py --check     # verify only, write nothing
+    python scripts/legacy/migrate_18_to_20.py            # migrate in place
+    python scripts/legacy/migrate_18_to_20.py --check     # verify only, write nothing
 
 Reads:
     requirements.json
@@ -46,9 +46,11 @@ import os
 import re
 import sys
 import hashlib
+from pathlib import Path
 
-SOURCE_PATH = "requirements.json"
-WARNINGS_PATH = "migration_18_to_20_warnings.txt"
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+SOURCE_PATH = str(REPO_ROOT / "requirements.json")
+WARNINGS_PATH = str(REPO_ROOT / "scripts" / "legacy" / "migration_18_to_20_warnings.txt")
 
 EXPECTED_RECORD_COUNT = 286
 

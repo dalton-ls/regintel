@@ -1,6 +1,6 @@
 /**
- * Frozen stub. The live admin API is Cloudflare Pages Functions at
- * https://regintel.pages.dev/api — not this workers.dev hostname.
+ * Frozen stub. The live admin API is the `regintel` Worker at
+ * https://regintel.regintel.workers.dev/api — not this workers.dev hostname.
  * Occupying this script name prevents a static-site publish from
  * colliding with it again.
  */
