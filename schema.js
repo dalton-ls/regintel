@@ -11,6 +11,9 @@
 // copies those three fields through when an older batch includes them.
 // Canonical Role / Role Qualifier / Display Role are columns 48–50.
 // Role Classification Status is live-only (not emitted by the parser).
+// Program is live-only too: a closed set of training-topic families used as
+// the research-view grouping level (State > Agency > Program > requirement).
+// Assigned by scripts/assign_program.py after each apply; never hashed.
 
 const EXTRACTION_COLUMNS = [
   "Jurisdiction",
@@ -92,7 +95,72 @@ const ROLE_NOMENCLATURE_FIELDS = [
   "Role Classification Status"
 ];
 
+// Fallback only. The live vocabulary is program-taxonomy.json (both lanes);
+// loadProgramVocab() below fetches it and unions it with whatever Program
+// values already exist on rows, so an ad-hoc value is never rejected by a
+// dropdown. Edit the JSON, not this list.
+const PROGRAM_VOCAB_FALLBACK = [
+  "Orientation & Staff Development",
+  "Administrator & Leadership Qualification",
+  "Nurse Assistant Certification & In-Service",
+  "EMS & Prehospital Personnel",
+  "Home Care & Home Health Aide Training",
+  "Dementia & Cognitive Care",
+  "Medication Administration & Assistance",
+  "Restricted Health Conditions & Specialized Care",
+  "Personal Care & ADL Assistance",
+  "Hospice & End-of-Life Care",
+  "Infection Prevention & Control",
+  "Emergency Preparedness & Disaster Response",
+  "CPR, First Aid & AED",
+  "Resident Rights, Abuse Prevention & Ethics",
+  "Behavioral Health & Special Treatment Programs",
+  "Patient Safety, Security & Violence Prevention",
+  "Cultural Competency & Health Equity",
+  "Perinatal, Newborn & Pediatric Care",
+  "Child & Youth Care",
+  "Food & Dietetic Services",
+  "Clinical Service Line Competency",
+  "Policies, Procedures & Documentation",
+  "Public Health & Other Licensed Programs",
+  "Initial Certification & Licensure Training",
+  "Certification Renewal & Continuing Education",
+  "Competency Evaluation & Examination",
+  "Training Program & Vendor Approval",
+  "Specialty Permit & Expanded Scope",
+  "Unassigned (needs review)"
+];
+const PROGRAM_VOCAB = PROGRAM_VOCAB_FALLBACK.slice();
+
+// Returns { labels, byLane: {laneName: [labels]}, unassigned, version }.
+// `records` (optional) adds any Program value present on live rows.
+async function loadProgramVocab(records) {
+  let tax = null;
+  try {
+    const res = await fetch("program-taxonomy.json", { cache: "no-store" });
+    if (res.ok) tax = await res.json();
+  } catch (e) { /* fall through to fallback */ }
+  const byLane = {};
+  const labels = [];
+  const seen = new Set();
+  const push = v => { if (v && !seen.has(v)) { seen.add(v); labels.push(v); } };
+  const unassigned = (tax && tax.unassigned_label) || "Unassigned (needs review)";
+  if (tax && tax.lanes) {
+    Object.keys(tax.lanes).forEach(lane => {
+      byLane[lane] = (tax.lanes[lane].programs || []).map(p => p.label);
+      byLane[lane].forEach(push);
+    });
+  } else {
+    PROGRAM_VOCAB_FALLBACK.forEach(push);
+  }
+  (Array.isArray(records) ? records : []).forEach(r => push(r && r["Program"]));
+  push(unassigned);
+  return { labels, byLane, unassigned, version: tax ? tax.version : null, live: !!tax };
+}
+
+
 const SCHEMA_VOCAB = {
+  "Program": PROGRAM_VOCAB,
   "Jurisdiction": ["US"],
   "Authority Level": ["Federal Floor", "State Floor", "Competency"],
     "HSTM Role": [

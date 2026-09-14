@@ -91,6 +91,59 @@ Canonical Role, Role Qualifier, Display Role
 `Role Classification Status` is stored on live rows after apply/mapping; it is
 not in the parser emission list.
 
+### `Program` (live-only grouping field)
+
+Both research-view trees group State → Agency → **Program** → obligation.
+`Program` is stamped on every row and its vocabulary lives in ONE file:
+**`program-taxonomy.json`** (served live from GitHub HEAD like
+`requirements.json`). It has one lane per tab:
+
+| Lane | Regulation Type | Grouping axis |
+|---|---|---|
+| `care-setting` | Facility-Based/Organizational Training, Organizational Policy | training-topic family (Dementia & Cognitive Care, Infection Prevention & Control, …) |
+| `role` | Individual/Continuing Education | credential lifecycle stage (Initial Certification & Licensure Training, Certification Renewal & CE, Competency Evaluation & Examination, Training Program & Vendor Approval, Specialty Permit & Expanded Scope) |
+
+`Program` is UI navigation metadata only — not a parser column, not a Record
+ID input, not the ontology (Impact Type is). `Purpose` stays the parser's
+free-text intent label and is shown in the drawer.
+
+**After every apply** (new rows arrive without `Program` and render under
+*Unassigned (needs review)* until you do):
+
+```
+python scripts/assign_program.py            # dry run: counts + unassigned list
+python scripts/assign_program.py --write
+python scripts/assign_program.py --check    # CI-style: exit 1 if anything is unassigned
+```
+
+**Flexing the taxonomy** — all in `program-taxonomy.json`, no code changes:
+
+- *New program*: append to `lanes.<lane>.programs` and add a regex to
+  `rule_order` (first match wins; order matters). Re-run the script.
+- *Rename*: change `label`, put the old label in `aliases`; rows migrate on
+  the next `--write`.
+- *Misroute*: add an entry to `purpose_overrides` (exact) or
+  `purpose_prefix_overrides` rather than hand-editing rows, so the next apply
+  lands in the same bucket.
+- *Ad-hoc value*: the drawer and Bulk-Apply dropdowns are populated from the
+  taxonomy **∪ every Program value present on live rows**, so a value typed
+  or bulk-applied outside the taxonomy is never rejected. The script preserves
+  it (flagged `<-- not in taxonomy`) until you promote it or `--force`.
+- *Unmatched rows* print grouped by Purpose so you can see whether they need
+  a rule or a new program.
+
+Rule of thumb for adding a program: it should hold ≥ 3 obligations across
+≥ 2 citations, otherwise it belongs as a rule under an existing family.
+
+### `scripts/dedupe_requirements.py`
+
+Two extraction passes over the same Title 22 sections produced duplicate rows
+(same Citation + Training Topic + HSTM Setting + Regulation Type, different
+`Purpose` and therefore different Record IDs). This merges each group into the
+richer row, unions Impact Types, and stamps `[DEDUP date] merged duplicate
+req_…` into Notes. Dry run first; `--report out.csv` lists every merge.
+It never merges a Parent sentence with its enumerated Child topics.
+
 `Change Source path` (parser spelling) is accepted interchangeably with
 the earlier `Change Source Path`. `Approval Required` is `Yes` / `No` /
 `Unknown`. Hours Required stays verbatim (`NR` when unstated — never `0`).
@@ -249,9 +302,12 @@ is).
 | `data.json` | Last-resort fetch fallback if `requirements.json` / `wr.json` fail |
 | `role.json` / `caresetting.json` | Empty stubs for `scripts/legacy/migrate_to_unified.py` |
 | `scripts/normalize_batch.py` | Normalize one already-extracted sheet for Pending Review |
+| `scripts/assign_program.py` | Stamp the live-only `Program` grouping field (run after every apply) |
+| `scripts/dedupe_requirements.py` | Merge duplicate output rows from overlapping extraction passes |
 | `scripts/export_*.py` | Excel → JSON converters (run from repo root) |
 | `scripts/legacy/` | One-time migrations — not day-to-day |
 | `impact-types.js` | Phase 4 Impact Type closed taxonomy |
+| `program-taxonomy.json` | `Program` grouping vocabulary + assignment rules (both lanes) |
 | `DESIGN.md` | Site boundary, projection schema, admin workflow |
 | `src/site-worker.js` + `functions/api/` | Same-origin admin API: `GET /api/file`, `POST /api/commit` |
 | `worker/regintel-quality-monitor/` | Quality Monitor RSS/FR API (cron + KV) |

@@ -84,6 +84,13 @@ used by the current product. It is not the knowledge model.
   Individual/Continuing Education. **Obligations by Care Setting** is
   Facility-Based/Organizational Training or Organizational Policy.
 
+- **Program** is a live-only grouping label defined in
+  `program-taxonomy.json` (one lane per research-view tab: topic families for
+  Care Settings, credential lifecycle stages for Roles) that the research
+  view uses as the level between Oversight Agency and obligation. It is navigation metadata, not a
+  taxonomy: it is not hashed, not emitted by the parser, and does not replace
+  Impact Type. `Purpose` (parser column) remains the free-text intent label.
+
 Do not store derived counts (“7 policies”, “4,300 learners”) on the row.
 Those are computed from type-level applicability, not from customer
 rosters.

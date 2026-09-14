@@ -150,7 +150,7 @@
     "Oversight / Professional Agency", "Requirement Level", "Authority Level",
     "Explicit Training",
     "Citation", "Related Regulatory Provisions",
-    "Training Topic / Competency Item", "Relationship", "Purpose",
+    "Training Topic / Competency Item", "Relationship", "Purpose", "Program",
     "Approval Required", "Approval Basis",
     "Approval Scope", "Approval Responsibility", "Approval Timing",
     "Instructor/SME Qualification Required",
@@ -184,6 +184,7 @@
 
   const SELECT_OPTIONS = {
     "Requirement Level": SCHEMA_VOCAB["Requirement Level"].slice(),
+    "Program": SCHEMA_VOCAB["Program"].slice(),
     "Authority Level": SCHEMA_VOCAB["Authority Level"].slice(),
     "Approval Required": SCHEMA_VOCAB["Approval Required"].slice(),
     "Relationship": SCHEMA_VOCAB["Relationship"].slice(),
@@ -535,6 +536,7 @@
   async function init() {
     try {
       records = await fetchLatestRecords();
+      try { SELECT_OPTIONS['Program'] = (await loadProgramVocab(records)).labels; } catch (e) { console.warn('program vocab fallback', e); }
       if (window.__projectionSource === 'local') {
         document.getElementById('globalError').innerHTML = proxyUnavailableNote(records.length, window.__proxyError);
       }

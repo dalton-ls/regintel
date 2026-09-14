@@ -1,4 +1,4 @@
-const ALLOWED_PATHS = new Set(["requirements.json", "wr.json"]);
+const ALLOWED_PATHS = new Set(["requirements.json", "wr.json", "program-taxonomy.json"]);
 
 export { ALLOWED_PATHS };
 

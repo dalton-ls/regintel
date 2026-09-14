@@ -956,7 +956,7 @@
     "Oversight / Professional Agency", "Requirement Level", "Authority Level",
     "Explicit Training",
     "Citation", "Related Regulatory Provisions",
-    "Training Topic / Competency Item", "Relationship", "Purpose",
+    "Training Topic / Competency Item", "Relationship", "Purpose", "Program",
     "Approval Required", "Approval Basis",
     "Approval Scope", "Approval Responsibility", "Approval Timing",
     "Instructor/SME Qualification Required",
@@ -985,6 +985,7 @@
   const EDIT_COMPUTED_FIELDS = new Set(["Explicit Training"]);
   const EDIT_SELECT_OPTIONS = {
     "Requirement Level": SCHEMA_VOCAB["Requirement Level"].slice(),
+    "Program": SCHEMA_VOCAB["Program"].slice(),
     "Authority Level": SCHEMA_VOCAB["Authority Level"].slice(),
     "Approval Required": SCHEMA_VOCAB["Approval Required"].slice(),
     "Relationship": SCHEMA_VOCAB["Relationship"].slice(),
@@ -2000,7 +2001,8 @@ let selectedRole        = null;
       requirement_level:   r['Requirement Level'],
       authority_level:     r['Authority Level'],
       citation:            r['Citation'],
-      type:                r['Purpose'],
+      type:                r['Program'] || r['Purpose'] || 'Unassigned (needs review)',
+      purpose:             r['Purpose'] || '',
       training_topic:      r['Training Topic / Competency Item'],
       approval_required:   r['Approval Required'],
       approval_basis:      r['Approval Basis'] || '',
@@ -2357,6 +2359,7 @@ let selectedRole        = null;
       drawerText('Jurisdiction', STATE_NAMES[row.state] || row.state),
       drawerText('Authority', row.oversight_agency),
       drawerText('Program', row.type),
+      drawerText('Purpose', row.purpose),
       moduleTitle && moduleTitle !== row.training_topic ? drawerText('Module', moduleTitle) : ''
     ].filter(Boolean).join('') : '';
 
@@ -3320,7 +3323,12 @@ let selectedRole        = null;
   }
 
   // ─── Init ───
-  loadData().then(() => {
+  loadData().then(async () => {
+    // Program vocabulary is data-driven: program-taxonomy.json ∪ values on live rows.
+    try {
+      const vocab = await loadProgramVocab([...DATA, ...CARE_DATA].map(r => r._raw));
+      EDIT_SELECT_OPTIONS['Program'] = vocab.labels;
+    } catch (e) { console.warn('program-taxonomy.json unavailable, using fallback vocab', e); }
     applyHashSection();
     rowMap = {};
     [...DATA, ...CARE_DATA, ...WR_DATA].forEach(r => { rowMap[cardKey(r)] = r; });
@@ -3385,7 +3393,8 @@ let selectedRole        = null;
       'Citation':                  r.citation || '',
       'Related Regulatory Provisions': Array.isArray(r.related_provisions) ? r.related_provisions.join(' | ') : '',
       'Training Topic':            r.training_topic || '',
-      'Purpose':                   r.type || '',
+      'Program':                   r.type || '',
+      'Purpose':                   r.purpose || '',
       'Approval Required':         r.approval_required || '',
       'Approval Basis':            r.approval_basis || '',
       'Approval Scope':            r.approval_scope || '',
