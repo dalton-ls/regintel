@@ -211,16 +211,36 @@
 
     .multi-select-panel {
       position: absolute; top: calc(100% + 4px); left: 0;
-      min-width: 160px; z-index: 200;
+      min-width: 160px; max-width: min(360px, calc(100vw - 32px));
+      z-index: 200;
       background: #fff; border: 1px solid #dde1ea;
       border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.10);
-      padding: 6px 0; display: none;
+      padding: 0; display: none;
+      max-height: min(320px, calc(100vh - 96px));
+      overflow: hidden;
     }
-    .multi-select-panel.open { display: block; }
+    .multi-select-panel.open {
+      display: flex;
+      flex-direction: column;
+    }
+    .multi-select-options {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 6px 0;
+      -webkit-overflow-scrolling: touch;
+    }
+    .multi-select-options::-webkit-scrollbar { width: 8px; }
+    .multi-select-options::-webkit-scrollbar-thumb {
+      background: #c5cdd8; border-radius: 8px;
+    }
+    .multi-select-options::-webkit-scrollbar-track { background: transparent; }
 
     .panel-action {
-      display: flex; justify-content: space-between;
-      padding: 4px 14px 8px; border-bottom: 1px solid #f0f2f5; margin-bottom: 4px;
+      display: flex; justify-content: space-between; flex-shrink: 0;
+      padding: 10px 14px 8px; border-bottom: 1px solid #f0f2f5;
+      background: #fff;
     }
     .panel-action button {
       background: none; border: none; cursor: pointer;
@@ -2547,7 +2567,7 @@ let selectedRole        = null;
       <button type="button" data-dropdown-all="${id}">Select all</button>
       <button type="button" data-dropdown-clear="${id}">Clear</button>
     </div>
-    ${options}
+    <div class="multi-select-options">${options}</div>
   </div>
 </div>`;
   }
@@ -2566,7 +2586,7 @@ let selectedRole        = null;
     <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
   </button>
   <div class="multi-select-panel${isOpen ? ' open' : ''}" data-dropdown-panel="role">
-    ${options}
+    <div class="multi-select-options">${options}</div>
   </div>
 </div>`;
   }
@@ -2582,7 +2602,7 @@ let selectedRole        = null;
     <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
   </button>
   <div class="multi-select-panel${isOpen ? ' open' : ''}" data-dropdown-panel="care-setting">
-    ${options}
+    <div class="multi-select-options">${options}</div>
   </div>
 </div>`;
   }
@@ -2602,7 +2622,7 @@ let selectedRole        = null;
     <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
   </button>
   <div class="multi-select-panel${isOpen ? ' open' : ''}" data-dropdown-panel="${id}">
-    ${options.join('')}
+    <div class="multi-select-options">${options.join('')}</div>
   </div>
 </div>`;
   }
@@ -2725,7 +2745,7 @@ let selectedRole        = null;
     <span class="trigger-value${!selLabel ? ' role-placeholder-value' : ''}">${selLabel ? esc(selLabel) : 'Select…'}</span>
     <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
   </button>
-  <div class="multi-select-panel${isOpen ? ' open' : ''}" data-dropdown-panel="${id}">${opts}</div>
+  <div class="multi-select-panel${isOpen ? ' open' : ''}" data-dropdown-panel="${id}"><div class="multi-select-options">${opts}</div></div>
 </div>`;
   }
 
