@@ -1,526 +1,675 @@
 {
-  "$comment": "Single source of truth for the live-only `Program` grouping field. Edit here, then run scripts/assign_program.py --write. Labels are what is stored on rows; `aliases` let you rename a program (old label -> new) and the script migrates rows. Rules are Python/JS-compatible regexes tested case-insensitively against Purpose; first match in `rule_order` wins. Anything unmatched is stored as `unassigned_label` and listed by the script so you can add a rule or a new program.",
-  "version": "2026-09-14",
-  "unassigned_label": "Unassigned (needs review)",
-  "lanes": {
-    "care-setting": {
-      "$comment": "Regulation Type = Facility-Based/Organizational Training or Organizational Policy. Grouping axis: training-topic family.",
-      "regulation_types": [
-        "Facility-Based/Organizational Training",
-        "Organizational Policy"
-      ],
-      "programs": [
-        {
-          "id": "orientation-staff-development",
-          "label": "Orientation & Staff Development",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "orient|in-service|staff development|continuing education|knowledge and skills|training appropriate|competency validated|competence|competent|skills in|equivalent to paid staff|on-the-job|personnel requirements|^employees$|training program|training plan|training content|training requirement|trained"
-          ]
-        },
-        {
-          "id": "administrator-leadership-qualification",
-          "label": "Administrator & Leadership Qualification",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "administrator|initial certification training|core of knowledge|director of staff development|management personnel|medical director|director of patient care|licensee-general|organized medical staff|business-management"
-          ]
-        },
-        {
-          "id": "nurse-assistant-certification-in-service",
-          "label": "Nurse Assistant Certification & In-Service",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "nurse assistant|nursing assistant|\\bcna\\b|certified nurse"
-          ]
-        },
-        {
-          "id": "ems-prehospital-personnel",
-          "label": "EMS & Prehospital Personnel",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "\\bemt-|\\bemts?\\b|paramedic|prehospital personnel|local ems agency",
-            "\\bems\\b|emt|paramedic|prehospital|ambulance|aeromedical|flight crew|public safety first aid|base hospital|triage"
-          ]
-        },
-        {
-          "id": "home-care-home-health-aide-training",
-          "label": "Home Care & Home Health Aide Training",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "home care aide|home health aide|home health|nurse home visitor|home medical device"
-          ]
-        },
-        {
-          "id": "dementia-cognitive-care",
-          "label": "Dementia & Cognitive Care",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "dementia|sundowning|neurocognitive"
-          ]
-        },
-        {
-          "id": "medication-administration-assistance",
-          "label": "Medication Administration & Assistance",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "medication|inhaled|opioid|naloxone|epinephrine|anaphylaxis|medication-assisted|\\bmat\\b|pharmaceutical|cannabis"
-          ]
-        },
-        {
-          "id": "restricted-health-conditions-specialized-care",
-          "label": "Restricted Health Conditions & Specialized Care",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "restricted health|bedridden|colostomy|ileostomy|catheter|contracture|incontinence|blood glucose|diabetes|incidental medical|special health care needs|specialized and restricted|postural support"
-          ]
-        },
-        {
-          "id": "personal-care-adl-assistance",
-          "label": "Personal Care & ADL Assistance",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "activities of daily living|personal care|basic care, health and safety"
-          ]
-        },
-        {
-          "id": "hospice-end-of-life-care",
-          "label": "Hospice & End-of-Life Care",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "hospice|dying process|terminally ill"
-          ]
-        },
-        {
-          "id": "infection-prevention-control",
-          "label": "Infection Prevention & Control",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "infection|hiv|tuberculosis|tuberculin|hcv|sanitation measures|body art|piercing|healthcare-associated"
-          ]
-        },
-        {
-          "id": "emergency-preparedness-disaster-response",
-          "label": "Emergency Preparedness & Disaster Response",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "disaster|fire and panic|fire and internal|egress|earthquake|emergency/disaster|emergency fire|emergency training|mass casualty|emergency evacuation|secured-perimeter"
-          ]
-        },
-        {
-          "id": "cpr-first-aid-aed",
-          "label": "CPR, First Aid & AED",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "cpr|first[- ]aid|aed\\b|defibrillat"
-          ]
-        },
-        {
-          "id": "resident-rights-abuse-prevention-ethics",
-          "label": "Resident Rights, Abuse Prevention & Ethics",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "residents' rights|resident rights|advance directive|abuse|prudent parent|residents'-rights|rights-violation"
-          ]
-        },
-        {
-          "id": "behavioral-health-special-treatment-programs",
-          "label": "Behavioral Health & Special Treatment Programs",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "restraint|seclusion|emergency intervention|de-escalation|psychiatric|special treatment|alcohol/drug counselor"
-          ]
-        },
-        {
-          "id": "patient-safety-security-violence-prevention",
-          "label": "Patient Safety, Security & Violence Prevention",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "security|violence|patient safety|mistreatment|sonograph|chaperone|iipp|human trafficking"
-          ]
-        },
-        {
-          "id": "cultural-competency-health-equity",
-          "label": "Cultural Competency & Health Equity",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "implicit bias|cultural|trans-inclusive|sexual orientation|gender identity|discrimination|ethical"
-          ]
-        },
-        {
-          "id": "perinatal-newborn-pediatric-care",
-          "label": "Perinatal, Newborn & Pediatric Care",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "perinatal|newborn|nursery service|maternal|infant|birth service|pediatric|pedrc|burn care to child|labor\\b|prenatal|sudden infant"
-          ]
-        },
-        {
-          "id": "child-youth-care",
-          "label": "Child & Youth Care",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "child|daycare|crisis nursery|foster|boarding school|outdoor program|short-term residential|group home"
-          ]
-        },
-        {
-          "id": "food-dietetic-services",
-          "label": "Food & Dietetic Services",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "food|dietetic|diet counseling|haccp|reduced-oxygen"
-          ]
-        },
-        {
-          "id": "clinical-service-line-competency",
-          "label": "Clinical Service Line Competency",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "service|unit|trauma|stroke|coronary|catheterization|dialysis|transplant|respiratory|therapy|intensive care|emergency|specialty center|social work|activity program|activity coordinator|custodial|environmental services|discharge planning|radiologic|venipuncture|sonographer|counselor|genetic|blood withdrawal|biomonitoring"
-          ]
-        },
-        {
-          "id": "policies-procedures-documentation",
-          "label": "Policies, Procedures & Documentation",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": [
-            "policies and procedures|written policies|personnel policies|plan of operation|needs and services plan|guidelines|administrative policies|policy\\b"
-          ]
-        },
-        {
-          "id": "public-health-other-licensed-programs",
-          "label": "Public Health & Other Licensed Programs",
-          "description": "",
-          "aliases": [],
-          "purpose_rules": []
-        }
-      ],
-      "rule_order": [
-        {
-          "match": "administrator|initial certification training|core of knowledge|director of staff development|management personnel|medical director|director of patient care|licensee-general|organized medical staff|business-management",
-          "program": "Administrator & Leadership Qualification"
-        },
-        {
-          "match": "\\bemt-|\\bemts?\\b|paramedic|prehospital personnel|local ems agency",
-          "program": "EMS & Prehospital Personnel"
-        },
-        {
-          "match": "dementia|sundowning|neurocognitive",
-          "program": "Dementia & Cognitive Care"
-        },
-        {
-          "match": "hospice|dying process|terminally ill",
-          "program": "Hospice & End-of-Life Care"
-        },
-        {
-          "match": "cpr|first[- ]aid|aed\\b|defibrillat",
-          "program": "CPR, First Aid & AED"
-        },
-        {
-          "match": "infection|hiv|tuberculosis|tuberculin|hcv|sanitation measures|body art|piercing|healthcare-associated",
-          "program": "Infection Prevention & Control"
-        },
-        {
-          "match": "medication|inhaled|opioid|naloxone|epinephrine|anaphylaxis|medication-assisted|\\bmat\\b|pharmaceutical|cannabis",
-          "program": "Medication Administration & Assistance"
-        },
-        {
-          "match": "restricted health|bedridden|colostomy|ileostomy|catheter|contracture|incontinence|blood glucose|diabetes|incidental medical|special health care needs|specialized and restricted|postural support",
-          "program": "Restricted Health Conditions & Specialized Care"
-        },
-        {
-          "match": "activities of daily living|personal care|basic care, health and safety",
-          "program": "Personal Care & ADL Assistance"
-        },
-        {
-          "match": "disaster|fire and panic|fire and internal|egress|earthquake|emergency/disaster|emergency fire|emergency training|mass casualty|emergency evacuation|secured-perimeter",
-          "program": "Emergency Preparedness & Disaster Response"
-        },
-        {
-          "match": "restraint|seclusion|emergency intervention|de-escalation|psychiatric|special treatment|alcohol/drug counselor",
-          "program": "Behavioral Health & Special Treatment Programs"
-        },
-        {
-          "match": "security|violence|patient safety|mistreatment|sonograph|chaperone|iipp|human trafficking",
-          "program": "Patient Safety, Security & Violence Prevention"
-        },
-        {
-          "match": "implicit bias|cultural|trans-inclusive|sexual orientation|gender identity|discrimination|ethical",
-          "program": "Cultural Competency & Health Equity"
-        },
-        {
-          "match": "residents' rights|resident rights|advance directive|abuse|prudent parent|residents'-rights|rights-violation",
-          "program": "Resident Rights, Abuse Prevention & Ethics"
-        },
-        {
-          "match": "perinatal|newborn|nursery service|maternal|infant|birth service|pediatric|pedrc|burn care to child|labor\\b|prenatal|sudden infant",
-          "program": "Perinatal, Newborn & Pediatric Care"
-        },
-        {
-          "match": "child|daycare|crisis nursery|foster|boarding school|outdoor program|short-term residential|group home",
-          "program": "Child & Youth Care"
-        },
-        {
-          "match": "food|dietetic|diet counseling|haccp|reduced-oxygen",
-          "program": "Food & Dietetic Services"
-        },
-        {
-          "match": "nurse assistant|nursing assistant|\\bcna\\b|certified nurse",
-          "program": "Nurse Assistant Certification & In-Service"
-        },
-        {
-          "match": "\\bems\\b|emt|paramedic|prehospital|ambulance|aeromedical|flight crew|public safety first aid|base hospital|triage",
-          "program": "EMS & Prehospital Personnel"
-        },
-        {
-          "match": "home care aide|home health aide|home health|nurse home visitor|home medical device",
-          "program": "Home Care & Home Health Aide Training"
-        },
-        {
-          "match": "policies and procedures|written policies|personnel policies|plan of operation|needs and services plan|guidelines|administrative policies|policy\\b",
-          "program": "Policies, Procedures & Documentation"
-        },
-        {
-          "match": "orient|in-service|staff development|continuing education|knowledge and skills|training appropriate|competency validated|competence|competent|skills in|equivalent to paid staff|on-the-job|personnel requirements|^employees$|training program|training plan|training content|training requirement|trained",
-          "program": "Orientation & Staff Development"
-        },
-        {
-          "match": "service|unit|trauma|stroke|coronary|catheterization|dialysis|transplant|respiratory|therapy|intensive care|emergency|specialty center|social work|activity program|activity coordinator|custodial|environmental services|discharge planning|radiologic|venipuncture|sonographer|counselor|genetic|blood withdrawal|biomonitoring",
-          "program": "Clinical Service Line Competency"
-        }
-      ],
-      "citation_rules": [
-        {
-          "match": "22 CCR § 1000\\d\\d\\b|22 CCR § 1001[0-2]\\d\\b",
-          "program": "EMS & Prehospital Personnel",
-          "$comment": "Title 22 Div. 9 EMSA personnel chapters"
-        }
-      ],
-      "purpose_hint_rules": [
-        {
-          "match": "tuberculin|blood withdrawal|biomonitoring|prenatal diagnosis|hiv test|hiv counsel|home medical device|prescription devices|piercing|radiologic technologist|body art",
-          "program": "Public Health & Other Licensed Programs"
-        }
-      ],
-      "purpose_overrides": {
-        "Employees": "Orientation & Staff Development",
-        "Nursing Staff Development": "Orientation & Staff Development",
-        "Staff Development": "Orientation & Staff Development",
-        "In-Service Training Program": "Orientation & Staff Development",
-        "Orientation Program": "Orientation & Staff Development",
-        "Personnel Requirements-General": "Orientation & Staff Development",
-        "Night Supervision": "Orientation & Staff Development",
-        "Nursing Service-Administration of Medications and Treatments": "Medication Administration & Assistance",
-        "Director of Staff Development or Instructor": "Administrator & Leadership Qualification",
-        "Administrative Policies and Procedures": "Policies, Procedures & Documentation",
-        "Special Treatment Program Service Unit-in-Service Education": "Behavioral Health & Special Treatment Programs",
-        "Special Treatment Program Service Unit-Program Requirements": "Behavioral Health & Special Treatment Programs",
-        "Special Treatment Program Service Unit - Staff": "Behavioral Health & Special Treatment Programs",
-        "Psychiatric Nursing Service General Requirements": "Behavioral Health & Special Treatment Programs",
-        "Psychiatric Rehabilitative Activities Service General Requirements": "Behavioral Health & Special Treatment Programs",
-        "Psychiatric Unit General Requirements": "Behavioral Health & Special Treatment Programs",
-        "Medical Social Services": "Clinical Service Line Competency",
-        "Therapy Services": "Clinical Service Line Competency",
-        "Diet Counseling Services": "Food & Dietetic Services",
-        "Dietetic Service Staff": "Food & Dietetic Services",
-        "Dietetic Service - Staff": "Food & Dietetic Services",
-        "Dietetic Service General Requirements": "Food & Dietetic Services",
-        "Emergency Service": "Clinical Service Line Competency",
-        "Disaster and Mass Casualty Program": "Emergency Preparedness & Disaster Response",
-        "External Disaster and Mass Casualty Program": "Emergency Preparedness & Disaster Response",
-        "Fire and Internal Disaster Plan": "Emergency Preparedness & Disaster Response",
-        "Fire and Internal Disasters": "Emergency Preparedness & Disaster Response",
-        "Infection Control Program": "Infection Prevention & Control",
-        "Infection Control Requirements": "Infection Prevention & Control",
-        "Licensee-General Duties": "Administrator & Leadership Qualification",
-        "Organized Medical Staff": "Clinical Service Line Competency",
-        "Activity Program-Requirements": "Clinical Service Line Competency",
-        "Activity Program-Staff": "Clinical Service Line Competency",
-        "Care of Persons with Dementia": "Dementia & Cognitive Care",
-        "Hospice Care for Terminally Ill Residents": "Hospice & End-of-Life Care",
-        "Care of Bedridden Residents": "Restricted Health Conditions & Specialized Care",
-        "Managed Incontinence": "Restricted Health Conditions & Specialized Care",
-        "Contractures": "Restricted Health Conditions & Specialized Care",
-        "Colostomy/Ileostomy": "Restricted Health Conditions & Specialized Care",
-        "Indwelling Urinary Catheter": "Restricted Health Conditions & Specialized Care",
-        "General Requirements for Restricted Health Conditions": "Restricted Health Conditions & Specialized Care",
-        "Automated External Defibrillators (AEDs)": "CPR, First Aid & AED",
-        "Initial Certification Training Program Vendor and Program Approval Requirements": "Administrator & Leadership Qualification",
-        "Perinatal Unit Staff": "Perinatal, Newborn & Pediatric Care",
-        "Pediatric Service Staff": "Perinatal, Newborn & Pediatric Care",
-        "Intensive Care Newborn Nursery Service Staff": "Perinatal, Newborn & Pediatric Care",
-        "Intensive Care Newborn Nursery Service General Requirements": "Perinatal, Newborn & Pediatric Care",
-        "Pharmaceutical Service General Requirements": "Medication Administration & Assistance",
-        "Cardiovascular Catheterization Laboratory": "Clinical Service Line Competency",
-        "Establishes required HIV/AIDS and tuberculosis training content for adult residential and social rehabilitation facility administrators and staff": "Infection Prevention & Control"
-      },
-      "purpose_prefix_overrides": [
-        {
-          "prefix": "Establishes required HIV/AIDS and tuberculosis training content",
-          "program": "Infection Prevention & Control"
-        },
-        {
-          "prefix": "Trains administrators and authorized volunteers to recognize and respond to seizures",
-          "program": "Restricted Health Conditions & Specialized Care"
-        },
-        {
-          "prefix": "Ensures adult day health care center staff are trained on egress-device",
-          "program": "Emergency Preparedness & Disaster Response"
-        },
-        {
-          "prefix": "Ensures adult day program staff are trained on egress-device",
-          "program": "Emergency Preparedness & Disaster Response"
-        },
-        {
-          "prefix": "Requires the supervised clinical-training component to address special needs",
-          "program": "Nurse Assistant Certification & In-Service"
-        },
-        {
-          "prefix": "Requires the nurse assistant curriculum to address",
-          "program": "Nurse Assistant Certification & In-Service"
-        },
-        {
-          "prefix": "Ensures nursing staff receive continuing education and training in perinatal nursing",
-          "program": "Perinatal, Newborn & Pediatric Care"
-        },
-        {
-          "prefix": "Ensures trans-inclusive, culturally competent care",
-          "program": "Cultural Competency & Health Equity"
-        },
-        {
-          "prefix": "Trains RCFE designated substitutes to interact with emergency personnel",
-          "program": "Emergency Preparedness & Disaster Response"
-        },
-        {
-          "prefix": "Ensures designated specialty center staff maintain critical care competency",
-          "program": "Clinical Service Line Competency"
-        },
-        {
-          "prefix": "Ensures dialysis facility personnel are trained in dialyzer reprocessing",
-          "program": "Clinical Service Line Competency"
-        },
-        {
-          "prefix": "Establishes required content for training direct care staff on postural supports",
-          "program": "Restricted Health Conditions & Specialized Care"
-        },
-        {
-          "prefix": "Ensures staff of special treatment and developmental program services",
-          "program": "Behavioral Health & Special Treatment Programs"
-        },
-        {
-          "prefix": "Ensures hospice interdisciplinary team members",
-          "program": "Hospice & End-of-Life Care"
-        }
-      ],
-      "fallback_to_training_topic": true
+ "$comment": "Single source of truth for the live-only `Program` grouping field. Edit here, then run scripts/assign_program.py --write. Labels are what is stored on rows; `aliases` let you rename a program (old label -> new) and the script migrates rows. Rules are Python/JS-compatible regexes tested case-insensitively against Purpose; first match in `rule_order` wins. Anything unmatched is stored as `unassigned_label` and listed by the script so you can add a rule or a new program. 2026-09-15: added the Cal/OSHA subject-family set for 8 CCR Title 8, routed by citation_rules rather than Purpose regexes so a family is anchored to the regulation rather than to wording. Registry with scope, citation basis, source URL, owner and verification date lives in RegIntel_Work 06_Reviews/Applied/CA__Administrative__CA-RR__Title-08__Baseline-20260902/cal-osha-program-registry.json. Boundary placements (3340/3341 -> HazCom, 5157/5158 -> HazMat, 3205 -> BBP) signed off by Dalton Scott 2026-09-15.",
+ "version": "2026-09-15",
+ "unassigned_label": "Unassigned (needs review)",
+ "lanes": {
+  "care-setting": {
+   "$comment": "Regulation Type = Facility-Based/Organizational Training or Organizational Policy. Grouping axis: training-topic family.",
+   "regulation_types": [
+    "Facility-Based/Organizational Training",
+    "Organizational Policy"
+   ],
+   "programs": [
+    {
+     "id": "orientation-staff-development",
+     "label": "Orientation & Staff Development",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "orient|in-service|staff development|continuing education|knowledge and skills|training appropriate|competency validated|competence|competent|skills in|equivalent to paid staff|on-the-job|personnel requirements|^employees$|training program|training plan|training content|training requirement|trained"
+     ]
     },
-    "role": {
-      "$comment": "Regulation Type = Individual/Continuing Education. Grouping axis: credential lifecycle stage, not topic.",
-      "regulation_types": [
-        "Individual/Continuing Education"
-      ],
-      "programs": [
-        {
-          "id": "initial-certification-licensure",
-          "label": "Initial Certification & Licensure Training",
-          "description": "Curriculum, hours, and prerequisites to earn the credential the first time.",
-          "aliases": []
-        },
-        {
-          "id": "renewal-continuing-education",
-          "label": "Certification Renewal & Continuing Education",
-          "description": "CE hours and in-service required to keep the credential.",
-          "aliases": []
-        },
-        {
-          "id": "competency-evaluation-examination",
-          "label": "Competency Evaluation & Examination",
-          "description": "Exams, competency evaluations, and exam-eligibility rules.",
-          "aliases": []
-        },
-        {
-          "id": "program-vendor-approval",
-          "label": "Training Program & Vendor Approval",
-          "description": "Approval of the programs, vendors, preceptors, and curricula that deliver the credential.",
-          "aliases": []
-        },
-        {
-          "id": "specialty-permit-expanded-scope",
-          "label": "Specialty Permit & Expanded Scope",
-          "description": "Add-on permits or optional scope expansions on an existing license.",
-          "aliases": []
-        }
-      ],
-      "rule_order": [
-        {
-          "match": "vendor|program approval|preceptor|uniform core of knowledge|directs (joint )?development|directs the department",
-          "program": "Training Program & Vendor Approval"
-        },
-        {
-          "match": "renewal|recertification|maintain certification|maintain .* permit|continuing[- ]education|in-service|ongoing .*coursework|unexpired",
-          "program": "Certification Renewal & Continuing Education"
-        },
-        {
-          "match": "fluoroscopy|bone densitometer|additional-scope|digital radiography|optional scope|expanded scope",
-          "program": "Specialty Permit & Expanded Scope"
-        },
-        {
-          "match": "examination|competency[- ]evaluation|eligibility requirements for .* exam",
-          "program": "Competency Evaluation & Examination"
-        },
-        {
-          "match": "certification|licensure|curriculum|training program|training\\b|administrator-in-training|coursework|approved course|approved-school|eligibility pathway|prerequisite|initial",
-          "program": "Initial Certification & Licensure Training"
-        }
-      ],
-      "citation_rules": [],
-      "purpose_hint_rules": [],
-      "purpose_overrides": {
-        "Certification Training and Competency Evaluation Program": "Initial Certification & Licensure Training",
-        "Home Health Aide Training": "Initial Certification & Licensure Training",
-        "Home Health Aide Certification": "Initial Certification & Licensure Training",
-        "Personal Care/Home Health Aide Services": "Initial Certification & Licensure Training",
-        "Administrator Certification Requirements": "Initial Certification & Licensure Training",
-        "Administrator Recertification Requirements": "Certification Renewal & Continuing Education",
-        "Renewal of Unexpired Certificates": "Certification Renewal & Continuing Education"
-      },
-      "purpose_prefix_overrides": [
-        {
-          "prefix": "Ensures certified",
-          "program": "Certification Renewal & Continuing Education"
-        },
-        {
-          "prefix": "Ensures EMS personnel maintain",
-          "program": "Certification Renewal & Continuing Education"
-        },
-        {
-          "prefix": "Requires dementia-specific instruction within the RCFE administrator continuing-education",
-          "program": "Certification Renewal & Continuing Education"
-        }
-      ],
-      "fallback_to_training_topic": true
+    {
+     "id": "administrator-leadership-qualification",
+     "label": "Administrator & Leadership Qualification",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "administrator|initial certification training|core of knowledge|director of staff development|management personnel|medical director|director of patient care|licensee-general|organized medical staff|business-management"
+     ]
+    },
+    {
+     "id": "nurse-assistant-certification-in-service",
+     "label": "Nurse Assistant Certification & In-Service",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "nurse assistant|nursing assistant|\\bcna\\b|certified nurse"
+     ]
+    },
+    {
+     "id": "ems-prehospital-personnel",
+     "label": "EMS & Prehospital Personnel",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "\\bemt-|\\bemts?\\b|paramedic|prehospital personnel|local ems agency",
+      "\\bems\\b|emt|paramedic|prehospital|ambulance|aeromedical|flight crew|public safety first aid|base hospital|triage"
+     ]
+    },
+    {
+     "id": "home-care-home-health-aide-training",
+     "label": "Home Care & Home Health Aide Training",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "home care aide|home health aide|home health|nurse home visitor|home medical device"
+     ]
+    },
+    {
+     "id": "dementia-cognitive-care",
+     "label": "Dementia & Cognitive Care",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "dementia|sundowning|neurocognitive"
+     ]
+    },
+    {
+     "id": "medication-administration-assistance",
+     "label": "Medication Administration & Assistance",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "medication|inhaled|opioid|naloxone|epinephrine|anaphylaxis|medication-assisted|\\bmat\\b|pharmaceutical|cannabis"
+     ]
+    },
+    {
+     "id": "restricted-health-conditions-specialized-care",
+     "label": "Restricted Health Conditions & Specialized Care",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "restricted health|bedridden|colostomy|ileostomy|catheter|contracture|incontinence|blood glucose|diabetes|incidental medical|special health care needs|specialized and restricted|postural support"
+     ]
+    },
+    {
+     "id": "personal-care-adl-assistance",
+     "label": "Personal Care & ADL Assistance",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "activities of daily living|personal care|basic care, health and safety"
+     ]
+    },
+    {
+     "id": "hospice-end-of-life-care",
+     "label": "Hospice & End-of-Life Care",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "hospice|dying process|terminally ill"
+     ]
+    },
+    {
+     "id": "infection-prevention-control",
+     "label": "Infection Prevention & Control",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "infection|hiv|tuberculosis|tuberculin|hcv|sanitation measures|body art|piercing|healthcare-associated"
+     ]
+    },
+    {
+     "id": "emergency-preparedness-disaster-response",
+     "label": "Emergency Preparedness & Disaster Response",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "disaster|fire and panic|fire and internal|egress|earthquake|emergency/disaster|emergency fire|emergency training|mass casualty|emergency evacuation|secured-perimeter"
+     ]
+    },
+    {
+     "id": "cpr-first-aid-aed",
+     "label": "CPR, First Aid & AED",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "cpr|first[- ]aid|aed\\b|defibrillat"
+     ]
+    },
+    {
+     "id": "resident-rights-abuse-prevention-ethics",
+     "label": "Resident Rights, Abuse Prevention & Ethics",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "residents' rights|resident rights|advance directive|abuse|prudent parent|residents'-rights|rights-violation"
+     ]
+    },
+    {
+     "id": "behavioral-health-special-treatment-programs",
+     "label": "Behavioral Health & Special Treatment Programs",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "restraint|seclusion|emergency intervention|de-escalation|psychiatric|special treatment|alcohol/drug counselor"
+     ]
+    },
+    {
+     "id": "patient-safety-security-violence-prevention",
+     "label": "Patient Safety, Security & Violence Prevention",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "security|violence|patient safety|mistreatment|sonograph|chaperone|iipp|human trafficking"
+     ]
+    },
+    {
+     "id": "cultural-competency-health-equity",
+     "label": "Cultural Competency & Health Equity",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "implicit bias|cultural|trans-inclusive|sexual orientation|gender identity|discrimination|ethical"
+     ]
+    },
+    {
+     "id": "perinatal-newborn-pediatric-care",
+     "label": "Perinatal, Newborn & Pediatric Care",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "perinatal|newborn|nursery service|maternal|infant|birth service|pediatric|pedrc|burn care to child|labor\\b|prenatal|sudden infant"
+     ]
+    },
+    {
+     "id": "child-youth-care",
+     "label": "Child & Youth Care",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "child|daycare|crisis nursery|foster|boarding school|outdoor program|short-term residential|group home"
+     ]
+    },
+    {
+     "id": "food-dietetic-services",
+     "label": "Food & Dietetic Services",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "food|dietetic|diet counseling|haccp|reduced-oxygen"
+     ]
+    },
+    {
+     "id": "clinical-service-line-competency",
+     "label": "Clinical Service Line Competency",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "service|unit|trauma|stroke|coronary|catheterization|dialysis|transplant|respiratory|therapy|intensive care|emergency|specialty center|social work|activity program|activity coordinator|custodial|environmental services|discharge planning|radiologic|venipuncture|sonographer|counselor|genetic|blood withdrawal|biomonitoring"
+     ]
+    },
+    {
+     "id": "policies-procedures-documentation",
+     "label": "Policies, Procedures & Documentation",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": [
+      "policies and procedures|written policies|personnel policies|plan of operation|needs and services plan|guidelines|administrative policies|policy\\b"
+     ]
+    },
+    {
+     "id": "public-health-other-licensed-programs",
+     "label": "Public Health & Other Licensed Programs",
+     "description": "",
+     "aliases": [],
+     "purpose_rules": []
+    },
+    {
+     "id": "caosha-iipp",
+     "label": "Injury & Illness Prevention",
+     "description": "The written Injury and Illness Prevention Program every California employer must maintain, and the employee and supervisor training that implements it.",
+     "aliases": [],
+     "purpose_rules": []
+    },
+    {
+     "id": "caosha-wpv",
+     "label": "Workplace Violence Prevention",
+     "description": "Workplace violence prevention training for health care employees, supervisors, and employees assigned to respond to alarms.",
+     "aliases": [],
+     "purpose_rules": []
+    },
+    {
+     "id": "caosha-emergency-fire",
+     "label": "Emergency Action & Fire Prevention",
+     "description": "Emergency action plans, fire prevention plans, and training on fire protection and alarm equipment.",
+     "aliases": [],
+     "purpose_rules": []
+    },
+    {
+     "id": "caosha-heat-environmental",
+     "label": "Heat Illness & Environmental Exposure",
+     "description": "Indoor and outdoor heat illness prevention, and protection from wildfire smoke.",
+     "aliases": [],
+     "purpose_rules": []
+    },
+    {
+     "id": "caosha-bbp-infection",
+     "label": "Bloodborne Pathogens & Infection Exposure",
+     "description": "Bloodborne pathogens, aerosol transmissible diseases, and respiratory-illness exposure controls.",
+     "aliases": [],
+     "purpose_rules": []
+    },
+    {
+     "id": "caosha-respiratory",
+     "label": "Respiratory Protection",
+     "description": "Respirator selection, fit testing, user seal checks, maintenance, and voluntary use.",
+     "aliases": [],
+     "purpose_rules": []
+    },
+    {
+     "id": "caosha-hearing",
+     "label": "Hearing Conservation",
+     "description": "Hearing conservation programs, hearing protector fitting and use, and the annual training program.",
+     "aliases": [],
+     "purpose_rules": []
+    },
+    {
+     "id": "caosha-ergonomics",
+     "label": "Ergonomics & Safe Patient Handling",
+     "description": "Repetitive motion injury prevention, and health care worker back and musculoskeletal injury prevention.",
+     "aliases": [],
+     "purpose_rules": []
+    },
+    {
+     "id": "caosha-hazmat-response",
+     "label": "Hazardous Materials & Emergency Response",
+     "description": "Hazardous waste operations, emergency response to hazardous substance releases, and permit-required confined space entry.",
+     "aliases": [],
+     "purpose_rules": []
+    },
+    {
+     "id": "caosha-hazcom-chemical",
+     "label": "Hazard Communication & Chemical Safety",
+     "description": "Hazard communication, laboratory chemical hygiene, accident prevention signs and tags, and the substance-specific exposure standards.",
+     "aliases": [],
+     "purpose_rules": []
+    },
+    {
+     "id": "caosha-ppe",
+     "label": "PPE & Exposure Controls",
+     "description": "Personal protective equipment selection, use, care and limitations.",
+     "aliases": [],
+     "purpose_rules": []
+    },
+    {
+     "id": "caosha-equipment",
+     "label": "Equipment, Machinery & Material Handling",
+     "description": "Operator training and competency for machinery, powered equipment, lifting devices, and energy control.",
+     "aliases": [],
+     "purpose_rules": []
     }
+   ],
+   "rule_order": [
+    {
+     "match": "administrator|initial certification training|core of knowledge|director of staff development|management personnel|medical director|director of patient care|licensee-general|organized medical staff|business-management",
+     "program": "Administrator & Leadership Qualification"
+    },
+    {
+     "match": "\\bemt-|\\bemts?\\b|paramedic|prehospital personnel|local ems agency",
+     "program": "EMS & Prehospital Personnel"
+    },
+    {
+     "match": "dementia|sundowning|neurocognitive",
+     "program": "Dementia & Cognitive Care"
+    },
+    {
+     "match": "hospice|dying process|terminally ill",
+     "program": "Hospice & End-of-Life Care"
+    },
+    {
+     "match": "cpr|first[- ]aid|aed\\b|defibrillat",
+     "program": "CPR, First Aid & AED"
+    },
+    {
+     "match": "infection|hiv|tuberculosis|tuberculin|hcv|sanitation measures|body art|piercing|healthcare-associated",
+     "program": "Infection Prevention & Control"
+    },
+    {
+     "match": "medication|inhaled|opioid|naloxone|epinephrine|anaphylaxis|medication-assisted|\\bmat\\b|pharmaceutical|cannabis",
+     "program": "Medication Administration & Assistance"
+    },
+    {
+     "match": "restricted health|bedridden|colostomy|ileostomy|catheter|contracture|incontinence|blood glucose|diabetes|incidental medical|special health care needs|specialized and restricted|postural support",
+     "program": "Restricted Health Conditions & Specialized Care"
+    },
+    {
+     "match": "activities of daily living|personal care|basic care, health and safety",
+     "program": "Personal Care & ADL Assistance"
+    },
+    {
+     "match": "disaster|fire and panic|fire and internal|egress|earthquake|emergency/disaster|emergency fire|emergency training|mass casualty|emergency evacuation|secured-perimeter",
+     "program": "Emergency Preparedness & Disaster Response"
+    },
+    {
+     "match": "restraint|seclusion|emergency intervention|de-escalation|psychiatric|special treatment|alcohol/drug counselor",
+     "program": "Behavioral Health & Special Treatment Programs"
+    },
+    {
+     "match": "security|violence|patient safety|mistreatment|sonograph|chaperone|iipp|human trafficking",
+     "program": "Patient Safety, Security & Violence Prevention"
+    },
+    {
+     "match": "implicit bias|cultural|trans-inclusive|sexual orientation|gender identity|discrimination|ethical",
+     "program": "Cultural Competency & Health Equity"
+    },
+    {
+     "match": "residents' rights|resident rights|advance directive|abuse|prudent parent|residents'-rights|rights-violation",
+     "program": "Resident Rights, Abuse Prevention & Ethics"
+    },
+    {
+     "match": "perinatal|newborn|nursery service|maternal|infant|birth service|pediatric|pedrc|burn care to child|labor\\b|prenatal|sudden infant",
+     "program": "Perinatal, Newborn & Pediatric Care"
+    },
+    {
+     "match": "child|daycare|crisis nursery|foster|boarding school|outdoor program|short-term residential|group home",
+     "program": "Child & Youth Care"
+    },
+    {
+     "match": "food|dietetic|diet counseling|haccp|reduced-oxygen",
+     "program": "Food & Dietetic Services"
+    },
+    {
+     "match": "nurse assistant|nursing assistant|\\bcna\\b|certified nurse",
+     "program": "Nurse Assistant Certification & In-Service"
+    },
+    {
+     "match": "\\bems\\b|emt|paramedic|prehospital|ambulance|aeromedical|flight crew|public safety first aid|base hospital|triage",
+     "program": "EMS & Prehospital Personnel"
+    },
+    {
+     "match": "home care aide|home health aide|home health|nurse home visitor|home medical device",
+     "program": "Home Care & Home Health Aide Training"
+    },
+    {
+     "match": "policies and procedures|written policies|personnel policies|plan of operation|needs and services plan|guidelines|administrative policies|policy\\b",
+     "program": "Policies, Procedures & Documentation"
+    },
+    {
+     "match": "orient|in-service|staff development|continuing education|knowledge and skills|training appropriate|competency validated|competence|competent|skills in|equivalent to paid staff|on-the-job|personnel requirements|^employees$|training program|training plan|training content|training requirement|trained",
+     "program": "Orientation & Staff Development"
+    },
+    {
+     "match": "service|unit|trauma|stroke|coronary|catheterization|dialysis|transplant|respiratory|therapy|intensive care|emergency|specialty center|social work|activity program|activity coordinator|custodial|environmental services|discharge planning|radiologic|venipuncture|sonographer|counselor|genetic|blood withdrawal|biomonitoring",
+     "program": "Clinical Service Line Competency"
+    }
+   ],
+   "citation_rules": [
+    {
+     "match": "^8 CCR § (?:3203|4402|4418)(?![0-9.])",
+     "program": "Injury & Illness Prevention",
+     "$comment": "Cal/OSHA subject family 1/13 - 8 CCR 3203, 4402, 4418"
+    },
+    {
+     "match": "^8 CCR § (?:3342)(?![0-9.])",
+     "program": "Workplace Violence Prevention",
+     "$comment": "Cal/OSHA subject family 2/13 - 8 CCR 3342"
+    },
+    {
+     "match": "^8 CCR § (?:3220|3221|3294|6151|6165|6175|6181|6183|6184)(?![0-9.])",
+     "program": "Emergency Action & Fire Prevention",
+     "$comment": "Cal/OSHA subject family 3/13"
+    },
+    {
+     "match": "^8 CCR § (?:3395|3396|5141\\.1)(?![0-9.])",
+     "program": "Heat Illness & Environmental Exposure",
+     "$comment": "Cal/OSHA subject family 4/13 - NEW family; 560 rows that had no home"
+    },
+    {
+     "match": "^8 CCR § (?:5193|5199|3205)(?![0-9.])",
+     "program": "Bloodborne Pathogens & Infection Exposure",
+     "$comment": "Cal/OSHA subject family 5/13 - MUST precede family 10"
+    },
+    {
+     "match": "^8 CCR § (?:5144)(?![0-9.])",
+     "program": "Respiratory Protection",
+     "$comment": "Cal/OSHA subject family 6/13 - the (?![0-9.]) lookahead lets 5144-APPENDIX-A/C/D match while 5144.x would not"
+    },
+    {
+     "match": "^8 CCR § (?:5097|5098|5099)(?![0-9.])",
+     "program": "Hearing Conservation",
+     "$comment": "Cal/OSHA subject family 7/13"
+    },
+    {
+     "match": "^8 CCR § (?:5110|5120)(?![0-9.])",
+     "program": "Ergonomics & Safe Patient Handling",
+     "$comment": "Cal/OSHA subject family 8/13"
+    },
+    {
+     "match": "^8 CCR § (?:5192|5157|5158)(?![0-9.])",
+     "program": "Hazardous Materials & Emergency Response",
+     "$comment": "Cal/OSHA subject family 9/13 - MUST precede family 10 (5192)"
+    },
+    {
+     "match": "^8 CCR § (?:5194|5191|3340|3341|5154\\.1|5185|5189|5197|5198|519[0-9]|520[0-9]|521[0-9]|5220|5208\\.1|5461)(?![0-9.])",
+     "program": "Hazard Communication & Chemical Safety",
+     "$comment": "Cal/OSHA subject family 10/13 - broad 519x/520x/521x range, which is why families 5 and 9 precede it"
+    },
+    {
+     "match": "^8 CCR § (?:3380)(?![0-9.])",
+     "program": "PPE & Exposure Controls",
+     "$comment": "Cal/OSHA subject family 11/13"
+    },
+    {
+     "match": "^8 CCR § (?:3276|3282|3286|3298|3311|3314|332[456]|3558|3563|363[8]|364[68]|3650|3668|4203|4208\\.1|4243|4355|4414|4445|4799|4988\\.2|4993\\.1|5003\\.1|5006\\.1|5006|5009)(?![0-9.])",
+     "program": "Equipment, Machinery & Material Handling",
+     "$comment": "Cal/OSHA subject family 12/13 - 5006.1 precedes 5006 so the dotted section is not shadowed"
+    },
+    {
+     "match": "^8 CCR § (?:3400)(?![0-9.])",
+     "program": "CPR, First Aid & AED",
+     "$comment": "Cal/OSHA subject family 13/13 - routes 8 CCR 3400 to the EXISTING 'CPR, First Aid & AED' program (PROGRAM tab row 21). No new program is created: a separate 'First Aid, CPR & AED' would differ from it only in word order, which is the vocabulary drift the taxonomy exists to prevent, and with 1 obligation it would also fail the size-discipline gate."
+    },
+    {
+     "match": "22 CCR § 1000\\d\\d\\b|22 CCR § 1001[0-2]\\d\\b",
+     "program": "EMS & Prehospital Personnel",
+     "$comment": "Title 22 Div. 9 EMSA personnel chapters"
+    }
+   ],
+   "purpose_hint_rules": [
+    {
+     "match": "tuberculin|blood withdrawal|biomonitoring|prenatal diagnosis|hiv test|hiv counsel|home medical device|prescription devices|piercing|radiologic technologist|body art",
+     "program": "Public Health & Other Licensed Programs"
+    }
+   ],
+   "purpose_overrides": {
+    "Employees": "Orientation & Staff Development",
+    "Nursing Staff Development": "Orientation & Staff Development",
+    "Staff Development": "Orientation & Staff Development",
+    "In-Service Training Program": "Orientation & Staff Development",
+    "Orientation Program": "Orientation & Staff Development",
+    "Personnel Requirements-General": "Orientation & Staff Development",
+    "Night Supervision": "Orientation & Staff Development",
+    "Nursing Service-Administration of Medications and Treatments": "Medication Administration & Assistance",
+    "Director of Staff Development or Instructor": "Administrator & Leadership Qualification",
+    "Administrative Policies and Procedures": "Policies, Procedures & Documentation",
+    "Special Treatment Program Service Unit-in-Service Education": "Behavioral Health & Special Treatment Programs",
+    "Special Treatment Program Service Unit-Program Requirements": "Behavioral Health & Special Treatment Programs",
+    "Special Treatment Program Service Unit - Staff": "Behavioral Health & Special Treatment Programs",
+    "Psychiatric Nursing Service General Requirements": "Behavioral Health & Special Treatment Programs",
+    "Psychiatric Rehabilitative Activities Service General Requirements": "Behavioral Health & Special Treatment Programs",
+    "Psychiatric Unit General Requirements": "Behavioral Health & Special Treatment Programs",
+    "Medical Social Services": "Clinical Service Line Competency",
+    "Therapy Services": "Clinical Service Line Competency",
+    "Diet Counseling Services": "Food & Dietetic Services",
+    "Dietetic Service Staff": "Food & Dietetic Services",
+    "Dietetic Service - Staff": "Food & Dietetic Services",
+    "Dietetic Service General Requirements": "Food & Dietetic Services",
+    "Emergency Service": "Clinical Service Line Competency",
+    "Disaster and Mass Casualty Program": "Emergency Preparedness & Disaster Response",
+    "External Disaster and Mass Casualty Program": "Emergency Preparedness & Disaster Response",
+    "Fire and Internal Disaster Plan": "Emergency Preparedness & Disaster Response",
+    "Fire and Internal Disasters": "Emergency Preparedness & Disaster Response",
+    "Infection Control Program": "Infection Prevention & Control",
+    "Infection Control Requirements": "Infection Prevention & Control",
+    "Licensee-General Duties": "Administrator & Leadership Qualification",
+    "Organized Medical Staff": "Clinical Service Line Competency",
+    "Activity Program-Requirements": "Clinical Service Line Competency",
+    "Activity Program-Staff": "Clinical Service Line Competency",
+    "Care of Persons with Dementia": "Dementia & Cognitive Care",
+    "Hospice Care for Terminally Ill Residents": "Hospice & End-of-Life Care",
+    "Care of Bedridden Residents": "Restricted Health Conditions & Specialized Care",
+    "Managed Incontinence": "Restricted Health Conditions & Specialized Care",
+    "Contractures": "Restricted Health Conditions & Specialized Care",
+    "Colostomy/Ileostomy": "Restricted Health Conditions & Specialized Care",
+    "Indwelling Urinary Catheter": "Restricted Health Conditions & Specialized Care",
+    "General Requirements for Restricted Health Conditions": "Restricted Health Conditions & Specialized Care",
+    "Automated External Defibrillators (AEDs)": "CPR, First Aid & AED",
+    "Initial Certification Training Program Vendor and Program Approval Requirements": "Administrator & Leadership Qualification",
+    "Perinatal Unit Staff": "Perinatal, Newborn & Pediatric Care",
+    "Pediatric Service Staff": "Perinatal, Newborn & Pediatric Care",
+    "Intensive Care Newborn Nursery Service Staff": "Perinatal, Newborn & Pediatric Care",
+    "Intensive Care Newborn Nursery Service General Requirements": "Perinatal, Newborn & Pediatric Care",
+    "Pharmaceutical Service General Requirements": "Medication Administration & Assistance",
+    "Cardiovascular Catheterization Laboratory": "Clinical Service Line Competency",
+    "Establishes required HIV/AIDS and tuberculosis training content for adult residential and social rehabilitation facility administrators and staff": "Infection Prevention & Control"
+   },
+   "purpose_prefix_overrides": [
+    {
+     "prefix": "Establishes required HIV/AIDS and tuberculosis training content",
+     "program": "Infection Prevention & Control"
+    },
+    {
+     "prefix": "Trains administrators and authorized volunteers to recognize and respond to seizures",
+     "program": "Restricted Health Conditions & Specialized Care"
+    },
+    {
+     "prefix": "Ensures adult day health care center staff are trained on egress-device",
+     "program": "Emergency Preparedness & Disaster Response"
+    },
+    {
+     "prefix": "Ensures adult day program staff are trained on egress-device",
+     "program": "Emergency Preparedness & Disaster Response"
+    },
+    {
+     "prefix": "Requires the supervised clinical-training component to address special needs",
+     "program": "Nurse Assistant Certification & In-Service"
+    },
+    {
+     "prefix": "Requires the nurse assistant curriculum to address",
+     "program": "Nurse Assistant Certification & In-Service"
+    },
+    {
+     "prefix": "Ensures nursing staff receive continuing education and training in perinatal nursing",
+     "program": "Perinatal, Newborn & Pediatric Care"
+    },
+    {
+     "prefix": "Ensures trans-inclusive, culturally competent care",
+     "program": "Cultural Competency & Health Equity"
+    },
+    {
+     "prefix": "Trains RCFE designated substitutes to interact with emergency personnel",
+     "program": "Emergency Preparedness & Disaster Response"
+    },
+    {
+     "prefix": "Ensures designated specialty center staff maintain critical care competency",
+     "program": "Clinical Service Line Competency"
+    },
+    {
+     "prefix": "Ensures dialysis facility personnel are trained in dialyzer reprocessing",
+     "program": "Clinical Service Line Competency"
+    },
+    {
+     "prefix": "Establishes required content for training direct care staff on postural supports",
+     "program": "Restricted Health Conditions & Specialized Care"
+    },
+    {
+     "prefix": "Ensures staff of special treatment and developmental program services",
+     "program": "Behavioral Health & Special Treatment Programs"
+    },
+    {
+     "prefix": "Ensures hospice interdisciplinary team members",
+     "program": "Hospice & End-of-Life Care"
+    }
+   ],
+   "fallback_to_training_topic": true
+  },
+  "role": {
+   "$comment": "Regulation Type = Individual/Continuing Education. Grouping axis: credential lifecycle stage, not topic.",
+   "regulation_types": [
+    "Individual/Continuing Education"
+   ],
+   "programs": [
+    {
+     "id": "initial-certification-licensure",
+     "label": "Initial Certification & Licensure Training",
+     "description": "Curriculum, hours, and prerequisites to earn the credential the first time.",
+     "aliases": []
+    },
+    {
+     "id": "renewal-continuing-education",
+     "label": "Certification Renewal & Continuing Education",
+     "description": "CE hours and in-service required to keep the credential.",
+     "aliases": []
+    },
+    {
+     "id": "competency-evaluation-examination",
+     "label": "Competency Evaluation & Examination",
+     "description": "Exams, competency evaluations, and exam-eligibility rules.",
+     "aliases": []
+    },
+    {
+     "id": "program-vendor-approval",
+     "label": "Training Program & Vendor Approval",
+     "description": "Approval of the programs, vendors, preceptors, and curricula that deliver the credential.",
+     "aliases": []
+    },
+    {
+     "id": "specialty-permit-expanded-scope",
+     "label": "Specialty Permit & Expanded Scope",
+     "description": "Add-on permits or optional scope expansions on an existing license.",
+     "aliases": []
+    }
+   ],
+   "rule_order": [
+    {
+     "match": "vendor|program approval|preceptor|uniform core of knowledge|directs (joint )?development|directs the department",
+     "program": "Training Program & Vendor Approval"
+    },
+    {
+     "match": "renewal|recertification|maintain certification|maintain .* permit|continuing[- ]education|in-service|ongoing .*coursework|unexpired",
+     "program": "Certification Renewal & Continuing Education"
+    },
+    {
+     "match": "fluoroscopy|bone densitometer|additional-scope|digital radiography|optional scope|expanded scope",
+     "program": "Specialty Permit & Expanded Scope"
+    },
+    {
+     "match": "examination|competency[- ]evaluation|eligibility requirements for .* exam",
+     "program": "Competency Evaluation & Examination"
+    },
+    {
+     "match": "certification|licensure|curriculum|training program|training\\b|administrator-in-training|coursework|approved course|approved-school|eligibility pathway|prerequisite|initial",
+     "program": "Initial Certification & Licensure Training"
+    }
+   ],
+   "citation_rules": [],
+   "purpose_hint_rules": [],
+   "purpose_overrides": {
+    "Certification Training and Competency Evaluation Program": "Initial Certification & Licensure Training",
+    "Home Health Aide Training": "Initial Certification & Licensure Training",
+    "Home Health Aide Certification": "Initial Certification & Licensure Training",
+    "Personal Care/Home Health Aide Services": "Initial Certification & Licensure Training",
+    "Administrator Certification Requirements": "Initial Certification & Licensure Training",
+    "Administrator Recertification Requirements": "Certification Renewal & Continuing Education",
+    "Renewal of Unexpired Certificates": "Certification Renewal & Continuing Education"
+   },
+   "purpose_prefix_overrides": [
+    {
+     "prefix": "Ensures certified",
+     "program": "Certification Renewal & Continuing Education"
+    },
+    {
+     "prefix": "Ensures EMS personnel maintain",
+     "program": "Certification Renewal & Continuing Education"
+    },
+    {
+     "prefix": "Requires dementia-specific instruction within the RCFE administrator continuing-education",
+     "program": "Certification Renewal & Continuing Education"
+    }
+   ],
+   "fallback_to_training_topic": true
   }
+ }
 }

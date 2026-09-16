@@ -250,14 +250,21 @@ def resolve_source_dataset(raw_row, cli_source_dataset, sheet_name):
     return source_dataset_from_sheet_name(sheet_name or "")
 
 
+def hash_component(value):
+    """Null hash inputs are empty strings, not the literal 'None'."""
+    if value is None:
+        return ""
+    return str(value)
+
+
 def make_record_id(source_dataset, record):
     basis = "|".join([
-        source_dataset,
-        str(record.get("Citation", "")),
-        str(record.get("Training Topic / Competency Item", "")),
-        str(record.get("Jurisdiction", "")),
-        str(record.get("Jurisdiction Role", "")),
-        str(record.get("Jurisdiction Setting", "")),
+        hash_component(source_dataset),
+        hash_component(record.get("Citation", "")),
+        hash_component(record.get("Training Topic / Competency Item", "")),
+        hash_component(record.get("Jurisdiction", "")),
+        hash_component(record.get("Jurisdiction Role", "")),
+        hash_component(record.get("Jurisdiction Setting", "")),
     ])
     digest = hashlib.sha1(basis.encode("utf-8")).hexdigest()[:12]
     return "req_" + digest
