@@ -34,6 +34,13 @@ Usage:
     python scripts/assign_program.py --force         # re-derive even where a
                                                      #  non-taxonomy value exists
 """
+import argparse
+import collections
+import json
+import re
+import sys
+from pathlib import Path
+
 from requirements_store import load_records, save_records, ROOT, STUB_PATH
 
 ROOT = Path(__file__).resolve().parents[1]

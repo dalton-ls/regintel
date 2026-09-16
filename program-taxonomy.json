@@ -1,6 +1,6 @@
 {
- "$comment": "Single source of truth for the live-only `Program` grouping field. Edit here, then run scripts/assign_program.py --write. Labels are what is stored on rows; `aliases` let you rename a program (old label -> new) and the script migrates rows. Rules are Python/JS-compatible regexes tested case-insensitively against Purpose; first match in `rule_order` wins. Anything unmatched is stored as `unassigned_label` and listed by the script so you can add a rule or a new program. 2026-09-15: added the Cal/OSHA subject-family set for 8 CCR Title 8, routed by citation_rules rather than Purpose regexes so a family is anchored to the regulation rather than to wording. Registry with scope, citation basis, source URL, owner and verification date lives in RegIntel_Work 06_Reviews/Applied/CA__Administrative__CA-RR__Title-08__Baseline-20260902/cal-osha-program-registry.json. Boundary placements (3340/3341 -> HazCom, 5157/5158 -> HazMat, 3205 -> BBP) signed off by Dalton Scott 2026-09-15.",
- "version": "2026-09-15",
+  "$comment": "Single source of truth for the live-only `Program` grouping field. Edit here, then run scripts/assign_program.py --write. Labels are what is stored on rows; `aliases` let you rename a program (old label -> new) and the script migrates rows. Rules are Python/JS-compatible regexes tested case-insensitively against Purpose; first match in `rule_order` wins. Anything unmatched is stored as `unassigned_label` and listed by the script so you can add a rule or a new program. 2026-09-15: added the Cal/OSHA subject-family set for 8 CCR Title 8, routed by citation_rules rather than Purpose regexes so a family is anchored to the regulation rather than to wording. Registry with scope, citation basis, source URL, owner and verification date lives in RegIntel_Work 06_Reviews/Applied/CA__Administrative__CA-RR__Title-08__Baseline-20260902/cal-osha-program-registry.json. Boundary placements (3340/3341 -> HazCom, 5157/5158 -> HazMat, 3205 -> BBP) signed off by Dalton Scott 2026-09-15. 2026-09-16: added Licensed Profession Curriculum & Program Approval (care-setting last-match) and widened the Role-lane renewal/specialty/initial regexes for 16 CCR Title 16. Topic families still win when Purpose names a clinical subject; the new program only takes leftover board-approved curricula.",
+ "version": "2026-09-16",
  "unassigned_label": "Unassigned (needs review)",
  "lanes": {
   "care-setting": {
@@ -217,6 +217,13 @@
      "purpose_rules": []
     },
     {
+     "id": "licensed-profession-curriculum-program-approval",
+     "label": "Licensed Profession Curriculum & Program Approval",
+     "description": "Board-approved educational programmes, courses, and curricula that a California licensing board requires a school, provider, or supervising licensee to deliver. Title 16 (Professional and Vocational Regulations) first use; topic-family rules still win when Purpose names a clinical subject.",
+     "aliases": [],
+     "purpose_rules": []
+    },
+    {
      "id": "caosha-iipp",
      "label": "Injury & Illness Prevention",
      "description": "The written Injury and Illness Prevention Program every California employer must maintain, and the employee and supervisor training that implements it.",
@@ -319,7 +326,7 @@
      "program": "Hospice & End-of-Life Care"
     },
     {
-     "match": "cpr|first[- ]aid|aed\\b|defibrillat",
+     "match": "cpr|first[- ]aid|aed\\b|defibrillat|basic life support|\\bbls\\b",
      "program": "CPR, First Aid & AED"
     },
     {
@@ -393,6 +400,11 @@
     {
      "match": "service|unit|trauma|stroke|coronary|catheterization|dialysis|transplant|respiratory|therapy|intensive care|emergency|specialty center|social work|activity program|activity coordinator|custodial|environmental services|discharge planning|radiologic|venipuncture|sonographer|counselor|genetic|blood withdrawal|biomonitoring",
      "program": "Clinical Service Line Competency"
+    },
+    {
+     "match": "curriculum|programme|\\bcourse\\b|didactic|preclinical|clinical instruction|clinical training|clinical practice|clinical content|clinical hours|clinical medicine|compounding|preceptorship|psychoanalytic|vocational nursing|nurse practitioner|nurse-midwif|hazardous drugs|aseptic|supervised (?:clinical|direct|practice|professional)|personal psychoanalysis|classroom training|organised, structured|calibration training|trainee-applicant|supervision coursework|supervision and training|additional (?:training|education)",
+     "program": "Licensed Profession Curriculum & Program Approval",
+     "$comment": "Last-match catch-all for Title 16 board-approved programme curricula. Placed after every topic family so Infection Prevention, Medication, etc. still win when Purpose names the subject. 2026-09-16 Title 16 apply."
     }
    ],
    "citation_rules": [
@@ -624,23 +636,23 @@
    ],
    "rule_order": [
     {
-     "match": "vendor|program approval|preceptor|uniform core of knowledge|directs (joint )?development|directs the department",
+     "match": "vendor|program approval|preceptor|uniform core of knowledge|directs (joint )?development|directs the department|programme|board[- ]approved|didactic|preclinical|course must|institute must|faculty member|tutorial|trainee-applicant|supervised professional experience|clinical hours an approved|compounding hazardous|subject areas a board-approved|approved radiographic|approved interim|psychoanalytic",
      "program": "Training Program & Vendor Approval"
     },
     {
-     "match": "renewal|recertification|maintain certification|maintain .* permit|continuing[- ]education|in-service|ongoing .*coursework|unexpired",
+     "match": "renewal|recertification|\\brenew\\b|maintain certification|maintain .* permit|continuing[- ]education|continuing (?:medical education|professional development|competency|optometric)|professional development units|reactivat|in-service|ongoing .*coursework|unexpired|\\bprobation\\b|addiction associated|elderly patient population|schedule ii",
      "program": "Certification Renewal & Continuing Education"
     },
     {
-     "match": "fluoroscopy|bone densitometer|additional-scope|digital radiography|optional scope|expanded scope",
+     "match": "fluoroscopy|bone densitometer|additional-scope|digital radiography|optional scope|expanded scope|advanced practice|hand therapy|physical agent|furnish or order|practise acupuncture as part of dentistry",
      "program": "Specialty Permit & Expanded Scope"
     },
     {
-     "match": "examination|competency[- ]evaluation|eligibility requirements for .* exam",
+     "match": "examination|competency[- ]evaluation|\\bcompetence\\b|eligibility requirements for .* exam",
      "program": "Competency Evaluation & Examination"
     },
     {
-     "match": "certification|licensure|curriculum|training program|training\\b|administrator-in-training|coursework|approved course|approved-school|eligibility pathway|prerequisite|initial",
+     "match": "certification|certificate|licensure|curriculum|training program|training\\b|administrator-in-training|coursework|approved course|approved-school|eligibility pathway|prerequisite|initial|theoretical content|polysomnographic education|additional education|course of instruction",
      "program": "Initial Certification & Licensure Training"
     }
    ],

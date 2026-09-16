@@ -123,6 +123,7 @@ const PROGRAM_VOCAB_FALLBACK = [
   "Clinical Service Line Competency",
   "Policies, Procedures & Documentation",
   "Public Health & Other Licensed Programs",
+  "Licensed Profession Curriculum & Program Approval",
   "Initial Certification & Licensure Training",
   "Certification Renewal & Continuing Education",
   "Competency Evaluation & Examination",

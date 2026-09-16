@@ -270,6 +270,16 @@
     .role-select-option.selected { background: #eef3fb; color: #2463eb; font-weight: 600; }
     .role-select-option.role-placeholder-value { cursor: default; color: #8b95a5; }
     .role-select-option.role-placeholder-value:hover { background: transparent; }
+    .role-select-option-name { display: block; line-height: 1.35; }
+    .role-select-option-meta {
+      display: block; margin-top: 2px;
+      font-size: 11.5px; font-weight: 500; color: #8a94a6; line-height: 1.35;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .role-select-option.selected .role-select-option-meta { color: #7b93c4; font-weight: 500; }
+    .multi-select-panel[data-dropdown-panel="role"] {
+      min-width: 240px; max-width: min(380px, calc(100vw - 32px));
+    }
 
     /* ── Main content ── */
     .main-content { padding: 24px; flex: 1; }
@@ -783,6 +793,32 @@
     .badge-lifecycle { background: #f8fafc; color: #334155; border: 1px solid #e2e8f0; }
     .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip { display: inline-flex; align-items: center; background: #f1f5f9; color: #1a2332; font-size: 11.5px; font-weight: 500; padding: 3px 9px; border-radius: 20px; border: 1px solid #e8ecf0; }
+
+    .results-context { margin-bottom: 18px; }
+    .results-context-title { font-size: 18px; font-weight: 700; color: #1a2332; line-height: 1.3; }
+    .results-context-sub { margin-top: 4px; font-size: 13px; color: #6b7a99; line-height: 1.5; }
+    .results-context-filter { margin-top: 12px; }
+    .facet-legend {
+      font-size: 11px; font-weight: 700; color: #6b7a99;
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
+    }
+    .facet-chip-row { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+    .facet-chip {
+      display: inline-flex; align-items: center;
+      background: #f1f5f9; color: #1a2332;
+      font-size: 11.5px; font-weight: 500;
+      padding: 4px 10px; border-radius: 20px;
+      border: 1px solid #e8ecf0;
+      font-family: inherit; cursor: pointer; white-space: nowrap;
+    }
+    .facet-chip:hover { background: #e8ecf0; }
+    .facet-chip:focus-visible { outline: 2px solid #2463eb; outline-offset: 2px; }
+    .facet-chip[aria-pressed="true"] {
+      background: #eef3fb; color: #2463eb; border-color: #c7d7f8; font-weight: 600;
+    }
+    @media (max-width: 600px) {
+      .facet-chip { white-space: normal; max-width: 100%; text-align: left; }
+    }
     .drawer-crumb { font-size: 11.5px; color: #8a94a6; line-height: 1.4; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -1035,7 +1071,9 @@
   // ─── UI state ───
   let sidebarOpen   = true;
   let activeSection = 'roles';
-let selectedRole        = null;
+  let selectedRole        = null;
+  let selectedRoleSetting = null;
+  let roleSettingOverflowOpen = false;
   let selectedCareSetting = null;
   let selectedWFRole      = null;
   let selectedWFSetting   = null;
@@ -1330,35 +1368,79 @@ let selectedRole        = null;
     );
   }
 
+  function roleRecordsInSelectedJurisdictions(roleKey) {
+    return publicRecords(ROLE_DATA[roleKey] || []).filter(r => filterState.jurisdictions.has(r.state));
+  }
+
+  function distinctCareSettingsForRole(roleKey) {
+    const settings = new Set();
+    roleRecordsInSelectedJurisdictions(roleKey).forEach(r => {
+      if (r.hstm_setting) settings.add(r.hstm_setting);
+    });
+    return [...settings].sort();
+  }
+
+  function roleCareSettingHint(roleKey) {
+    const settings = distinctCareSettingsForRole(roleKey);
+    if (settings.length === 1) return settings[0];
+    if (settings.length > 1) return settings.length + ' care settings';
+    return '';
+  }
+
+  function syncRoleSettingFilter() {
+    if (!selectedRole) {
+      selectedRoleSetting = null;
+      roleSettingOverflowOpen = false;
+      return;
+    }
+    const available = distinctCareSettingsForRole(selectedRole);
+    if (!selectedRoleSetting || !available.includes(selectedRoleSetting)) {
+      selectedRoleSetting = null;
+    }
+    if (available.length <= 4) roleSettingOverflowOpen = false;
+  }
+
   function syncSelectedRoleToJurisdictions() {
-    if (!selectedRole) return;
+    if (!selectedRole) {
+      syncRoleSettingFilter();
+      return;
+    }
     if (!rolesForSelectedJurisdictions().some(r => r.value === selectedRole)) {
       selectedRole = null;
     }
+    syncRoleSettingFilter();
+  }
+
+  function matchesRoleFacets(r) {
+    if (!filterState.jurisdictions.has(r.state))         return false;
+    if (!filterState.requirementLevels.has(r.requirement_level)) return false;
+    if (!filterState.authorityLevels.has(r.authority_level)) return false;
+    // Applicability filter only engages once real rule data exists and the
+    // user has actively narrowed it; with the default "all selected" state
+    // (or while ALL_APPLICABILITY_VALUES is empty, as it is on every live
+    // record today) this is a no-op so nothing gets hidden.
+    if (ALL_APPLICABILITY_VALUES.length && filterState.applicabilityValues.size < ALL_APPLICABILITY_VALUES.length) {
+      const tokens = applicabilityTokens(r.applicability_rules);
+      if (!tokens.some(t => filterState.applicabilityValues.has(t))) return false;
+    }
+    // Impact Type filter: fixed vocabulary — set-intersection against the
+    // row's impact_types array (not mutually exclusive).
+    if (filterState.impactTypes.size < ALL_IMPACT_TYPES.length) {
+      const tags = Array.isArray(r.impact_types) ? r.impact_types : [];
+      if (!tags.some(t => filterState.impactTypes.has(t))) return false;
+    }
+    return true;
+  }
+
+  function roleResultUniverse() {
+    const src = selectedRole ? (ROLE_DATA[selectedRole] || []) : DATA;
+    return publicRecords(src).filter(matchesRoleFacets);
   }
 
   function filterData() {
-    const src = selectedRole ? (ROLE_DATA[selectedRole] || []) : DATA;
-    return publicRecords(src).filter(r => {
-      if (!filterState.jurisdictions.has(r.state))         return false;
-      if (!filterState.requirementLevels.has(r.requirement_level)) return false;
-      if (!filterState.authorityLevels.has(r.authority_level)) return false;
-      // Applicability filter only engages once real rule data exists and the
-      // user has actively narrowed it; with the default "all selected" state
-      // (or while ALL_APPLICABILITY_VALUES is empty, as it is on every live
-      // record today) this is a no-op so nothing gets hidden.
-      if (ALL_APPLICABILITY_VALUES.length && filterState.applicabilityValues.size < ALL_APPLICABILITY_VALUES.length) {
-        const tokens = applicabilityTokens(r.applicability_rules);
-        if (!tokens.some(t => filterState.applicabilityValues.has(t))) return false;
-      }
-      // Impact Type filter: fixed vocabulary — set-intersection against the
-      // row's impact_types array (not mutually exclusive).
-      if (filterState.impactTypes.size < ALL_IMPACT_TYPES.length) {
-        const tags = Array.isArray(r.impact_types) ? r.impact_types : [];
-        if (!tags.some(t => filterState.impactTypes.has(t))) return false;
-      }
-      return true;
-    });
+    const rows = roleResultUniverse();
+    if (!selectedRoleSetting) return rows;
+    return rows.filter(r => r.hstm_setting === selectedRoleSetting);
   }
 
   function statesInOrder(map) {
@@ -2210,6 +2292,7 @@ let selectedRole        = null;
       if ((r.oversight_agency || '') !== (sample.oversight_agency || '')) return false;
       if ((r.type || '') !== (sample.type || '')) return false;
       if (activeSection === 'care-settings' && selectedCareSetting && r.hstm_setting !== selectedCareSetting) return false;
+      if (activeSection === 'roles' && selectedRoleSetting && r.hstm_setting !== selectedRoleSetting) return false;
       return true;
     });
   }
@@ -2600,20 +2683,80 @@ let selectedRole        = null;
 </div>`;
   }
 
+  function jurisdictionSummary() {
+    const selected = [...filterState.jurisdictions];
+    if (!selected.length) return 'No jurisdictions';
+    if (ALL_JURISDICTIONS.length && selected.length === ALL_JURISDICTIONS.length) return 'All jurisdictions';
+    if (selected.length === 1) {
+      const code = selected[0];
+      return STATE_NAMES[code] || code;
+    }
+    return selected.length + ' jurisdictions';
+  }
+
+  function renderRoleSettingFilter(settings) {
+    if (!settings || settings.length < 2) return '';
+    const visibleLimit = 4;
+    const extra = settings.length - visibleLimit;
+    const selectedHidden = extra > 0 && selectedRoleSetting && settings.indexOf(selectedRoleSetting) >= visibleLimit;
+    const showOverflow = extra > 0 && !roleSettingOverflowOpen && !selectedHidden;
+    const visible = showOverflow ? settings.slice(0, visibleLimit) : settings;
+    const chip = (value, label, pressed) =>
+      `<button type="button" class="facet-chip" data-role-setting-filter="${esc(value)}" aria-pressed="${pressed ? 'true' : 'false'}" title="${esc(label)}">${esc(label)}</button>`;
+    const chips = [chip('', 'All settings', !selectedRoleSetting)]
+      .concat(visible.map(s => chip(s, s, selectedRoleSetting === s)));
+    if (showOverflow) {
+      chips.push(`<button type="button" class="facet-chip" data-role-setting-overflow="1" aria-expanded="false">+${extra}</button>`);
+    }
+    return `<div class="results-context-filter">
+      <div class="facet-legend" id="roleSettingFilterLabel">Care Setting</div>
+      <div class="facet-chip-row" role="group" aria-labelledby="roleSettingFilterLabel">${chips.join('')}</div>
+    </div>`;
+  }
+
+  function renderRoleResultsContext(universe, filtered) {
+    const roleLabel = ROLES.find(r => r.value === selectedRole)?.label || selectedRole || '';
+    const settings = selectedRole ? distinctCareSettingsForRole(selectedRole) : [];
+    const count = universe.length;
+    let sub;
+    if (selectedRoleSetting) {
+      sub = `Showing ${filtered.length} of ${count} obligation${count === 1 ? '' : 's'} in ${selectedRoleSetting}`;
+    } else if (settings.length > 1) {
+      sub = `${count} obligation${count === 1 ? '' : 's'} across ${settings.length} care settings`;
+    } else if (settings.length === 1) {
+      sub = `${count} obligation${count === 1 ? '' : 's'} in ${settings[0]}`;
+    } else {
+      sub = `${count} obligation${count === 1 ? '' : 's'}`;
+    }
+    return `<div class="results-context">
+      <div class="results-context-title">${esc(roleLabel)}</div>
+      <div class="results-context-sub">${esc(jurisdictionSummary())} · ${esc(sub)}</div>
+      ${renderRoleSettingFilter(settings)}
+    </div>`;
+  }
+
   function renderRoleDropdown() {
     const isOpen   = openDropdown === 'role';
     const available = rolesForSelectedJurisdictions();
     const selLabel = selectedRole ? available.find(r => r.value === selectedRole)?.label : null;
     const options  = available.length
-      ? available.map(r => `<div class="role-select-option${selectedRole === r.value ? ' selected' : ''}" data-role-select="${esc(r.value)}">${esc(r.label)}</div>`).join('')
+      ? available.map(r => {
+          const hint = roleCareSettingHint(r.value);
+          const meta = hint
+            ? `<span class="role-select-option-meta" title="${esc(hint)}">${esc(hint)}</span>`
+            : '';
+          return `<div class="role-select-option${selectedRole === r.value ? ' selected' : ''}" data-role-select="${esc(r.value)}" role="option" tabindex="0" aria-selected="${selectedRole === r.value ? 'true' : 'false'}">
+        <span class="role-select-option-name">${esc(r.label)}</span>${meta}
+      </div>`;
+        }).join('')
       : `<div class="role-select-option role-placeholder-value">No roles for selected jurisdictions</div>`;
     return `<div class="filter-group">
-  <button type="button" class="multi-select-trigger${isOpen ? ' open' : ''}" data-dropdown-trigger="role">
+  <button type="button" class="multi-select-trigger${isOpen ? ' open' : ''}" data-dropdown-trigger="role" aria-haspopup="listbox" aria-expanded="${isOpen ? 'true' : 'false'}">
     <span class="trigger-label">Role</span>
     <span class="trigger-value${selLabel === null ? ' role-placeholder-value' : ''}">${selLabel === null ? 'Select a role' : esc(selLabel)}</span>
     <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
   </button>
-  <div class="multi-select-panel${isOpen ? ' open' : ''}" data-dropdown-panel="role">
+  <div class="multi-select-panel${isOpen ? ' open' : ''}" data-dropdown-panel="role" role="listbox">
     <div class="multi-select-options">${options}</div>
   </div>
 </div>`;
@@ -2960,13 +3103,14 @@ let selectedRole        = null;
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
           <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
         </svg>
-        <p class="empty-state-title">Select a role to get started</p>
-        <p class="empty-state-text">Choose jurisdiction(s), then a role, to view regulatory requirements.</p>
+        <p class="empty-state-title">Select a jurisdiction and role to get started</p>
+        <p class="empty-state-text">Choose jurisdiction(s), then a role, to view applicable requirements. After a role is selected, care setting can refine results when more than one setting is represented.</p>
       </div></div>`;
       updateDrawer();
       return;
     }
 
+    const universe = roleResultUniverse();
     const filtered = filterData();
     const tree    = buildHierarchy(filtered);
     const body    = tree.length
@@ -2977,7 +3121,7 @@ let selectedRole        = null;
            <p class="empty-state-text">Try adjusting your filters.</p>
          </div>`;
 
-    panel.innerHTML = renderFilterBar() + `<div class="main-content">${body}</div>`;
+    panel.innerHTML = renderFilterBar() + `<div class="main-content">${renderRoleResultsContext(universe, filtered)}${body}</div>`;
     updateDrawer();
   }
 
@@ -3029,6 +3173,18 @@ let selectedRole        = null;
     if (roleOpt) {
       selectedRole = roleOpt.dataset.roleSelect;
       openDropdown = null;
+      syncRoleSettingFilter();
+      render();
+      return;
+    }
+    const roleSettingOpt = e.target.closest('[data-role-setting-filter]');
+    if (roleSettingOpt) {
+      selectedRoleSetting = roleSettingOpt.dataset.roleSettingFilter || null;
+      render();
+      return;
+    }
+    if (e.target.closest('[data-role-setting-overflow]')) {
+      roleSettingOverflowOpen = true;
       render();
       return;
     }
@@ -3126,6 +3282,15 @@ let selectedRole        = null;
     if (opener && !e.target.closest('.tree-action')) {
       e.preventDefault();
       setSelectedRow(opener.dataset.openDrawer);
+      return;
+    }
+    const roleOpt = e.target.closest('[data-role-select]');
+    if (roleOpt) {
+      e.preventDefault();
+      selectedRole = roleOpt.dataset.roleSelect;
+      openDropdown = null;
+      syncRoleSettingFilter();
+      render();
     }
   });
 
