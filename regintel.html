@@ -1073,6 +1073,7 @@
   let activeSection = 'roles';
   let selectedRole        = null;
   let selectedRoleSetting = null;
+  const ROLE_SETTING_UNMAPPED = '__unmapped__';
   let roleSettingOverflowOpen = false;
   let selectedCareSetting = null;
   let selectedWFRole      = null;
@@ -1373,16 +1374,30 @@
   }
 
   function distinctCareSettingsForRole(roleKey) {
-    const settings = new Set();
+    const named = new Set();
+    let unmapped = false;
     roleRecordsInSelectedJurisdictions(roleKey).forEach(r => {
-      if (r.hstm_setting) settings.add(r.hstm_setting);
+      if (r.hstm_setting) named.add(r.hstm_setting);
+      else unmapped = true;
     });
-    return [...settings].sort();
+    const settings = [...named].sort();
+    if (unmapped) settings.push(ROLE_SETTING_UNMAPPED);
+    return settings;
+  }
+
+  function roleSettingChipLabel(value) {
+    return value === ROLE_SETTING_UNMAPPED ? 'No HSTM Setting' : value;
+  }
+
+  function matchesSelectedRoleSetting(r) {
+    if (!selectedRoleSetting) return true;
+    if (selectedRoleSetting === ROLE_SETTING_UNMAPPED) return !r.hstm_setting;
+    return r.hstm_setting === selectedRoleSetting;
   }
 
   function roleCareSettingHint(roleKey) {
     const settings = distinctCareSettingsForRole(roleKey);
-    if (settings.length === 1) return settings[0];
+    if (settings.length === 1) return roleSettingChipLabel(settings[0]);
     if (settings.length > 1) return settings.length + ' care settings';
     return '';
   }
@@ -1439,8 +1454,7 @@
 
   function filterData() {
     const rows = roleResultUniverse();
-    if (!selectedRoleSetting) return rows;
-    return rows.filter(r => r.hstm_setting === selectedRoleSetting);
+    return rows.filter(matchesSelectedRoleSetting);
   }
 
   function statesInOrder(map) {
@@ -2292,7 +2306,7 @@
       if ((r.oversight_agency || '') !== (sample.oversight_agency || '')) return false;
       if ((r.type || '') !== (sample.type || '')) return false;
       if (activeSection === 'care-settings' && selectedCareSetting && r.hstm_setting !== selectedCareSetting) return false;
-      if (activeSection === 'roles' && selectedRoleSetting && r.hstm_setting !== selectedRoleSetting) return false;
+      if (activeSection === 'roles' && !matchesSelectedRoleSetting(r)) return false;
       return true;
     });
   }
@@ -2704,7 +2718,7 @@
     const chip = (value, label, pressed) =>
       `<button type="button" class="facet-chip" data-role-setting-filter="${esc(value)}" aria-pressed="${pressed ? 'true' : 'false'}" title="${esc(label)}">${esc(label)}</button>`;
     const chips = [chip('', 'All settings', !selectedRoleSetting)]
-      .concat(visible.map(s => chip(s, s, selectedRoleSetting === s)));
+      .concat(visible.map(s => chip(s, roleSettingChipLabel(s), selectedRoleSetting === s)));
     if (showOverflow) {
       chips.push(`<button type="button" class="facet-chip" data-role-setting-overflow="1" aria-expanded="false">+${extra}</button>`);
     }
@@ -2720,10 +2734,12 @@
     const count = universe.length;
     let sub;
     if (selectedRoleSetting) {
-      sub = `Showing ${filtered.length} of ${count} obligation${count === 1 ? '' : 's'} in ${selectedRoleSetting}`;
+      const settingLabel = roleSettingChipLabel(selectedRoleSetting);
+      const inPhrase = selectedRoleSetting === ROLE_SETTING_UNMAPPED ? 'with no HSTM Setting' : `in ${settingLabel}`;
+      sub = `Showing ${filtered.length} of ${count} obligation${count === 1 ? '' : 's'} ${inPhrase}`;
     } else if (settings.length > 1) {
       sub = `${count} obligation${count === 1 ? '' : 's'} across ${settings.length} care settings`;
-    } else if (settings.length === 1) {
+    } else if (settings.length === 1 && settings[0] !== ROLE_SETTING_UNMAPPED) {
       sub = `${count} obligation${count === 1 ? '' : 's'} in ${settings[0]}`;
     } else {
       sub = `${count} obligation${count === 1 ? '' : 's'}`;
@@ -3447,6 +3463,8 @@
 
   // Obligations-by-Role dropdown publishes Display Role only (Metadata v4
   // CANONICAL ROLE: do not emit Unlabeled / unresolved source strings).
+  // Display Role is the occupation family (Administrator, CNA); HSTM Setting
+  // is a chip filter on this tab, not part of the published role string.
   // Jurisdiction Role stays on the record and is never a published label.
   function researchRoleLabels(r) {
     return splitRoleLabels(r['Display Role']);

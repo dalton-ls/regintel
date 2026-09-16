@@ -50,7 +50,10 @@ Opening HTML from disk works for browsing; admin writes need the Worker and
 `requirements.json` is the live **output-row projection**: a flat array
 of classified rows. `"Source Dataset": "Role" | "Care Setting"` is kept
 for Record ID identity. The research view **Obligations by Role** tab
-shows `Regulation Type` = Individual/Continuing Education. **Obligations
+shows `Regulation Type` = Individual/Continuing Education. The Role tab
+picker is `Display Role` (occupation family); `HSTM Setting` is a chip
+filter, including unmapped rows. California Assisted Living Facility is
+RCFE only — Group Homes / ARF / SRF stay unmapped. **Obligations
 by Care Setting** shows Facility-Based/Organizational Training and
 Organizational Policy. See [DESIGN.md](DESIGN.md).
 
