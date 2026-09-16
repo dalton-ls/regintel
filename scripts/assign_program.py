@@ -34,8 +34,7 @@ Usage:
     python scripts/assign_program.py --force         # re-derive even where a
                                                      #  non-taxonomy value exists
 """
-import json, re, argparse, collections, sys
-from pathlib import Path
+from requirements_store import load_records, save_records, ROOT, STUB_PATH
 
 ROOT = Path(__file__).resolve().parents[1]
 REQ = ROOT / "requirements.json"
@@ -112,7 +111,11 @@ def main():
     args = ap.parse_args()
 
     tax, lanes, by_type, unassigned = load_taxonomy(args.taxonomy)
-    rows = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    input_path = Path(args.input)
+    if input_path.resolve() == STUB_PATH.resolve():
+        rows = load_records(ROOT)
+    else:
+        rows = json.loads(input_path.read_text(encoding="utf-8"))
 
     counts = collections.defaultdict(collections.Counter)      # lane -> program -> n
     how = collections.Counter()
@@ -175,8 +178,13 @@ def main():
                 print(f"    {n:3d} | {p[:100]} | {cite}")
 
     if args.write:
-        Path(args.output).write_text(json.dumps(rows, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        print(f"\nWrote {args.output}")
+        output_path = Path(args.output)
+        if output_path.resolve() == STUB_PATH.resolve():
+            save_records(rows, ROOT)
+            print(f"\nWrote sharded requirements ({len(rows)} rows)")
+        else:
+            output_path.write_text(json.dumps(rows, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            print(f"\nWrote {args.output}")
     if args.check and total_unassigned:
         sys.exit(1)
 

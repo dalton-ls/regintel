@@ -1,9 +1,12 @@
 /** Shared loader for admin screens: same-origin /api, then public GitHub, then local file. */
 const ADMIN_PROXY_TIMEOUT_MS = 12000;
+const REQUIREMENTS_TIMEOUT_MS = 90000;
 const SAME_ORIGIN_TIMEOUT_MS = 8000;
 const GITHUB_REPO_OWNER = 'dalton-ls';
 const GITHUB_REPO_NAME = 'regintel';
 const GITHUB_PROJECTION_BRANCH = 'main';
+const REQUIREMENTS_MANIFEST = 'requirements/manifest.json';
+const REQUIREMENTS_INDEX = 'requirements/index.json';
 function canonicalOrigin() {
   return (typeof window !== 'undefined' && window.REGINTEL_ORIGIN)
     ? window.REGINTEL_ORIGIN
@@ -68,7 +71,8 @@ function sameOriginProjectionSource() {
 }
 
 async function loadSameOriginJson(path) {
-  const res = await fetchWithTimeout(path, SAME_ORIGIN_TIMEOUT_MS);
+  const ms = path === 'requirements.json' ? REQUIREMENTS_TIMEOUT_MS : SAME_ORIGIN_TIMEOUT_MS;
+  const res = await fetchWithTimeout(path, ms);
   if (!res.ok) throw new Error('same-origin HTTP ' + res.status);
   return res.json();
 }
@@ -83,7 +87,8 @@ function wrapProjection(content, path, unwrap, source, proxyError) {
 }
 
 async function loadJsonViaApi(workerUrl, path) {
-  const res = await fetchWithTimeout(workerUrl + '/file?path=' + encodeURIComponent(path), ADMIN_PROXY_TIMEOUT_MS);
+  const ms = path === 'requirements.json' ? REQUIREMENTS_TIMEOUT_MS : ADMIN_PROXY_TIMEOUT_MS;
+  const res = await fetchWithTimeout(workerUrl + '/file?path=' + encodeURIComponent(path), ms);
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     throw new Error((body && body.error) ? body.error : ('HTTP ' + res.status));
@@ -94,6 +99,32 @@ async function loadJsonViaApi(workerUrl, path) {
   return content;
 }
 
+function parseJsonl(text) {
+  const rows = [];
+  String(text || '').split(/\r?\n/).forEach(function (line) {
+    const trimmed = line.trim();
+    if (trimmed) rows.push(JSON.parse(trimmed));
+  });
+  return rows;
+}
+
+function githubRawUrl(path) {
+  return 'https://raw.githubusercontent.com/' + GITHUB_REPO_OWNER + '/' + GITHUB_REPO_NAME +
+    '/' + GITHUB_PROJECTION_BRANCH + '/' + path;
+}
+
+async function loadShardedGithubRecords() {
+  const manifest = await loadGithubFile(REQUIREMENTS_MANIFEST);
+  const shards = (manifest && manifest.shards) || [];
+  if (!shards.length) throw new Error('requirements manifest has no shards');
+  const parts = await Promise.all(shards.map(async function (shard) {
+    const res = await fetchWithTimeout(githubRawUrl(shard.path), REQUIREMENTS_TIMEOUT_MS);
+    if (!res.ok) throw new Error('GitHub shard HTTP ' + res.status + ' ' + shard.path);
+    return parseJsonl(await res.text());
+  }));
+  return parts.reduce(function (all, rows) { return all.concat(rows); }, []);
+}
+
 async function loadGithubFile(path) {
   const apiUrl = 'https://api.github.com/repos/' + GITHUB_REPO_OWNER + '/' + GITHUB_REPO_NAME +
     '/contents/' + path + '?ref=' + encodeURIComponent(GITHUB_PROJECTION_BRANCH);
@@ -101,17 +132,22 @@ async function loadGithubFile(path) {
     headers: { Accept: 'application/vnd.github.raw' }
   });
   if (res.ok) return JSON.parse(await res.text());
-  const rawUrl = 'https://raw.githubusercontent.com/' + GITHUB_REPO_OWNER + '/' + GITHUB_REPO_NAME +
-    '/' + GITHUB_PROJECTION_BRANCH + '/' + path;
-  const rawRes = await fetchWithTimeout(rawUrl, ADMIN_PROXY_TIMEOUT_MS);
+  const rawRes = await fetchWithTimeout(githubRawUrl(path), ADMIN_PROXY_TIMEOUT_MS);
   if (!rawRes.ok) throw new Error('GitHub HTTP ' + res.status);
   return JSON.parse(await rawRes.text());
 }
 
 async function loadRequirementsFromGithub() {
-  const rows = unwrapRecordArray(await loadGithubFile('requirements.json'));
-  if (!rows) throw new Error('GitHub did not return a record array');
-  return rows;
+  try {
+    const direct = await loadGithubFile('requirements.json');
+    const rows = unwrapRecordArray(direct);
+    if (rows) return rows;
+  } catch (err) {
+    console.warn('GitHub requirements.json stub or missing', err);
+  }
+  const sharded = await loadShardedGithubRecords();
+  if (!sharded.length) throw new Error('GitHub did not return a record array');
+  return sharded;
 }
 
 function abortOrMessage(err) {
@@ -142,6 +178,9 @@ async function loadProjectionContent(workerUrl, path, opts) {
     }
   }
   try {
+    if (path === 'requirements.json') {
+      return wrapProjection(await loadRequirementsFromGithub(), path, unwrap, 'github', proxyError);
+    }
     return wrapProjection(await loadGithubFile(path), path, unwrap, 'github', proxyError);
   } catch (err) {
     console.warn('GitHub projection unavailable for ' + path, err);
@@ -175,6 +214,26 @@ async function loadRequirementsAndWr(workerUrl, opts) {
 async function loadRequirementsProjection(workerUrl) {
   const loaded = await loadProjectionContent(workerUrl, 'requirements.json', { unwrapArray: true });
   return { records: loaded.content, source: loaded.source, proxyError: loaded.proxyError || '' };
+}
+
+async function loadRequirementsIndex(workerUrl) {
+  try {
+    const loaded = await loadProjectionContent(workerUrl, REQUIREMENTS_INDEX, {});
+    const content = loaded.content;
+    const records = content && Array.isArray(content.records) ? content.records : unwrapRecordArray(content);
+    return { index: records || [], source: loaded.source, proxyError: loaded.proxyError || '' };
+  } catch (err) {
+    return { index: [], source: 'none', proxyError: abortOrMessage(err) };
+  }
+}
+
+async function commitRequirements(workerUrl, token, payload) {
+  const body = Object.assign({ path: 'requirements.json' }, payload || {});
+  return fetch(workerUrl + '/commit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+    body: JSON.stringify(body)
+  });
 }
 
 function proxyUnavailableNote(recordCount, proxyError) {

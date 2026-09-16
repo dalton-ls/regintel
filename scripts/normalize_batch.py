@@ -110,6 +110,7 @@ import json
 import hashlib
 import argparse
 from pathlib import Path
+from requirements_store import STUB_PATH, load_records
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -379,11 +380,19 @@ def normalize_row(raw_row, source_dataset):
 def load_reference_values(reference_path):
     """Distinct known-good values per field, from an existing requirements.json,
     used only to warn on drift -- never to block or silently rewrite."""
-    if not reference_path or not Path(reference_path).exists():
+    path = Path(reference_path)
+    if not reference_path or not path.exists():
         return {}
     try:
-        existing = json.loads(Path(reference_path).read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
+        if path.resolve() == STUB_PATH.resolve():
+            existing = load_records()
+        else:
+            existing = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(existing, dict) and existing.get("sharded"):
+                existing = load_records()
+        if not isinstance(existing, list):
+            return {}
+    except (json.JSONDecodeError, OSError, FileNotFoundError):
         return {}
     known = {"Jurisdiction": set(), "HSTM Setting": set(), "HSTM Role": set(),
              "Authority Level": set()}

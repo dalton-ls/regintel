@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "budgetBytes": 10485760,
+  "recordCount": 6117,
+  "shards": [
+    {
+      "id": "ca-ccr-22",
+      "path": "requirements/shards/ca-ccr-22.jsonl",
+      "records": 1651,
+      "bytes": 5921514
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7.jsonl",
+      "records": 154,
+      "bytes": 1019326
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_10",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_10.jsonl",
+      "records": 518,
+      "bytes": 3229562
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_105",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_105.jsonl",
+      "records": 104,
+      "bytes": 511356
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_106",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_106.jsonl",
+      "records": 105,
+      "bytes": 461966
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_107",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_107.jsonl",
+      "records": 430,
+      "bytes": 2632120
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_108",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_108.jsonl",
+      "records": 39,
+      "bytes": 213098
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_109",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_109.jsonl",
+      "records": 913,
+      "bytes": 6115234
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_110",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_110.jsonl",
+      "records": 507,
+      "bytes": 3415318
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_137",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_137.jsonl",
+      "records": 1,
+      "bytes": 3554
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_157",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_157.jsonl",
+      "records": 28,
+      "bytes": 136304
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_158",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_158.jsonl",
+      "records": 13,
+      "bytes": 60715
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_160",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_160.jsonl",
+      "records": 13,
+      "bytes": 73546
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_164",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_164.jsonl",
+      "records": 13,
+      "bytes": 64121
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_165",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_165.jsonl",
+      "records": 13,
+      "bytes": 65291
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_2",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_2.jsonl",
+      "records": 84,
+      "bytes": 403116
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_20",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_20.jsonl",
+      "records": 106,
+      "bytes": 519959
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_24",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_24.jsonl",
+      "records": 104,
+      "bytes": 496315
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_25",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_25.jsonl",
+      "records": 312,
+      "bytes": 1763050
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_4",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_4.jsonl",
+      "records": 104,
+      "bytes": 498772
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_5",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_5.jsonl",
+      "records": 8,
+      "bytes": 35305
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_55",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_55.jsonl",
+      "records": 9,
+      "bytes": 46223
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_56",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_56.jsonl",
+      "records": 1,
+      "bytes": 3878
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_6",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_6.jsonl",
+      "records": 8,
+      "bytes": 40735
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_61",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_61.jsonl",
+      "records": 13,
+      "bytes": 68047
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_64",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_64.jsonl",
+      "records": 14,
+      "bytes": 60327
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_65",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_65.jsonl",
+      "records": 1,
+      "bytes": 3641
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_7",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_7.jsonl",
+      "records": 278,
+      "bytes": 1888490
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_97_1",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_97_1.jsonl",
+      "records": 1,
+      "bytes": 3977
+    },
+    {
+      "id": "ca-ccr-8--division_1-chapter_4-subchapter_7-article_98",
+      "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_98.jsonl",
+      "records": 15,
+      "bytes": 83136
+    },
+    {
+      "id": "ca-hsc",
+      "path": "requirements/shards/ca-hsc.jsonl",
+      "records": 557,
+      "bytes": 1890443
+    }
+  ]
+}

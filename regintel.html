@@ -1984,6 +1984,26 @@ let selectedRole        = null;
     return res.json();
   }
 
+  async function commitRequirementsChange(payload) {
+    const token = getAdminToken();
+    if (!token) throw new Error('Admin token is required to save.');
+    let res;
+    try {
+      res = await commitRequirements(WORKER_URL, token, payload);
+    } catch (err) {
+      throw new Error(proxyNetworkError(err, 'Save'));
+    }
+    if (res.status === 401) {
+      sessionStorage.removeItem(TOKEN_KEY);
+      throw new Error('Admin token was rejected. It has been cleared — try saving again to re-enter it.');
+    }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || ('Save failed (HTTP ' + res.status + ')'));
+    }
+    return res.json();
+  }
+
   function findJsonByRecordId(store, id) {
     if (Array.isArray(store)) return store.find(r => r && r['Record ID'] === id) || null;
     if (!store || typeof store !== 'object') return null;
@@ -2215,11 +2235,10 @@ let selectedRole        = null;
     const unique = [...new Set((ids || []).filter(Boolean))];
     if (!unique.length) throw new Error('Nothing to delete');
     const idSet = new Set(unique);
-    const latest = await fetchWorkerFile('requirements.json');
-    if (!Array.isArray(latest)) throw new Error('requirements.json is not a record array');
-    const remaining = latest.filter(r => !idSet.has(r && r['Record ID']));
-    if (remaining.length === latest.length) throw new Error('Those records were not found in requirements.json');
-    const result = await commitWorkerFile('requirements.json', remaining, message);
+    const result = await commitRequirementsChange({
+      deletedIds: unique,
+      message
+    });
     Object.keys(CURRENT_SHEETS).forEach(k => {
       if (!Array.isArray(CURRENT_SHEETS[k])) return;
       CURRENT_SHEETS[k] = CURRENT_SHEETS[k].filter(r => !idSet.has(r['Record ID']));
@@ -2228,7 +2247,7 @@ let selectedRole        = null;
     selectedCardKey = null;
     drawerTab = 'overview';
     render();
-    return { removed: latest.length - remaining.length, result };
+    return { removed: unique.length, result };
   }
 
   async function deleteProgramBucket(program) {
@@ -2295,19 +2314,28 @@ let selectedRole        = null;
 
     const path = row._lane === 'wr' ? 'wr.json' : 'requirements.json';
     if (saveBtn) saveBtn.disabled = true;
-    if (status) status.textContent = 'Fetching latest and committing…';
+    if (status) status.textContent = 'Committing to GitHub…';
     try {
-      const latest = await fetchWorkerFile(path);
-      if (path === 'requirements.json' && !Array.isArray(latest)) throw new Error('requirements.json is not a record array');
-      const existing = findJsonByRecordId(latest, id);
-      if (!existing) throw new Error('Record ' + id + ' was not found in ' + path);
-      const updated = patchJsonByRecordId(latest, id, values);
-      const committed = findJsonByRecordId(updated, id);
-      if (!committed || !valuesMatchSaved(committed, values)) {
-        throw new Error('Local patch did not apply all fields to ' + id);
+      let result;
+      let saved = merged;
+      if (path === 'wr.json') {
+        const latest = await fetchWorkerFile(path);
+        const existing = findJsonByRecordId(latest, id);
+        if (!existing) throw new Error('Record ' + id + ' was not found in ' + path);
+        const updated = patchJsonByRecordId(latest, id, values);
+        const committed = findJsonByRecordId(updated, id);
+        if (!committed || !valuesMatchSaved(committed, values)) {
+          throw new Error('Local patch did not apply all fields to ' + id);
+        }
+        result = await commitWorkerFile(path, updated, 'Edit ' + id + ' via research view');
+        saved = committed;
+      } else {
+        result = await commitRequirementsChange({
+          recordId: id,
+          fields: values,
+          message: 'Edit ' + id + ' via research view'
+        });
       }
-      const result = await commitWorkerFile(path, updated, 'Edit ' + id + ' via research view');
-      let saved = committed;
       let staleReadback = false;
       try {
         const verified = await fetchWorkerFile(path);

@@ -1,6 +1,11 @@
-const ALLOWED_PATHS = new Set(["requirements.json", "wr.json", "program-taxonomy.json"]);
+import { isAllowedPath } from "./requirements-store.js";
 
-export { ALLOWED_PATHS };
+export { isAllowedPath };
+export const ALLOWED_PATHS = {
+  has(path) {
+    return isAllowedPath(path);
+  },
+};
 
 export const DEFAULT_BRANCH = "main";
 
@@ -126,4 +131,83 @@ export function checkAuth(request, env) {
 
 export function githubCredentialError() {
   return "GITHUB_TOKEN was rejected by GitHub (401 Bad credentials). Create a fine-grained PAT with repository dalton-ls/regintel and Contents: Read and write, then from the repo root run: npx wrangler secret put GITHUB_TOKEN";
+}
+
+/** One git commit that adds/updates/deletes multiple files. Fails 409 if main moved. */
+export async function commitFiles(env, branch, message, files) {
+  if (!files || !files.length) {
+    throw new Error("commitFiles requires at least one file");
+  }
+  const refRes = await githubApiRequest(env, `git/refs/heads/${encodeURIComponent(branch)}`);
+  const refText = await refRes.text();
+  if (!refRes.ok) throw new Error(`GitHub ref GET failed: ${refRes.status} ${refText}`);
+  const ref = JSON.parse(refText);
+  const refObj = Array.isArray(ref) ? ref[0] : ref;
+  const parentSha = refObj && refObj.object && refObj.object.sha;
+  if (!parentSha) throw new Error("GitHub ref missing object sha");
+
+  const parentRes = await githubApiRequest(env, `git/commits/${parentSha}`);
+  const parentText = await parentRes.text();
+  if (!parentRes.ok) throw new Error(`GitHub commit GET failed: ${parentRes.status} ${parentText}`);
+  const parent = JSON.parse(parentText);
+  const baseTree = parent && parent.tree && parent.tree.sha;
+  if (!baseTree) throw new Error("GitHub commit missing tree sha");
+
+  const tree = [];
+  for (const file of files) {
+    if (!isAllowedPath(file.path)) {
+      throw new Error("path not allowed: " + file.path);
+    }
+    if (file.delete) {
+      tree.push({ path: file.path, mode: "100644", type: "blob", sha: null });
+      continue;
+    }
+    const blobRes = await githubApiRequest(env, "git/blobs", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: file.content, encoding: "utf-8" }),
+    });
+    const blobText = await blobRes.text();
+    if (!blobRes.ok) throw new Error(`GitHub blob POST failed: ${blobRes.status} ${blobText}`);
+    const blob = JSON.parse(blobText);
+    tree.push({ path: file.path, mode: "100644", type: "blob", sha: blob.sha });
+  }
+
+  const newTreeRes = await githubApiRequest(env, "git/trees", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ base_tree: baseTree, tree }),
+  });
+  const newTreeText = await newTreeRes.text();
+  if (!newTreeRes.ok) throw new Error(`GitHub tree POST failed: ${newTreeRes.status} ${newTreeText}`);
+  const newTree = JSON.parse(newTreeText);
+
+  const commitRes = await githubApiRequest(env, "git/commits", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message: message || "Admin edit via regintel Worker",
+      tree: newTree.sha,
+      parents: [parentSha],
+    }),
+  });
+  const commitText = await commitRes.text();
+  if (!commitRes.ok) throw new Error(`GitHub commit POST failed: ${commitRes.status} ${commitText}`);
+  const commit = JSON.parse(commitText);
+
+  const updateRes = await githubApiRequest(env, `git/refs/heads/${encodeURIComponent(branch)}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sha: commit.sha, force: false }),
+  });
+  const updateText = await updateRes.text();
+  if (updateRes.status === 422 || updateRes.status === 409) {
+    const err = new Error("conflict — the file changed since you loaded it; reload and try again");
+    err.status = 409;
+    throw err;
+  }
+  if (!updateRes.ok) throw new Error(`GitHub ref update failed: ${updateRes.status} ${updateText}`);
+
+  const htmlUrl = `https://github.com/${env.GITHUB_OWNER}/${env.GITHUB_REPO}/commit/${commit.sha}`;
+  return { commit: { sha: commit.sha, html_url: htmlUrl } };
 }

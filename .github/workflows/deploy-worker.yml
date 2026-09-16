@@ -23,22 +23,46 @@ jobs:
           node <<'NODE'
           const fs = require("fs");
           const path = require("path");
-          for (const f of ["requirements.json", "wr.json"]) {
-            const raw = fs.readFileSync(f, "utf8");
+          function noConflict(raw, f) {
             if (/^(<<<<<<<|=======|>>>>>>>)/m.test(raw)) {
               console.error(`::error file=${f}::Merge conflict markers in ${f}`);
               process.exit(1);
             }
-            try {
-              JSON.parse(raw);
-            } catch (err) {
-              console.error(`::error file=${f}::Invalid JSON: ${err.message}`);
+          }
+          const wr = fs.readFileSync("wr.json", "utf8");
+          noConflict(wr, "wr.json");
+          JSON.parse(wr);
+          console.log("ok wr.json");
+          const stub = JSON.parse(fs.readFileSync("requirements.json", "utf8"));
+          if (Array.isArray(stub)) {
+            console.error("::error file=requirements.json::Legacy array still present; run python scripts/requirements_store.py --from-legacy --write");
+            process.exit(1);
+          }
+          const manifest = JSON.parse(fs.readFileSync("requirements/manifest.json", "utf8"));
+          const budget = manifest.budgetBytes || 10 * 1024 * 1024;
+          let total = 0;
+          for (const shard of manifest.shards || []) {
+            const rel = shard.path;
+            const raw = fs.readFileSync(rel, "utf8");
+            noConflict(raw, rel);
+            const lines = raw.split(/\r?\n/).filter(Boolean);
+            for (const line of lines) JSON.parse(line);
+            const size = fs.statSync(rel).size;
+            total += lines.length;
+            if (size > budget) {
+              console.error(`::error file=${rel}::${rel} is ${(size / 1048576).toFixed(2)} MiB; shard budget is ${(budget / 1048576).toFixed(1)} MiB. Re-split with scripts/requirements_store.py`);
               process.exit(1);
             }
-            console.log("ok", f);
+            console.log("ok", rel, lines.length, size);
           }
+          const index = JSON.parse(fs.readFileSync("requirements/index.json", "utf8"));
+          if ((index.recordCount || 0) !== total || (manifest.recordCount || 0) !== total) {
+            console.error("::error::index/manifest recordCount does not match shard rows", index.recordCount, manifest.recordCount, total);
+            process.exit(1);
+          }
+          console.log("ok sharded requirements", total);
           const maxAsset = 25 * 1024 * 1024;
-          const skipDirs = new Set([".git", ".github", ".cursor", ".wrangler", "node_modules", "worker", "functions", "src", "scripts"]);
+          const skipDirs = new Set([".git", ".github", ".cursor", ".wrangler", "node_modules", "worker", "functions", "src", "scripts", "requirements"]);
           const ignoreLines = fs.readFileSync(".assetsignore", "utf8").split(/\r?\n/).map((line) => line.replace(/#.*$/, "").trim()).filter(Boolean);
           function ignored(rel) {
             const posix = rel.split(path.sep).join("/");
@@ -88,11 +112,11 @@ jobs:
           health="$(mktemp)"
           curl_ok "$origin/api/health" 20 "$health"
           grep -q '"githubAuth":"ok"' "$health"
-          curl_ok "$origin/requirements.json" 45 /dev/null
+          curl_ok "$origin/requirements.json" 90 /dev/null
           fileout="$(mktemp)"
           ok=0
           for i in 1 2 3 4 5; do
-            if curl_ok "$origin/api/file?path=requirements.json" 45 "$fileout"; then
+            if curl_ok "$origin/api/file?path=requirements.json" 90 "$fileout"; then
               ok=1
               break
             fi
