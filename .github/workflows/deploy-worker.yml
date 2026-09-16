@@ -22,6 +22,7 @@ jobs:
         run: |
           node <<'NODE'
           const fs = require("fs");
+          const path = require("path");
           for (const f of ["requirements.json", "wr.json"]) {
             const raw = fs.readFileSync(f, "utf8");
             if (/^(<<<<<<<|=======|>>>>>>>)/m.test(raw)) {
@@ -36,6 +37,33 @@ jobs:
             }
             console.log("ok", f);
           }
+          const maxAsset = 25 * 1024 * 1024;
+          const skipDirs = new Set([".git", ".github", ".cursor", ".wrangler", "node_modules", "worker", "functions", "src", "scripts"]);
+          const ignoreLines = fs.readFileSync(".assetsignore", "utf8").split(/\r?\n/).map((line) => line.replace(/#.*$/, "").trim()).filter(Boolean);
+          function ignored(rel) {
+            const posix = rel.split(path.sep).join("/");
+            return ignoreLines.some((line) => posix === line || posix.startsWith(line.replace(/\/$/, "") + "/") || posix.split("/").includes(line.replace(/\/$/, "")));
+          }
+          function walk(dir) {
+            for (const name of fs.readdirSync(dir)) {
+              if (skipDirs.has(name)) continue;
+              const full = path.join(dir, name);
+              const st = fs.statSync(full);
+              const rel = path.relative(".", full);
+              if (st.isDirectory()) {
+                if (!ignored(rel)) walk(full);
+                continue;
+              }
+              if (st.size <= maxAsset) continue;
+              if (ignored(rel)) {
+                console.log("ok oversized ignored asset", rel, st.size);
+                continue;
+              }
+              console.error(`::error file=${rel}::${rel} is ${(st.size / 1048576).toFixed(2)} MiB; Workers assets max is 25 MiB. Serve it from GitHub and add it to .assetsignore.`);
+              process.exit(1);
+            }
+          }
+          walk(".");
           NODE
       - uses: cloudflare/wrangler-action@v4
         with:

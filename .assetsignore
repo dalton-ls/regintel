@@ -10,6 +10,8 @@ scripts
 *.py
 *.pyc
 __pycache__
+# Live GitHub JSON — also over the 25 MiB Workers static-asset file limit
+requirements.json
 ALF-normalized.json
 migration_18_to_20_warnings.txt
 DESIGN.md
