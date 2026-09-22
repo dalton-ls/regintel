@@ -40,7 +40,7 @@
     .header-left {
       display: flex;
       align-items: center;
-      flex: 1;
+      flex: 0 1 auto;
       min-width: 0;
     }
 
@@ -85,6 +85,169 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .header-search {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1 1 auto;
+      min-width: 0;
+      padding: 0 16px;
+    }
+    .header-search-form {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      max-width: 560px;
+    }
+    .header-search-select,
+    .header-search-input {
+      height: 32px;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.08);
+      color: #f8fafc;
+      font-family: inherit;
+      font-size: 13px;
+    }
+    .header-search-select {
+      flex: 0 0 148px;
+      min-width: 120px;
+      max-width: 180px;
+      padding: 0 8px;
+      cursor: pointer;
+    }
+    .header-search-select option { color: #1e293b; background: #fff; }
+    .header-search-input {
+      flex: 1 1 auto;
+      min-width: 80px;
+      padding: 0 10px;
+    }
+    .header-search-select:focus,
+    .header-search-input:focus {
+      outline: none;
+      border-color: rgba(96,165,250,0.65);
+      background: rgba(255,255,255,0.12);
+    }
+    .header-search-input::placeholder { color: #94a3b8; }
+    .header-search-submit {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 8px;
+      background: rgba(37,99,235,0.35);
+      color: #dbeafe;
+      cursor: pointer;
+    }
+    .header-search-submit:hover { background: rgba(37,99,235,0.55); color: #fff; }
+    .header-search-results {
+      display: none;
+      position: fixed;
+      top: 48px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(640px, calc(100vw - 32px));
+      max-height: min(420px, calc(100vh - 64px));
+      overflow: auto;
+      z-index: 250;
+      background: #fff;
+      border: 1px solid #dde1ea;
+      border-radius: 10px;
+      box-shadow: 0 12px 32px rgba(15,23,42,0.18);
+      color: #1e293b;
+    }
+    body.admin-on .header-search-results { top: 84px; }
+    .header-search-results.open { display: block; }
+    .header-search-status {
+      padding: 14px 16px;
+      font-size: 13px;
+      color: #64748b;
+    }
+    .header-search-group {
+      padding: 8px 12px 4px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #64748b;
+      background: #f8fafc;
+      border-top: 1px solid #eef2f7;
+    }
+    .header-search-group:first-child { border-top: none; }
+    .header-search-hit {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 14px;
+      border: none;
+      border-top: 1px solid #f1f5f9;
+      background: #fff;
+      text-align: left;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .header-search-hit:hover { background: #f8fafc; }
+    .header-search-hit-cite {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .header-search-hit-meta {
+      margin-top: 2px;
+      font-size: 12px;
+      color: #64748b;
+    }
+    .header-search-hit-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      flex-shrink: 0;
+      padding-top: 1px;
+    }
+    .header-search-tab {
+      display: inline-flex;
+      align-items: center;
+      height: 20px;
+      padding: 0 7px;
+      border-radius: 999px;
+      border: 1px solid #dbe4f0;
+      background: #eef3fb;
+      color: #1d4ed8;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .header-search-tab:hover { background: #dbeafe; }
+    .header-search-more {
+      padding: 10px 14px 12px;
+      font-size: 12px;
+      color: #64748b;
+      border-top: 1px solid #f1f5f9;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    @media (max-width: 1100px) {
+      .header-subtitle, .header-sep { display: none; }
+    }
+    @media (max-width: 760px) {
+      .header-search-select { flex-basis: 110px; min-width: 96px; }
+      .projection-badge { max-width: 120px; }
     }
 
 
@@ -839,7 +1002,21 @@
         <span class="header-subtitle">Regulatory Intelligence Research</span>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;">
+    <div class="header-search" id="headerSearch">
+      <form class="header-search-form" id="headerSearchForm" autocomplete="off">
+        <select class="header-search-select" id="headerSearchJurisdiction" aria-label="Jurisdiction">
+          <option value="">Jurisdiction</option>
+        </select>
+        <input class="header-search-input" id="headerSearchQuery" type="search" name="citation"
+          placeholder="Citation or § number" aria-label="Citation or section number" />
+        <button class="header-search-submit" type="submit" aria-label="Search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </button>
+      </form>
+    </div>
+    <div class="header-actions">
       <span class="projection-badge" id="projectionBadge" title="Where this page loaded requirements.json from">Loading data…</span>
       <button class="admin-toggle" id="adminToggle" onclick="toggleAdmin()">
         <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
@@ -849,6 +1026,7 @@
       </button>
     </div>
   </header>
+  <div class="header-search-results" id="headerSearchResults" hidden></div>
 
   <!-- ── Body ── -->
   <div class="admin-bar" id="adminBar">
@@ -2646,6 +2824,202 @@
     updateDrawer();
   }
 
+  const HEADER_SEARCH_LIMIT = 50;
+
+  function isSectionNumberQuery(query) {
+    return /^\d+[a-z]?(\.\d+)*(\([^)]+\))*$/i.test(String(query || '').trim());
+  }
+
+  function citationMatches(citation, query) {
+    const c = String(citation || '');
+    const q = String(query || '').trim();
+    if (!q) return false;
+    const ql = q.toLowerCase();
+    if (!isSectionNumberQuery(ql)) return c.toLowerCase().includes(ql);
+    const escaped = ql.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('(?:§\\s*|section[_\\s]+)' + escaped + '(?:\\b|[.(]|$)', 'i').test(c);
+  }
+
+  function searchRecords(jurisdiction, query) {
+    const state = String(jurisdiction || '').trim();
+    const q = String(query || '').trim();
+    if (!state || !q) return [];
+    const seen = new Set();
+    const hits = [];
+    publicRecords([...DATA, ...CARE_DATA]).forEach(row => {
+      const id = row.record_id || cardKey(row);
+      if (seen.has(id)) return;
+      if (row.state !== state) return;
+      if (!citationMatches(row.citation, q)) return;
+      seen.add(id);
+      hits.push(row);
+    });
+    hits.sort((a, b) => {
+      const cite = String(a.citation || '').localeCompare(String(b.citation || ''));
+      if (cite) return cite;
+      return String(a.training_topic || '').localeCompare(String(b.training_topic || ''));
+    });
+    return hits;
+  }
+
+  function searchHitPrimaryTab(row) {
+    const raw = row && row._raw ? row._raw : row;
+    if (routesToRoleTab(raw) || (row && row.regulation_type === 'Individual/Continuing Education')) return 'roles';
+    return 'care-settings';
+  }
+
+  function searchHitRoleLabel(row) {
+    const labels = researchRoleLabels((row && row._raw) || {});
+    if (labels.length) return labels[0];
+    return row.display_role || row.jurisdictional_name || '';
+  }
+
+  function jurisdictionLabel(code) {
+    if (code === 'US') return 'US / National';
+    return STATE_NAMES[code] || code || '';
+  }
+
+  function populateHeaderJurisdictions() {
+    const sel = document.getElementById('headerSearchJurisdiction');
+    if (!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">Jurisdiction</option>' + ALL_JURISDICTIONS.map(code =>
+      '<option value="' + esc(code) + '">' + esc(jurisdictionLabel(code)) + '</option>'
+    ).join('');
+    if (prev && ALL_JURISDICTIONS.indexOf(prev) !== -1) sel.value = prev;
+  }
+
+  function hideHeaderSearchResults() {
+    const panel = document.getElementById('headerSearchResults');
+    if (!panel) return;
+    panel.classList.remove('open');
+    panel.hidden = true;
+    panel.innerHTML = '';
+  }
+
+  function showHeaderSearchResults(html) {
+    const panel = document.getElementById('headerSearchResults');
+    if (!panel) return;
+    panel.innerHTML = html;
+    panel.hidden = false;
+    panel.classList.add('open');
+  }
+
+  function renderHeaderSearchResults(matches, total, missing) {
+    if (missing === 'jurisdiction') {
+      return '<div class="header-search-status">Select a jurisdiction, then enter a citation or section number.</div>';
+    }
+    if (missing === 'query') {
+      return '<div class="header-search-status">Enter a citation or section number to search.</div>';
+    }
+    if (!matches.length) {
+      return '<div class="header-search-status">No matching citations.</div>';
+    }
+    const groups = [];
+    const byCite = new Map();
+    matches.forEach(row => {
+      const cite = row.citation || '(no citation)';
+      if (!byCite.has(cite)) {
+        const group = { citation: cite, rows: [] };
+        byCite.set(cite, group);
+        groups.push(group);
+      }
+      byCite.get(cite).rows.push(row);
+    });
+    const html = groups.map(group => {
+      const countLabel = group.rows.length > 1 ? ' · ' + group.rows.length : '';
+      const hits = group.rows.map(row => {
+        const key = cardKey(row);
+        const primary = searchHitPrimaryTab(row);
+        const roleLabel = searchHitRoleLabel(row);
+        const setting = row.hstm_setting || '';
+        const meta = [jurisdictionLabel(row.state), roleLabel, setting].filter(Boolean).join(' · ');
+        const topic = truncUrl(row.training_topic || '', 90);
+        const policy = isPolicyRelevant(row);
+        const tabs = ['<button type="button" class="header-search-tab" data-search-open="' + esc(key) + '" data-search-tab="' + primary + '">' +
+          (primary === 'roles' ? 'Role' : 'Care Setting') + '</button>'];
+        if (policy) {
+          tabs.push('<button type="button" class="header-search-tab" data-search-open="' + esc(key) + '" data-search-tab="policy">Policy</button>');
+        }
+        return '<div class="header-search-hit" data-search-open="' + esc(key) + '" data-search-tab="' + primary + '" role="button" tabindex="0">' +
+          '<div><div class="header-search-hit-cite">' + esc(row.citation || '(no citation)') + '</div>' +
+          (topic ? '<div class="header-search-hit-meta">' + esc(topic) + '</div>' : '') +
+          (meta ? '<div class="header-search-hit-meta">' + esc(meta) + '</div>' : '') +
+          '</div><div class="header-search-hit-tabs">' + tabs.join('') + '</div></div>';
+      }).join('');
+      return '<div class="header-search-group">' + esc(group.citation) + esc(countLabel) + '</div>' + hits;
+    }).join('');
+    const more = total > matches.length
+      ? '<div class="header-search-more">' + (total - matches.length) + ' more matches</div>'
+      : '';
+    return html + more;
+  }
+
+  function runHeaderSearch() {
+    const jurisdiction = (document.getElementById('headerSearchJurisdiction') || {}).value || '';
+    const query = (document.getElementById('headerSearchQuery') || {}).value || '';
+    if (!jurisdiction.trim()) {
+      showHeaderSearchResults(renderHeaderSearchResults([], 0, 'jurisdiction'));
+      return;
+    }
+    if (!String(query).trim()) {
+      showHeaderSearchResults(renderHeaderSearchResults([], 0, 'query'));
+      return;
+    }
+    const all = searchRecords(jurisdiction, query);
+    showHeaderSearchResults(renderHeaderSearchResults(all.slice(0, HEADER_SEARCH_LIMIT), all.length));
+  }
+
+  function setActiveResearchSection(section) {
+    activeSection = section;
+    history.replaceState(null, '', '#' + section);
+    document.querySelectorAll('.nav-item[data-section]').forEach(n => {
+      n.classList.toggle('active', n.dataset.section === section);
+    });
+  }
+
+  function roleKeyForSearchHit(row) {
+    const labels = researchRoleLabels((row && row._raw) || {});
+    for (let i = 0; i < labels.length; i++) {
+      const key = 'R ' + labels[i];
+      if (ROLE_DATA[key]) return key;
+    }
+    const id = row && row.record_id;
+    if (id) {
+      const keys = Object.keys(ROLE_DATA);
+      for (let i = 0; i < keys.length; i++) {
+        if ((ROLE_DATA[keys[i]] || []).some(r => r.record_id === id)) return keys[i];
+      }
+    }
+    return labels[0] ? 'R ' + labels[0] : null;
+  }
+
+  function openSearchHit(key, tab) {
+    const row = lookupRow(key);
+    if (!row) return;
+    if (row.state) filterState.jurisdictions.add(row.state);
+    const target = tab || searchHitPrimaryTab(row);
+    if (target === 'policy') {
+      setActiveResearchSection('policy');
+    } else if (target === 'roles') {
+      selectedRole = roleKeyForSearchHit(row);
+      syncRoleSettingFilter();
+      const available = selectedRole ? distinctCareSettingsForRole(selectedRole) : [];
+      if (row.hstm_setting && available.indexOf(row.hstm_setting) !== -1) {
+        selectedRoleSetting = row.hstm_setting;
+      } else if (!row.hstm_setting && available.indexOf(ROLE_SETTING_UNMAPPED) !== -1) {
+        selectedRoleSetting = ROLE_SETTING_UNMAPPED;
+      }
+      setActiveResearchSection('roles');
+    } else {
+      selectedCareSetting = row.hstm_setting || null;
+      setActiveResearchSection('care-settings');
+    }
+    hideHeaderSearchResults();
+    render();
+    setSelectedRow(cardKey(row));
+  }
+
   function toggleTreeNode(level, key) {
     const set = openTree[level];
     if (!set || !key) return;
@@ -3341,6 +3715,36 @@
     document.getElementById('sidebar').classList.toggle('collapsed', !sidebarOpen);
   });
 
+  document.getElementById('headerSearchForm').addEventListener('submit', e => {
+    e.preventDefault();
+    runHeaderSearch();
+  });
+
+  document.getElementById('headerSearchResults').addEventListener('click', e => {
+    const hit = e.target.closest('[data-search-open]');
+    if (!hit) return;
+    e.preventDefault();
+    e.stopPropagation();
+    openSearchHit(hit.dataset.searchOpen, hit.dataset.searchTab);
+  });
+
+  document.getElementById('headerSearchResults').addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const hit = e.target.closest('[data-search-open]');
+    if (!hit) return;
+    e.preventDefault();
+    openSearchHit(hit.dataset.searchOpen, hit.dataset.searchTab);
+  });
+
+  document.addEventListener('click', e => {
+    if (e.target.closest('#headerSearch') || e.target.closest('#headerSearchResults')) return;
+    hideHeaderSearchResults();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') hideHeaderSearchResults();
+  });
+
   // ─── Nav switching ───
   document.querySelectorAll('.nav-item[data-section]').forEach(item => {
     item.addEventListener('click', e => {
@@ -3442,6 +3846,7 @@
     ALL_HSTM_ROLES = [...new Set([...DATA, ...CARE_DATA].flatMap(r => Array.isArray(r.hstm_role) ? r.hstm_role : (r.hstm_role ? [r.hstm_role] : [])))].sort();
     rowMap = {};
     [...DATA, ...CARE_DATA, ...WR_DATA].forEach(r => { rowMap[cardKey(r)] = r; });
+    populateHeaderJurisdictions();
   }
 
   // parseData() expects the legacy sheet-keyed shape ({ "R <role>": [...],
