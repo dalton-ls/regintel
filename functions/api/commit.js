@@ -9,7 +9,7 @@ import {
   githubToken,
   putFile,
 } from "../_lib/github.js";
-import { loadRequirementRecords, requirementFilesFromRecords } from "../_lib/requirements-io.js";
+import { filesForRecordEdit, requirementFilesFromRecords } from "../_lib/requirements-io.js";
 
 function unwrapRecords(content) {
   if (Array.isArray(content)) return content;
@@ -18,8 +18,7 @@ function unwrapRecords(content) {
   return null;
 }
 
-async function commitRequirementRecords(env, branch, message, records, origin) {
-  const files = await requirementFilesFromRecords(env, records, branch);
+async function commitFileList(env, branch, message, files, origin) {
   const commit = await commitFiles(env, branch, message, files);
   return json({
     ok: true,
@@ -27,6 +26,11 @@ async function commitRequirementRecords(env, branch, message, records, origin) {
     commitUrl: commit.commit && commit.commit.html_url,
     shards: files.filter((f) => !f.delete).length,
   }, 200, origin);
+}
+
+async function commitRequirementRecords(env, branch, message, records, origin) {
+  const files = await requirementFilesFromRecords(env, records, branch);
+  return commitFileList(env, branch, message, files, origin);
 }
 
 export async function onRequestPost(context) {
@@ -53,24 +57,17 @@ export async function onRequestPost(context) {
     const commitMessage = message || "Admin edit via regintel Worker";
 
     if (path === "requirements.json") {
-      let records;
       if (recordId && fields && typeof fields === "object") {
-        records = await loadRequirementRecords(env, branch);
-        const idx = records.findIndex((row) => row && row["Record ID"] === recordId);
-        if (idx < 0) return json({ error: "Record " + recordId + " was not found" }, 404, origin);
-        records[idx] = Object.assign({}, records[idx], fields);
-      } else if (Array.isArray(deletedIds) && deletedIds.length) {
-        const idSet = new Set(deletedIds.filter(Boolean));
-        records = await loadRequirementRecords(env, branch);
-        const next = records.filter((row) => !idSet.has(row && row["Record ID"]));
-        if (next.length === records.length) {
-          return json({ error: "Those records were not found in requirements.json" }, 404, origin);
-        }
-        records = next;
-      } else {
-        records = unwrapRecords(content);
-        if (!records) return json({ error: "missing content" }, 400, origin);
+        const files = await filesForRecordEdit(env, branch, { recordId, fields });
+        return await commitFileList(env, branch, commitMessage, files, origin);
       }
+      if (Array.isArray(deletedIds) && deletedIds.length) {
+        const files = await filesForRecordEdit(env, branch, { deletedIds });
+        return await commitFileList(env, branch, commitMessage, files, origin);
+      }
+      console.warn("full requirements replace rewrites every shard and can exceed the Workers free-plan subrequest limit");
+      const records = unwrapRecords(content);
+      if (!records) return json({ error: "missing content" }, 400, origin);
       return await commitRequirementRecords(env, branch, commitMessage, records, origin);
     }
 
@@ -86,6 +83,9 @@ export async function onRequestPost(context) {
   } catch (err) {
     if (err.status === 409) {
       return json({ error: "conflict — the file changed since you loaded it; reload and try again" }, 409, origin);
+    }
+    if (err.status === 404) {
+      return json({ error: err.message }, 404, origin);
     }
     const msg = err && err.message ? err.message : String(err);
     if (/401/.test(msg) && /Bad credentials/i.test(msg)) {

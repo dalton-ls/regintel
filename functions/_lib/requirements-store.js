@@ -208,6 +208,168 @@ export function buildIndex(shards) {
   };
 }
 
+export function rowMatchesShard(row, shardId) {
+  if (!row || !shardId) return false;
+  const corpus = corpusId(row);
+  const chapter = shardIdFor(row, "chapter");
+  const article = shardIdFor(row, "article");
+  const rid = row["Record ID"] || "";
+  const nibble = rid ? rid[rid.length - 1] : "0";
+  return shardId === corpus
+    || shardId === chapter
+    || shardId === article
+    || shardId === `${article}--x${nibble}`;
+}
+
+/** Keep the current shard when the row still belongs there. Otherwise pick an existing manifest shard, or the grain sibling shards already use. */
+export function destinationShardId(row, manifest, currentShardId) {
+  if (currentShardId && rowMatchesShard(row, currentShardId)) return currentShardId;
+  const ids = ((manifest && manifest.shards) || []).map((s) => s.id).filter(Boolean);
+  const corpus = corpusId(row);
+  const chapter = shardIdFor(row, "chapter");
+  const article = shardIdFor(row, "article");
+  const rid = row["Record ID"] || "";
+  const nibble = rid ? rid[rid.length - 1] : "0";
+  const nibbleId = `${article}--x${nibble}`;
+  if (ids.includes(nibbleId)) return nibbleId;
+  if (ids.includes(article)) return article;
+  if (ids.includes(chapter)) return chapter;
+  if (ids.includes(corpus)) return corpus;
+  const siblings = ids.filter((id) => id === corpus || id.startsWith(corpus + "--"));
+  if (!siblings.length) return corpus;
+  if (siblings.some((id) => /--x[0-9a-z]$/i.test(id))) return nibbleId;
+  if (siblings.some((id) => id.includes("-article_") || id.includes("-subarticle_"))) return article;
+  return chapter;
+}
+
+function copyRows(rows) {
+  return (rows || []).map((row) => Object.assign({}, row));
+}
+
+function manifestEntry(shardId, rows) {
+  const raw = recordsToJsonl(rows);
+  return {
+    id: shardId,
+    path: shardFilePath(shardId),
+    records: rows.length,
+    bytes: new TextEncoder().encode(raw).length,
+  };
+}
+
+function cloneIndex(index) {
+  const records = ((index && index.records) || []).map((row) => Object.assign({}, row));
+  return {
+    schemaVersion: (index && index.schemaVersion) || SHARD_SCHEMA_VERSION,
+    recordCount: records.length,
+    records,
+  };
+}
+
+function cloneManifest(manifest) {
+  return {
+    schemaVersion: (manifest && manifest.schemaVersion) || SHARD_SCHEMA_VERSION,
+    budgetBytes: (manifest && manifest.budgetBytes) || SHARD_BUDGET_BYTES,
+    recordCount: (manifest && manifest.recordCount) || 0,
+    shards: ((manifest && manifest.shards) || []).map((shard) => Object.assign({}, shard)),
+  };
+}
+
+function upsertManifestShard(manifest, shardId, rows) {
+  const path = shardFilePath(shardId);
+  const existing = manifest.shards.findIndex((shard) => shard.id === shardId || shard.path === path);
+  if (!rows.length) {
+    if (existing >= 0) manifest.shards.splice(existing, 1);
+    return;
+  }
+  const entry = manifestEntry(shardId, rows);
+  if (existing >= 0) {
+    manifest.shards[existing] = entry;
+    return;
+  }
+  manifest.shards.push(entry);
+  manifest.shards.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+}
+
+function filesFromTouched(touched, index, manifest) {
+  manifest.recordCount = manifest.shards.reduce((total, shard) => total + (shard.records || 0), 0);
+  index.recordCount = index.records.length;
+  const files = [];
+  for (const [shardId, rows] of touched) {
+    const path = shardFilePath(shardId);
+    if (!rows.length) files.push({ path, delete: true });
+    else files.push({ path, content: recordsToJsonl(rows) });
+  }
+  files.push({ path: MANIFEST_PATH, content: JSON.stringify(manifest, null, 2) + "\n" });
+  files.push({ path: INDEX_PATH, content: JSON.stringify(index) + "\n" });
+  return files;
+}
+
+/**
+ * File list for a drawer edit or delete. Only touched shard files, the index, and the manifest.
+ * loadedShards must already contain every shard the edit reads.
+ */
+export function filesForShardEdit({ index, manifest, loadedShards, recordId, fields, deletedIds }) {
+  if (recordId) {
+    return filesForOneRecord({ index, manifest, loadedShards, recordId, fields: fields || {} });
+  }
+  return filesForDeletes({ index, manifest, loadedShards, deletedIds: deletedIds || [] });
+}
+
+function filesForOneRecord({ index, manifest, loadedShards, recordId, fields }) {
+  const nextIndex = cloneIndex(index);
+  const idx = nextIndex.records.findIndex((row) => row && row["Record ID"] === recordId);
+  if (idx < 0) return { files: [], found: 0 };
+  const sourceId = nextIndex.records[idx].shard;
+  if (!sourceId) return { files: [], found: 0 };
+  const sourceRows = copyRows(loadedShards && loadedShards.get(sourceId));
+  const rowIdx = sourceRows.findIndex((row) => row && row["Record ID"] === recordId);
+  if (rowIdx < 0) {
+    throw new Error("Record " + recordId + " is indexed in " + sourceId + " but missing from that shard");
+  }
+  const merged = Object.assign({}, sourceRows[rowIdx], fields);
+  const destId = destinationShardId(merged, manifest, sourceId);
+  const nextManifest = cloneManifest(manifest);
+  const touched = new Map();
+  if (destId === sourceId) {
+    sourceRows[rowIdx] = merged;
+    touched.set(sourceId, sourceRows);
+  } else {
+    sourceRows.splice(rowIdx, 1);
+    touched.set(sourceId, sourceRows);
+    const destRows = copyRows(loadedShards && loadedShards.get(destId));
+    const existing = destRows.findIndex((row) => row && row["Record ID"] === merged["Record ID"]);
+    if (existing >= 0) destRows[existing] = merged;
+    else destRows.push(merged);
+    touched.set(destId, destRows);
+  }
+  nextIndex.records[idx] = Object.assign({}, nextIndex.records[idx], indexRow(merged, destId));
+  for (const [shardId, rows] of touched) upsertManifestShard(nextManifest, shardId, rows);
+  return { files: filesFromTouched(touched, nextIndex, nextManifest), found: 1, destShardId: destId };
+}
+
+function filesForDeletes({ index, manifest, loadedShards, deletedIds }) {
+  const idSet = new Set((deletedIds || []).filter(Boolean));
+  const nextIndex = cloneIndex(index);
+  const shardIds = new Set();
+  let found = 0;
+  nextIndex.records = nextIndex.records.filter((row) => {
+    if (!row || !idSet.has(row["Record ID"])) return true;
+    found += 1;
+    if (row.shard) shardIds.add(row.shard);
+    return false;
+  });
+  if (!found) return { files: [], found: 0 };
+  const nextManifest = cloneManifest(manifest);
+  const touched = new Map();
+  for (const shardId of shardIds) {
+    const rows = copyRows(loadedShards && loadedShards.get(shardId))
+      .filter((row) => !idSet.has(row && row["Record ID"]));
+    touched.set(shardId, rows);
+    upsertManifestShard(nextManifest, shardId, rows);
+  }
+  return { files: filesFromTouched(touched, nextIndex, nextManifest), found };
+}
+
 export function filesFromRecords(records, previousShardPaths = []) {
   const shards = assignShards(records);
   const files = [];

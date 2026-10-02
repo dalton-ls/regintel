@@ -153,6 +153,7 @@ export async function commitFiles(env, branch, message, files) {
   const baseTree = parent && parent.tree && parent.tree.sha;
   if (!baseTree) throw new Error("GitHub commit missing tree sha");
 
+  // GitHub creates blobs from inline tree content, one subrequest for the whole commit.
   const tree = [];
   for (const file of files) {
     if (!isAllowedPath(file.path)) {
@@ -162,15 +163,7 @@ export async function commitFiles(env, branch, message, files) {
       tree.push({ path: file.path, mode: "100644", type: "blob", sha: null });
       continue;
     }
-    const blobRes = await githubApiRequest(env, "git/blobs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: file.content, encoding: "utf-8" }),
-    });
-    const blobText = await blobRes.text();
-    if (!blobRes.ok) throw new Error(`GitHub blob POST failed: ${blobRes.status} ${blobText}`);
-    const blob = JSON.parse(blobText);
-    tree.push({ path: file.path, mode: "100644", type: "blob", sha: blob.sha });
+    tree.push({ path: file.path, mode: "100644", type: "blob", content: file.content });
   }
 
   const newTreeRes = await githubApiRequest(env, "git/trees", {
