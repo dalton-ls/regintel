@@ -50,7 +50,10 @@ Opening HTML from disk works for browsing; admin writes need the Worker and
 `requirements.json` is the live **output-row projection**: a flat array
 of classified rows. `"Source Dataset": "Role" | "Care Setting"` is kept
 for Record ID identity. The research view **Obligations by Role** tab
-shows `Regulation Type` = Individual/Continuing Education. **Obligations
+shows `Regulation Type` = Individual/Continuing Education. The Role tab
+picker is `Display Role` (occupation family); `HSTM Setting` is a chip
+filter, including unmapped rows. California Assisted Living Facility is
+RCFE only — Group Homes / ARF / SRF stay unmapped. **Obligations
 by Care Setting** shows Facility-Based/Organizational Training and
 Organizational Policy. See [DESIGN.md](DESIGN.md).
 
@@ -297,7 +300,7 @@ is).
 | `schema.js` | 50-column parser contract plus live `Role Classification Status` |
 | `bulk-apply.html` / `pending-review.html` / `export.html` | Unified admin tools |
 | `ingest.html` | WR ingest only |
-| `requirements.json` | Live output-row projection — source of truth for Role + Care Setting |
+| `requirements.json` | Stub pointer. Live Role/Care Setting rows are `requirements/shards/*.jsonl` plus `manifest.json` / `index.json`. The Worker concatenates `GET /requirements.json`. |
 | `wr.json` | Workforce Readiness (`WR *` sheets) |
 | `data.json` | Last-resort fetch fallback if `requirements.json` / `wr.json` fail |
 | `role.json` / `caresetting.json` | Empty stubs for `scripts/legacy/migrate_to_unified.py` |

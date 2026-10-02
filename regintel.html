@@ -40,7 +40,7 @@
     .header-left {
       display: flex;
       align-items: center;
-      flex: 1;
+      flex: 0 1 auto;
       min-width: 0;
     }
 
@@ -85,6 +85,169 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .header-search {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1 1 auto;
+      min-width: 0;
+      padding: 0 16px;
+    }
+    .header-search-form {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      width: 100%;
+      max-width: 560px;
+    }
+    .header-search-select,
+    .header-search-input {
+      height: 32px;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.08);
+      color: #f8fafc;
+      font-family: inherit;
+      font-size: 13px;
+    }
+    .header-search-select {
+      flex: 0 0 148px;
+      min-width: 120px;
+      max-width: 180px;
+      padding: 0 8px;
+      cursor: pointer;
+    }
+    .header-search-select option { color: #1e293b; background: #fff; }
+    .header-search-input {
+      flex: 1 1 auto;
+      min-width: 80px;
+      padding: 0 10px;
+    }
+    .header-search-select:focus,
+    .header-search-input:focus {
+      outline: none;
+      border-color: rgba(96,165,250,0.65);
+      background: rgba(255,255,255,0.12);
+    }
+    .header-search-input::placeholder { color: #94a3b8; }
+    .header-search-submit {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      flex-shrink: 0;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 8px;
+      background: rgba(37,99,235,0.35);
+      color: #dbeafe;
+      cursor: pointer;
+    }
+    .header-search-submit:hover { background: rgba(37,99,235,0.55); color: #fff; }
+    .header-search-results {
+      display: none;
+      position: fixed;
+      top: 48px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: min(640px, calc(100vw - 32px));
+      max-height: min(420px, calc(100vh - 64px));
+      overflow: auto;
+      z-index: 250;
+      background: #fff;
+      border: 1px solid #dde1ea;
+      border-radius: 10px;
+      box-shadow: 0 12px 32px rgba(15,23,42,0.18);
+      color: #1e293b;
+    }
+    body.admin-on .header-search-results { top: 84px; }
+    .header-search-results.open { display: block; }
+    .header-search-status {
+      padding: 14px 16px;
+      font-size: 13px;
+      color: #64748b;
+    }
+    .header-search-group {
+      padding: 8px 12px 4px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #64748b;
+      background: #f8fafc;
+      border-top: 1px solid #eef2f7;
+    }
+    .header-search-group:first-child { border-top: none; }
+    .header-search-hit {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 14px;
+      border: none;
+      border-top: 1px solid #f1f5f9;
+      background: #fff;
+      text-align: left;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .header-search-hit:hover { background: #f8fafc; }
+    .header-search-hit-cite {
+      font-size: 13px;
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .header-search-hit-meta {
+      margin-top: 2px;
+      font-size: 12px;
+      color: #64748b;
+    }
+    .header-search-hit-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      flex-shrink: 0;
+      padding-top: 1px;
+    }
+    .header-search-tab {
+      display: inline-flex;
+      align-items: center;
+      height: 20px;
+      padding: 0 7px;
+      border-radius: 999px;
+      border: 1px solid #dbe4f0;
+      background: #eef3fb;
+      color: #1d4ed8;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    .header-search-tab:hover { background: #dbeafe; }
+    .header-search-more {
+      padding: 10px 14px 12px;
+      font-size: 12px;
+      color: #64748b;
+      border-top: 1px solid #f1f5f9;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    @media (max-width: 1100px) {
+      .header-subtitle, .header-sep { display: none; }
+    }
+    @media (max-width: 760px) {
+      .header-search-select { flex-basis: 110px; min-width: 96px; }
+      .projection-badge { max-width: 120px; }
     }
 
 
@@ -211,16 +374,36 @@
 
     .multi-select-panel {
       position: absolute; top: calc(100% + 4px); left: 0;
-      min-width: 160px; z-index: 200;
+      min-width: 160px; max-width: min(360px, calc(100vw - 32px));
+      z-index: 200;
       background: #fff; border: 1px solid #dde1ea;
       border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.10);
-      padding: 6px 0; display: none;
+      padding: 0; display: none;
+      max-height: min(320px, calc(100vh - 96px));
+      overflow: hidden;
     }
-    .multi-select-panel.open { display: block; }
+    .multi-select-panel.open {
+      display: flex;
+      flex-direction: column;
+    }
+    .multi-select-options {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 6px 0;
+      -webkit-overflow-scrolling: touch;
+    }
+    .multi-select-options::-webkit-scrollbar { width: 8px; }
+    .multi-select-options::-webkit-scrollbar-thumb {
+      background: #c5cdd8; border-radius: 8px;
+    }
+    .multi-select-options::-webkit-scrollbar-track { background: transparent; }
 
     .panel-action {
-      display: flex; justify-content: space-between;
-      padding: 4px 14px 8px; border-bottom: 1px solid #f0f2f5; margin-bottom: 4px;
+      display: flex; justify-content: space-between; flex-shrink: 0;
+      padding: 10px 14px 8px; border-bottom: 1px solid #f0f2f5;
+      background: #fff;
     }
     .panel-action button {
       background: none; border: none; cursor: pointer;
@@ -250,6 +433,16 @@
     .role-select-option.selected { background: #eef3fb; color: #2463eb; font-weight: 600; }
     .role-select-option.role-placeholder-value { cursor: default; color: #8b95a5; }
     .role-select-option.role-placeholder-value:hover { background: transparent; }
+    .role-select-option-name { display: block; line-height: 1.35; }
+    .role-select-option-meta {
+      display: block; margin-top: 2px;
+      font-size: 11.5px; font-weight: 500; color: #8a94a6; line-height: 1.35;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .role-select-option.selected .role-select-option-meta { color: #7b93c4; font-weight: 500; }
+    .multi-select-panel[data-dropdown-panel="role"] {
+      min-width: 240px; max-width: min(380px, calc(100vw - 32px));
+    }
 
     /* ── Main content ── */
     .main-content { padding: 24px; flex: 1; }
@@ -763,6 +956,32 @@
     .badge-lifecycle { background: #f8fafc; color: #334155; border: 1px solid #e2e8f0; }
     .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
     .chip { display: inline-flex; align-items: center; background: #f1f5f9; color: #1a2332; font-size: 11.5px; font-weight: 500; padding: 3px 9px; border-radius: 20px; border: 1px solid #e8ecf0; }
+
+    .results-context { margin-bottom: 18px; }
+    .results-context-title { font-size: 18px; font-weight: 700; color: #1a2332; line-height: 1.3; }
+    .results-context-sub { margin-top: 4px; font-size: 13px; color: #6b7a99; line-height: 1.5; }
+    .results-context-filter { margin-top: 12px; }
+    .facet-legend {
+      font-size: 11px; font-weight: 700; color: #6b7a99;
+      text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 8px;
+    }
+    .facet-chip-row { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+    .facet-chip {
+      display: inline-flex; align-items: center;
+      background: #f1f5f9; color: #1a2332;
+      font-size: 11.5px; font-weight: 500;
+      padding: 4px 10px; border-radius: 20px;
+      border: 1px solid #e8ecf0;
+      font-family: inherit; cursor: pointer; white-space: nowrap;
+    }
+    .facet-chip:hover { background: #e8ecf0; }
+    .facet-chip:focus-visible { outline: 2px solid #2463eb; outline-offset: 2px; }
+    .facet-chip[aria-pressed="true"] {
+      background: #eef3fb; color: #2463eb; border-color: #c7d7f8; font-weight: 600;
+    }
+    @media (max-width: 600px) {
+      .facet-chip { white-space: normal; max-width: 100%; text-align: left; }
+    }
     .drawer-crumb { font-size: 11.5px; color: #8a94a6; line-height: 1.4; }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -783,7 +1002,21 @@
         <span class="header-subtitle">Regulatory Intelligence Research</span>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:10px;">
+    <div class="header-search" id="headerSearch">
+      <form class="header-search-form" id="headerSearchForm" autocomplete="off">
+        <select class="header-search-select" id="headerSearchJurisdiction" aria-label="Jurisdiction">
+          <option value="">Jurisdiction</option>
+        </select>
+        <input class="header-search-input" id="headerSearchQuery" type="search" name="citation"
+          placeholder="Citation or § number" aria-label="Citation or section number" />
+        <button class="header-search-submit" type="submit" aria-label="Search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4">
+            <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </button>
+      </form>
+    </div>
+    <div class="header-actions">
       <span class="projection-badge" id="projectionBadge" title="Where this page loaded requirements.json from">Loading data…</span>
       <button class="admin-toggle" id="adminToggle" onclick="toggleAdmin()">
         <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
@@ -793,6 +1026,7 @@
       </button>
     </div>
   </header>
+  <div class="header-search-results" id="headerSearchResults" hidden></div>
 
   <!-- ── Body ── -->
   <div class="admin-bar" id="adminBar">
@@ -1015,7 +1249,10 @@
   // ─── UI state ───
   let sidebarOpen   = true;
   let activeSection = 'roles';
-let selectedRole        = null;
+  let selectedRole        = null;
+  let selectedRoleSetting = null;
+  const ROLE_SETTING_UNMAPPED = '__unmapped__';
+  let roleSettingOverflowOpen = false;
   let selectedCareSetting = null;
   let selectedWFRole      = null;
   let selectedWFSetting   = null;
@@ -1310,35 +1547,92 @@ let selectedRole        = null;
     );
   }
 
+  function roleRecordsInSelectedJurisdictions(roleKey) {
+    return publicRecords(ROLE_DATA[roleKey] || []).filter(r => filterState.jurisdictions.has(r.state));
+  }
+
+  function distinctCareSettingsForRole(roleKey) {
+    const named = new Set();
+    let unmapped = false;
+    roleRecordsInSelectedJurisdictions(roleKey).forEach(r => {
+      if (r.hstm_setting) named.add(r.hstm_setting);
+      else unmapped = true;
+    });
+    const settings = [...named].sort();
+    if (unmapped) settings.push(ROLE_SETTING_UNMAPPED);
+    return settings;
+  }
+
+  function roleSettingChipLabel(value) {
+    return value === ROLE_SETTING_UNMAPPED ? 'No HSTM Setting' : value;
+  }
+
+  function matchesSelectedRoleSetting(r) {
+    if (!selectedRoleSetting) return true;
+    if (selectedRoleSetting === ROLE_SETTING_UNMAPPED) return !r.hstm_setting;
+    return r.hstm_setting === selectedRoleSetting;
+  }
+
+  function roleCareSettingHint(roleKey) {
+    const settings = distinctCareSettingsForRole(roleKey);
+    if (settings.length === 1) return roleSettingChipLabel(settings[0]);
+    if (settings.length > 1) return settings.length + ' care settings';
+    return '';
+  }
+
+  function syncRoleSettingFilter() {
+    if (!selectedRole) {
+      selectedRoleSetting = null;
+      roleSettingOverflowOpen = false;
+      return;
+    }
+    const available = distinctCareSettingsForRole(selectedRole);
+    if (!selectedRoleSetting || !available.includes(selectedRoleSetting)) {
+      selectedRoleSetting = null;
+    }
+    if (available.length <= 4) roleSettingOverflowOpen = false;
+  }
+
   function syncSelectedRoleToJurisdictions() {
-    if (!selectedRole) return;
+    if (!selectedRole) {
+      syncRoleSettingFilter();
+      return;
+    }
     if (!rolesForSelectedJurisdictions().some(r => r.value === selectedRole)) {
       selectedRole = null;
     }
+    syncRoleSettingFilter();
+  }
+
+  function matchesRoleFacets(r) {
+    if (!filterState.jurisdictions.has(r.state))         return false;
+    if (!filterState.requirementLevels.has(r.requirement_level)) return false;
+    if (!filterState.authorityLevels.has(r.authority_level)) return false;
+    // Applicability filter only engages once real rule data exists and the
+    // user has actively narrowed it; with the default "all selected" state
+    // (or while ALL_APPLICABILITY_VALUES is empty, as it is on every live
+    // record today) this is a no-op so nothing gets hidden.
+    if (ALL_APPLICABILITY_VALUES.length && filterState.applicabilityValues.size < ALL_APPLICABILITY_VALUES.length) {
+      const tokens = applicabilityTokens(r.applicability_rules);
+      if (!tokens.some(t => filterState.applicabilityValues.has(t))) return false;
+    }
+    // Impact Type filter: fixed vocabulary — set-intersection against the
+    // row's impact_types array (not mutually exclusive).
+    if (filterState.impactTypes.size < ALL_IMPACT_TYPES.length) {
+      const tags = Array.isArray(r.impact_types) ? r.impact_types : [];
+      if (!tags.some(t => filterState.impactTypes.has(t))) return false;
+    }
+    return true;
+  }
+
+  function roleResultUniverse() {
+    const src = selectedRole ? (ROLE_DATA[selectedRole] || []) : DATA;
+    return publicRecords(src).filter(matchesRoleFacets);
   }
 
   function filterData() {
-    const src = selectedRole ? (ROLE_DATA[selectedRole] || []) : DATA;
-    return publicRecords(src).filter(r => {
-      if (!filterState.jurisdictions.has(r.state))         return false;
-      if (!filterState.requirementLevels.has(r.requirement_level)) return false;
-      if (!filterState.authorityLevels.has(r.authority_level)) return false;
-      // Applicability filter only engages once real rule data exists and the
-      // user has actively narrowed it; with the default "all selected" state
-      // (or while ALL_APPLICABILITY_VALUES is empty, as it is on every live
-      // record today) this is a no-op so nothing gets hidden.
-      if (ALL_APPLICABILITY_VALUES.length && filterState.applicabilityValues.size < ALL_APPLICABILITY_VALUES.length) {
-        const tokens = applicabilityTokens(r.applicability_rules);
-        if (!tokens.some(t => filterState.applicabilityValues.has(t))) return false;
-      }
-      // Impact Type filter: fixed vocabulary — set-intersection against the
-      // row's impact_types array (not mutually exclusive).
-      if (filterState.impactTypes.size < ALL_IMPACT_TYPES.length) {
-        const tags = Array.isArray(r.impact_types) ? r.impact_types : [];
-        if (!tags.some(t => filterState.impactTypes.has(t))) return false;
-      }
-      return true;
-    });
+    const rows = roleResultUniverse();
+    return rows.filter(matchesSelectedRoleSetting);
   }
 
   function statesInOrder(map) {
@@ -1964,6 +2258,26 @@ let selectedRole        = null;
     return res.json();
   }
 
+  async function commitRequirementsChange(payload) {
+    const token = getAdminToken();
+    if (!token) throw new Error('Admin token is required to save.');
+    let res;
+    try {
+      res = await commitRequirements(WORKER_URL, token, payload);
+    } catch (err) {
+      throw new Error(proxyNetworkError(err, 'Save'));
+    }
+    if (res.status === 401) {
+      sessionStorage.removeItem(TOKEN_KEY);
+      throw new Error('Admin token was rejected. It has been cleared — try saving again to re-enter it.');
+    }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error || ('Save failed (HTTP ' + res.status + ')'));
+    }
+    return res.json();
+  }
+
   function findJsonByRecordId(store, id) {
     if (Array.isArray(store)) return store.find(r => r && r['Record ID'] === id) || null;
     if (!store || typeof store !== 'object') return null;
@@ -2170,6 +2484,7 @@ let selectedRole        = null;
       if ((r.oversight_agency || '') !== (sample.oversight_agency || '')) return false;
       if ((r.type || '') !== (sample.type || '')) return false;
       if (activeSection === 'care-settings' && selectedCareSetting && r.hstm_setting !== selectedCareSetting) return false;
+      if (activeSection === 'roles' && !matchesSelectedRoleSetting(r)) return false;
       return true;
     });
   }
@@ -2195,11 +2510,10 @@ let selectedRole        = null;
     const unique = [...new Set((ids || []).filter(Boolean))];
     if (!unique.length) throw new Error('Nothing to delete');
     const idSet = new Set(unique);
-    const latest = await fetchWorkerFile('requirements.json');
-    if (!Array.isArray(latest)) throw new Error('requirements.json is not a record array');
-    const remaining = latest.filter(r => !idSet.has(r && r['Record ID']));
-    if (remaining.length === latest.length) throw new Error('Those records were not found in requirements.json');
-    const result = await commitWorkerFile('requirements.json', remaining, message);
+    const result = await commitRequirementsChange({
+      deletedIds: unique,
+      message
+    });
     Object.keys(CURRENT_SHEETS).forEach(k => {
       if (!Array.isArray(CURRENT_SHEETS[k])) return;
       CURRENT_SHEETS[k] = CURRENT_SHEETS[k].filter(r => !idSet.has(r['Record ID']));
@@ -2208,7 +2522,7 @@ let selectedRole        = null;
     selectedCardKey = null;
     drawerTab = 'overview';
     render();
-    return { removed: latest.length - remaining.length, result };
+    return { removed: unique.length, result };
   }
 
   async function deleteProgramBucket(program) {
@@ -2275,19 +2589,28 @@ let selectedRole        = null;
 
     const path = row._lane === 'wr' ? 'wr.json' : 'requirements.json';
     if (saveBtn) saveBtn.disabled = true;
-    if (status) status.textContent = 'Fetching latest and committing…';
+    if (status) status.textContent = 'Committing to GitHub…';
     try {
-      const latest = await fetchWorkerFile(path);
-      if (path === 'requirements.json' && !Array.isArray(latest)) throw new Error('requirements.json is not a record array');
-      const existing = findJsonByRecordId(latest, id);
-      if (!existing) throw new Error('Record ' + id + ' was not found in ' + path);
-      const updated = patchJsonByRecordId(latest, id, values);
-      const committed = findJsonByRecordId(updated, id);
-      if (!committed || !valuesMatchSaved(committed, values)) {
-        throw new Error('Local patch did not apply all fields to ' + id);
+      let result;
+      let saved = merged;
+      if (path === 'wr.json') {
+        const latest = await fetchWorkerFile(path);
+        const existing = findJsonByRecordId(latest, id);
+        if (!existing) throw new Error('Record ' + id + ' was not found in ' + path);
+        const updated = patchJsonByRecordId(latest, id, values);
+        const committed = findJsonByRecordId(updated, id);
+        if (!committed || !valuesMatchSaved(committed, values)) {
+          throw new Error('Local patch did not apply all fields to ' + id);
+        }
+        result = await commitWorkerFile(path, updated, 'Edit ' + id + ' via research view');
+        saved = committed;
+      } else {
+        result = await commitRequirementsChange({
+          recordId: id,
+          fields: values,
+          message: 'Edit ' + id + ' via research view'
+        });
       }
-      const result = await commitWorkerFile(path, updated, 'Edit ' + id + ' via research view');
-      let saved = committed;
       let staleReadback = false;
       try {
         const verified = await fetchWorkerFile(path);
@@ -2501,6 +2824,202 @@ let selectedRole        = null;
     updateDrawer();
   }
 
+  const HEADER_SEARCH_LIMIT = 50;
+
+  function isSectionNumberQuery(query) {
+    return /^\d+[a-z]?(\.\d+)*(\([^)]+\))*$/i.test(String(query || '').trim());
+  }
+
+  function citationMatches(citation, query) {
+    const c = String(citation || '');
+    const q = String(query || '').trim();
+    if (!q) return false;
+    const ql = q.toLowerCase();
+    if (!isSectionNumberQuery(ql)) return c.toLowerCase().includes(ql);
+    const escaped = ql.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp('(?:§\\s*|section[_\\s]+)' + escaped + '(?:\\b|[.(]|$)', 'i').test(c);
+  }
+
+  function searchRecords(jurisdiction, query) {
+    const state = String(jurisdiction || '').trim();
+    const q = String(query || '').trim();
+    if (!state || !q) return [];
+    const seen = new Set();
+    const hits = [];
+    publicRecords([...DATA, ...CARE_DATA]).forEach(row => {
+      const id = row.record_id || cardKey(row);
+      if (seen.has(id)) return;
+      if (row.state !== state) return;
+      if (!citationMatches(row.citation, q)) return;
+      seen.add(id);
+      hits.push(row);
+    });
+    hits.sort((a, b) => {
+      const cite = String(a.citation || '').localeCompare(String(b.citation || ''));
+      if (cite) return cite;
+      return String(a.training_topic || '').localeCompare(String(b.training_topic || ''));
+    });
+    return hits;
+  }
+
+  function searchHitPrimaryTab(row) {
+    const raw = row && row._raw ? row._raw : row;
+    if (routesToRoleTab(raw) || (row && row.regulation_type === 'Individual/Continuing Education')) return 'roles';
+    return 'care-settings';
+  }
+
+  function searchHitRoleLabel(row) {
+    const labels = researchRoleLabels((row && row._raw) || {});
+    if (labels.length) return labels[0];
+    return row.display_role || row.jurisdictional_name || '';
+  }
+
+  function jurisdictionLabel(code) {
+    if (code === 'US') return 'US / National';
+    return STATE_NAMES[code] || code || '';
+  }
+
+  function populateHeaderJurisdictions() {
+    const sel = document.getElementById('headerSearchJurisdiction');
+    if (!sel) return;
+    const prev = sel.value;
+    sel.innerHTML = '<option value="">Jurisdiction</option>' + ALL_JURISDICTIONS.map(code =>
+      '<option value="' + esc(code) + '">' + esc(jurisdictionLabel(code)) + '</option>'
+    ).join('');
+    if (prev && ALL_JURISDICTIONS.indexOf(prev) !== -1) sel.value = prev;
+  }
+
+  function hideHeaderSearchResults() {
+    const panel = document.getElementById('headerSearchResults');
+    if (!panel) return;
+    panel.classList.remove('open');
+    panel.hidden = true;
+    panel.innerHTML = '';
+  }
+
+  function showHeaderSearchResults(html) {
+    const panel = document.getElementById('headerSearchResults');
+    if (!panel) return;
+    panel.innerHTML = html;
+    panel.hidden = false;
+    panel.classList.add('open');
+  }
+
+  function renderHeaderSearchResults(matches, total, missing) {
+    if (missing === 'jurisdiction') {
+      return '<div class="header-search-status">Select a jurisdiction, then enter a citation or section number.</div>';
+    }
+    if (missing === 'query') {
+      return '<div class="header-search-status">Enter a citation or section number to search.</div>';
+    }
+    if (!matches.length) {
+      return '<div class="header-search-status">No matching citations.</div>';
+    }
+    const groups = [];
+    const byCite = new Map();
+    matches.forEach(row => {
+      const cite = row.citation || '(no citation)';
+      if (!byCite.has(cite)) {
+        const group = { citation: cite, rows: [] };
+        byCite.set(cite, group);
+        groups.push(group);
+      }
+      byCite.get(cite).rows.push(row);
+    });
+    const html = groups.map(group => {
+      const countLabel = group.rows.length > 1 ? ' · ' + group.rows.length : '';
+      const hits = group.rows.map(row => {
+        const key = cardKey(row);
+        const primary = searchHitPrimaryTab(row);
+        const roleLabel = searchHitRoleLabel(row);
+        const setting = row.hstm_setting || '';
+        const meta = [jurisdictionLabel(row.state), roleLabel, setting].filter(Boolean).join(' · ');
+        const topic = truncUrl(row.training_topic || '', 90);
+        const policy = isPolicyRelevant(row);
+        const tabs = ['<button type="button" class="header-search-tab" data-search-open="' + esc(key) + '" data-search-tab="' + primary + '">' +
+          (primary === 'roles' ? 'Role' : 'Care Setting') + '</button>'];
+        if (policy) {
+          tabs.push('<button type="button" class="header-search-tab" data-search-open="' + esc(key) + '" data-search-tab="policy">Policy</button>');
+        }
+        return '<div class="header-search-hit" data-search-open="' + esc(key) + '" data-search-tab="' + primary + '" role="button" tabindex="0">' +
+          '<div><div class="header-search-hit-cite">' + esc(row.citation || '(no citation)') + '</div>' +
+          (topic ? '<div class="header-search-hit-meta">' + esc(topic) + '</div>' : '') +
+          (meta ? '<div class="header-search-hit-meta">' + esc(meta) + '</div>' : '') +
+          '</div><div class="header-search-hit-tabs">' + tabs.join('') + '</div></div>';
+      }).join('');
+      return '<div class="header-search-group">' + esc(group.citation) + esc(countLabel) + '</div>' + hits;
+    }).join('');
+    const more = total > matches.length
+      ? '<div class="header-search-more">' + (total - matches.length) + ' more matches</div>'
+      : '';
+    return html + more;
+  }
+
+  function runHeaderSearch() {
+    const jurisdiction = (document.getElementById('headerSearchJurisdiction') || {}).value || '';
+    const query = (document.getElementById('headerSearchQuery') || {}).value || '';
+    if (!jurisdiction.trim()) {
+      showHeaderSearchResults(renderHeaderSearchResults([], 0, 'jurisdiction'));
+      return;
+    }
+    if (!String(query).trim()) {
+      showHeaderSearchResults(renderHeaderSearchResults([], 0, 'query'));
+      return;
+    }
+    const all = searchRecords(jurisdiction, query);
+    showHeaderSearchResults(renderHeaderSearchResults(all.slice(0, HEADER_SEARCH_LIMIT), all.length));
+  }
+
+  function setActiveResearchSection(section) {
+    activeSection = section;
+    history.replaceState(null, '', '#' + section);
+    document.querySelectorAll('.nav-item[data-section]').forEach(n => {
+      n.classList.toggle('active', n.dataset.section === section);
+    });
+  }
+
+  function roleKeyForSearchHit(row) {
+    const labels = researchRoleLabels((row && row._raw) || {});
+    for (let i = 0; i < labels.length; i++) {
+      const key = 'R ' + labels[i];
+      if (ROLE_DATA[key]) return key;
+    }
+    const id = row && row.record_id;
+    if (id) {
+      const keys = Object.keys(ROLE_DATA);
+      for (let i = 0; i < keys.length; i++) {
+        if ((ROLE_DATA[keys[i]] || []).some(r => r.record_id === id)) return keys[i];
+      }
+    }
+    return labels[0] ? 'R ' + labels[0] : null;
+  }
+
+  function openSearchHit(key, tab) {
+    const row = lookupRow(key);
+    if (!row) return;
+    if (row.state) filterState.jurisdictions.add(row.state);
+    const target = tab || searchHitPrimaryTab(row);
+    if (target === 'policy') {
+      setActiveResearchSection('policy');
+    } else if (target === 'roles') {
+      selectedRole = roleKeyForSearchHit(row);
+      syncRoleSettingFilter();
+      const available = selectedRole ? distinctCareSettingsForRole(selectedRole) : [];
+      if (row.hstm_setting && available.indexOf(row.hstm_setting) !== -1) {
+        selectedRoleSetting = row.hstm_setting;
+      } else if (!row.hstm_setting && available.indexOf(ROLE_SETTING_UNMAPPED) !== -1) {
+        selectedRoleSetting = ROLE_SETTING_UNMAPPED;
+      }
+      setActiveResearchSection('roles');
+    } else {
+      selectedCareSetting = row.hstm_setting || null;
+      setActiveResearchSection('care-settings');
+    }
+    hideHeaderSearchResults();
+    render();
+    setSelectedRow(cardKey(row));
+  }
+
   function toggleTreeNode(level, key) {
     const set = openTree[level];
     if (!set || !key) return;
@@ -2547,9 +3066,63 @@ let selectedRole        = null;
       <button type="button" data-dropdown-all="${id}">Select all</button>
       <button type="button" data-dropdown-clear="${id}">Clear</button>
     </div>
-    ${options}
+    <div class="multi-select-options">${options}</div>
   </div>
 </div>`;
+  }
+
+  function jurisdictionSummary() {
+    const selected = [...filterState.jurisdictions];
+    if (!selected.length) return 'No jurisdictions';
+    if (ALL_JURISDICTIONS.length && selected.length === ALL_JURISDICTIONS.length) return 'All jurisdictions';
+    if (selected.length === 1) {
+      const code = selected[0];
+      return STATE_NAMES[code] || code;
+    }
+    return selected.length + ' jurisdictions';
+  }
+
+  function renderRoleSettingFilter(settings) {
+    if (!settings || settings.length < 2) return '';
+    const visibleLimit = 4;
+    const extra = settings.length - visibleLimit;
+    const selectedHidden = extra > 0 && selectedRoleSetting && settings.indexOf(selectedRoleSetting) >= visibleLimit;
+    const showOverflow = extra > 0 && !roleSettingOverflowOpen && !selectedHidden;
+    const visible = showOverflow ? settings.slice(0, visibleLimit) : settings;
+    const chip = (value, label, pressed) =>
+      `<button type="button" class="facet-chip" data-role-setting-filter="${esc(value)}" aria-pressed="${pressed ? 'true' : 'false'}" title="${esc(label)}">${esc(label)}</button>`;
+    const chips = [chip('', 'All settings', !selectedRoleSetting)]
+      .concat(visible.map(s => chip(s, roleSettingChipLabel(s), selectedRoleSetting === s)));
+    if (showOverflow) {
+      chips.push(`<button type="button" class="facet-chip" data-role-setting-overflow="1" aria-expanded="false">+${extra}</button>`);
+    }
+    return `<div class="results-context-filter">
+      <div class="facet-legend" id="roleSettingFilterLabel">Care Setting</div>
+      <div class="facet-chip-row" role="group" aria-labelledby="roleSettingFilterLabel">${chips.join('')}</div>
+    </div>`;
+  }
+
+  function renderRoleResultsContext(universe, filtered) {
+    const roleLabel = ROLES.find(r => r.value === selectedRole)?.label || selectedRole || '';
+    const settings = selectedRole ? distinctCareSettingsForRole(selectedRole) : [];
+    const count = universe.length;
+    let sub;
+    if (selectedRoleSetting) {
+      const settingLabel = roleSettingChipLabel(selectedRoleSetting);
+      const inPhrase = selectedRoleSetting === ROLE_SETTING_UNMAPPED ? 'with no HSTM Setting' : `in ${settingLabel}`;
+      sub = `Showing ${filtered.length} of ${count} obligation${count === 1 ? '' : 's'} ${inPhrase}`;
+    } else if (settings.length > 1) {
+      sub = `${count} obligation${count === 1 ? '' : 's'} across ${settings.length} care settings`;
+    } else if (settings.length === 1 && settings[0] !== ROLE_SETTING_UNMAPPED) {
+      sub = `${count} obligation${count === 1 ? '' : 's'} in ${settings[0]}`;
+    } else {
+      sub = `${count} obligation${count === 1 ? '' : 's'}`;
+    }
+    return `<div class="results-context">
+      <div class="results-context-title">${esc(roleLabel)}</div>
+      <div class="results-context-sub">${esc(jurisdictionSummary())} · ${esc(sub)}</div>
+      ${renderRoleSettingFilter(settings)}
+    </div>`;
   }
 
   function renderRoleDropdown() {
@@ -2557,16 +3130,24 @@ let selectedRole        = null;
     const available = rolesForSelectedJurisdictions();
     const selLabel = selectedRole ? available.find(r => r.value === selectedRole)?.label : null;
     const options  = available.length
-      ? available.map(r => `<div class="role-select-option${selectedRole === r.value ? ' selected' : ''}" data-role-select="${esc(r.value)}">${esc(r.label)}</div>`).join('')
+      ? available.map(r => {
+          const hint = roleCareSettingHint(r.value);
+          const meta = hint
+            ? `<span class="role-select-option-meta" title="${esc(hint)}">${esc(hint)}</span>`
+            : '';
+          return `<div class="role-select-option${selectedRole === r.value ? ' selected' : ''}" data-role-select="${esc(r.value)}" role="option" tabindex="0" aria-selected="${selectedRole === r.value ? 'true' : 'false'}">
+        <span class="role-select-option-name">${esc(r.label)}</span>${meta}
+      </div>`;
+        }).join('')
       : `<div class="role-select-option role-placeholder-value">No roles for selected jurisdictions</div>`;
     return `<div class="filter-group">
-  <button type="button" class="multi-select-trigger${isOpen ? ' open' : ''}" data-dropdown-trigger="role">
+  <button type="button" class="multi-select-trigger${isOpen ? ' open' : ''}" data-dropdown-trigger="role" aria-haspopup="listbox" aria-expanded="${isOpen ? 'true' : 'false'}">
     <span class="trigger-label">Role</span>
     <span class="trigger-value${selLabel === null ? ' role-placeholder-value' : ''}">${selLabel === null ? 'Select a role' : esc(selLabel)}</span>
     <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
   </button>
-  <div class="multi-select-panel${isOpen ? ' open' : ''}" data-dropdown-panel="role">
-    ${options}
+  <div class="multi-select-panel${isOpen ? ' open' : ''}" data-dropdown-panel="role" role="listbox">
+    <div class="multi-select-options">${options}</div>
   </div>
 </div>`;
   }
@@ -2582,7 +3163,7 @@ let selectedRole        = null;
     <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
   </button>
   <div class="multi-select-panel${isOpen ? ' open' : ''}" data-dropdown-panel="care-setting">
-    ${options}
+    <div class="multi-select-options">${options}</div>
   </div>
 </div>`;
   }
@@ -2602,7 +3183,7 @@ let selectedRole        = null;
     <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
   </button>
   <div class="multi-select-panel${isOpen ? ' open' : ''}" data-dropdown-panel="${id}">
-    ${options.join('')}
+    <div class="multi-select-options">${options.join('')}</div>
   </div>
 </div>`;
   }
@@ -2725,7 +3306,7 @@ let selectedRole        = null;
     <span class="trigger-value${!selLabel ? ' role-placeholder-value' : ''}">${selLabel ? esc(selLabel) : 'Select…'}</span>
     <svg class="trigger-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"/></svg>
   </button>
-  <div class="multi-select-panel${isOpen ? ' open' : ''}" data-dropdown-panel="${id}">${opts}</div>
+  <div class="multi-select-panel${isOpen ? ' open' : ''}" data-dropdown-panel="${id}"><div class="multi-select-options">${opts}</div></div>
 </div>`;
   }
 
@@ -2912,13 +3493,14 @@ let selectedRole        = null;
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
           <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
         </svg>
-        <p class="empty-state-title">Select a role to get started</p>
-        <p class="empty-state-text">Choose jurisdiction(s), then a role, to view regulatory requirements.</p>
+        <p class="empty-state-title">Select a jurisdiction and role to get started</p>
+        <p class="empty-state-text">Choose jurisdiction(s), then a role, to view applicable requirements. After a role is selected, care setting can refine results when more than one setting is represented.</p>
       </div></div>`;
       updateDrawer();
       return;
     }
 
+    const universe = roleResultUniverse();
     const filtered = filterData();
     const tree    = buildHierarchy(filtered);
     const body    = tree.length
@@ -2929,7 +3511,7 @@ let selectedRole        = null;
            <p class="empty-state-text">Try adjusting your filters.</p>
          </div>`;
 
-    panel.innerHTML = renderFilterBar() + `<div class="main-content">${body}</div>`;
+    panel.innerHTML = renderFilterBar() + `<div class="main-content">${renderRoleResultsContext(universe, filtered)}${body}</div>`;
     updateDrawer();
   }
 
@@ -2981,6 +3563,18 @@ let selectedRole        = null;
     if (roleOpt) {
       selectedRole = roleOpt.dataset.roleSelect;
       openDropdown = null;
+      syncRoleSettingFilter();
+      render();
+      return;
+    }
+    const roleSettingOpt = e.target.closest('[data-role-setting-filter]');
+    if (roleSettingOpt) {
+      selectedRoleSetting = roleSettingOpt.dataset.roleSettingFilter || null;
+      render();
+      return;
+    }
+    if (e.target.closest('[data-role-setting-overflow]')) {
+      roleSettingOverflowOpen = true;
       render();
       return;
     }
@@ -3078,6 +3672,15 @@ let selectedRole        = null;
     if (opener && !e.target.closest('.tree-action')) {
       e.preventDefault();
       setSelectedRow(opener.dataset.openDrawer);
+      return;
+    }
+    const roleOpt = e.target.closest('[data-role-select]');
+    if (roleOpt) {
+      e.preventDefault();
+      selectedRole = roleOpt.dataset.roleSelect;
+      openDropdown = null;
+      syncRoleSettingFilter();
+      render();
     }
   });
 
@@ -3110,6 +3713,36 @@ let selectedRole        = null;
   document.getElementById('sidebarToggle').addEventListener('click', () => {
     sidebarOpen = !sidebarOpen;
     document.getElementById('sidebar').classList.toggle('collapsed', !sidebarOpen);
+  });
+
+  document.getElementById('headerSearchForm').addEventListener('submit', e => {
+    e.preventDefault();
+    runHeaderSearch();
+  });
+
+  document.getElementById('headerSearchResults').addEventListener('click', e => {
+    const hit = e.target.closest('[data-search-open]');
+    if (!hit) return;
+    e.preventDefault();
+    e.stopPropagation();
+    openSearchHit(hit.dataset.searchOpen, hit.dataset.searchTab);
+  });
+
+  document.getElementById('headerSearchResults').addEventListener('keydown', e => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const hit = e.target.closest('[data-search-open]');
+    if (!hit) return;
+    e.preventDefault();
+    openSearchHit(hit.dataset.searchOpen, hit.dataset.searchTab);
+  });
+
+  document.addEventListener('click', e => {
+    if (e.target.closest('#headerSearch') || e.target.closest('#headerSearchResults')) return;
+    hideHeaderSearchResults();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') hideHeaderSearchResults();
   });
 
   // ─── Nav switching ───
@@ -3213,6 +3846,7 @@ let selectedRole        = null;
     ALL_HSTM_ROLES = [...new Set([...DATA, ...CARE_DATA].flatMap(r => Array.isArray(r.hstm_role) ? r.hstm_role : (r.hstm_role ? [r.hstm_role] : [])))].sort();
     rowMap = {};
     [...DATA, ...CARE_DATA, ...WR_DATA].forEach(r => { rowMap[cardKey(r)] = r; });
+    populateHeaderJurisdictions();
   }
 
   // parseData() expects the legacy sheet-keyed shape ({ "R <role>": [...],
@@ -3234,6 +3868,8 @@ let selectedRole        = null;
 
   // Obligations-by-Role dropdown publishes Display Role only (Metadata v4
   // CANONICAL ROLE: do not emit Unlabeled / unresolved source strings).
+  // Display Role is the occupation family (Administrator, CNA); HSTM Setting
+  // is a chip filter on this tab, not part of the published role string.
   // Jurisdiction Role stays on the record and is never a published label.
   function researchRoleLabels(r) {
     return splitRoleLabels(r['Display Role']);

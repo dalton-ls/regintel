@@ -110,6 +110,7 @@ import json
 import hashlib
 import argparse
 from pathlib import Path
+from requirements_store import STUB_PATH, load_records
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
@@ -250,14 +251,21 @@ def resolve_source_dataset(raw_row, cli_source_dataset, sheet_name):
     return source_dataset_from_sheet_name(sheet_name or "")
 
 
+def hash_component(value):
+    """Null hash inputs are empty strings, not the literal 'None'."""
+    if value is None:
+        return ""
+    return str(value)
+
+
 def make_record_id(source_dataset, record):
     basis = "|".join([
-        source_dataset,
-        str(record.get("Citation", "")),
-        str(record.get("Training Topic / Competency Item", "")),
-        str(record.get("Jurisdiction", "")),
-        str(record.get("Jurisdiction Role", "")),
-        str(record.get("Jurisdiction Setting", "")),
+        hash_component(source_dataset),
+        hash_component(record.get("Citation", "")),
+        hash_component(record.get("Training Topic / Competency Item", "")),
+        hash_component(record.get("Jurisdiction", "")),
+        hash_component(record.get("Jurisdiction Role", "")),
+        hash_component(record.get("Jurisdiction Setting", "")),
     ])
     digest = hashlib.sha1(basis.encode("utf-8")).hexdigest()[:12]
     return "req_" + digest
@@ -372,11 +380,19 @@ def normalize_row(raw_row, source_dataset):
 def load_reference_values(reference_path):
     """Distinct known-good values per field, from an existing requirements.json,
     used only to warn on drift -- never to block or silently rewrite."""
-    if not reference_path or not Path(reference_path).exists():
+    path = Path(reference_path)
+    if not reference_path or not path.exists():
         return {}
     try:
-        existing = json.loads(Path(reference_path).read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
+        if path.resolve() == STUB_PATH.resolve():
+            existing = load_records()
+        else:
+            existing = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(existing, dict) and existing.get("sharded"):
+                existing = load_records()
+        if not isinstance(existing, list):
+            return {}
+    except (json.JSONDecodeError, OSError, FileNotFoundError):
         return {}
     known = {"Jurisdiction": set(), "HSTM Setting": set(), "HSTM Role": set(),
              "Authority Level": set()}

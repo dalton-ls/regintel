@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "test": "npm test --prefix worker/regintel-quality-monitor"
+    "test": "npm test --prefix worker/regintel-quality-monitor && node --test functions/_lib/requirements-store.test.js"
   },
   "devDependencies": {
     "wrangler": "^4"

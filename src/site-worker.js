@@ -1,5 +1,7 @@
 import { corsHeaders, json } from "../functions/_lib/cors.js";
-import { ALLOWED_PATHS, getFileRaw, githubBranch } from "../functions/_lib/github.js";
+import { getFileRaw, githubBranch } from "../functions/_lib/github.js";
+import { ALLOWED_LIVE_JSON } from "../functions/_lib/requirements-store.js";
+import { loadRequirementRecords } from "../functions/_lib/requirements-io.js";
 import { onRequestGet as healthGet } from "../functions/api/health.js";
 import { onRequestGet as fileGet } from "../functions/api/file.js";
 import { onRequestPost as commitPost } from "../functions/api/commit.js";
@@ -10,12 +12,15 @@ function context(request, env) {
 
 function liveJsonPath(pathname) {
   const path = pathname.replace(/^\//, "");
-  return ALLOWED_PATHS.has(path) ? path : null;
+  return ALLOWED_LIVE_JSON.has(path) ? path : null;
 }
 
 async function serveGithubJson(env, path, request) {
   try {
-    const raw = await getFileRaw(env, path, githubBranch(env));
+    const branch = githubBranch(env);
+    const raw = path === "requirements.json"
+      ? JSON.stringify(await loadRequirementRecords(env, branch))
+      : await getFileRaw(env, path, branch);
     return new Response(raw, {
       status: 200,
       headers: {

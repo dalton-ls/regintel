@@ -82,7 +82,15 @@ used by the current product. It is not the knowledge model.
   lane used only in the Record ID hash. Research-view tabs do **not**
   route on it. **Obligations by Role** is `Regulation Type` =
   Individual/Continuing Education. **Obligations by Care Setting** is
-  Facility-Based/Organizational Training or Organizational Policy.
+  Facility-Based/Organizational Training or Organizational Policy. The
+  Role tab picker publishes `Display Role` as the occupation family
+  (Administrator, CNA). Setting-specific occupation strings are not
+  published labels; `HSTM Setting` is a chip filter on that tab.
+  Unmapped HSTM Setting is a first-class facet, not Assisted Living
+  Facility. In California, Assisted Living Facility maps only to RCFE
+  (HSC 1569 / 22 CCR around 87400). Group Homes, Adult Residential
+  Facilities, and Social Rehabilitation Facilities stay unmapped until
+  a product Setting exists.
 
 - **Program** is a live-only grouping label defined in
   `program-taxonomy.json` (one lane per research-view tab: topic families for

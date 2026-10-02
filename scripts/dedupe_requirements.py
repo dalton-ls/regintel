@@ -27,6 +27,7 @@ Usage:
 """
 import json, re, sys, argparse, collections, csv, datetime
 from pathlib import Path
+from requirements_store import load_records, save_records, ROOT, STUB_PATH
 
 ROOT = Path(__file__).resolve().parents[1]
 REQ = ROOT / "requirements.json"
@@ -69,7 +70,11 @@ def main():
     args = ap.parse_args()
     today = datetime.date.today().isoformat()
 
-    rows = json.loads(Path(args.input).read_text(encoding="utf-8"))
+    input_path = Path(args.input)
+    if input_path.resolve() == STUB_PATH.resolve():
+        rows = load_records(ROOT)
+    else:
+        rows = json.loads(input_path.read_text(encoding="utf-8"))
     n0 = len(rows)
 
     # bucket by citation/setting/type, then cluster topics
@@ -126,8 +131,13 @@ def main():
             w.writeheader(); w.writerows(report)
         print("report:", args.report)
     if args.write:
-        Path(args.output).write_text(json.dumps(out, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-        print("wrote", args.output)
+        output_path = Path(args.output)
+        if output_path.resolve() == STUB_PATH.resolve():
+            save_records(out, ROOT)
+            print("wrote sharded requirements")
+        else:
+            output_path.write_text(json.dumps(out, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            print("wrote", args.output)
 
 if __name__ == "__main__":
     main()

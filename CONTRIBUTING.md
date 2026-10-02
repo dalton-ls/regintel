@@ -63,6 +63,18 @@ One-time migrations live in `scripts/legacy/` and are not for ongoing ingest.
 ## Deploy
 
 Production deploys on push to `main` via `.github/workflows/deploy-worker.yml`.
+
+Two things are easy to miss:
+
+- Live projection data (`requirements/shards/*.jsonl`, plus `wr.json` and
+  `program-taxonomy.json`) is read **live from GitHub HEAD** on every request,
+  so a data commit shows up immediately. `GET /requirements.json` is concatenated
+  by the Worker. HTML/JS changes do **not** — they ship only with a Worker
+  deploy. If the record badge updates but the UI doesn't, the deploy didn't run.
+- The workflow only fires on `main`. Check `git status -sb` shows
+  `main...origin/main`; a local `main` tracking another remote branch pushes fine
+  and deploys nothing. `npx wrangler deploy` from the repo root is the manual
+  fallback.
 Repo Actions secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`.
 
 Manual:
