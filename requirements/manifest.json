@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "budgetBytes": 10485760,
-  "recordCount": 7381,
+  "recordCount": 7471,
   "shards": [
     {
       "id": "ca-ccr-16",
@@ -188,6 +188,12 @@
       "path": "requirements/shards/ca-ccr-8--division_1-chapter_4-subchapter_7-article_98.jsonl",
       "records": 15,
       "bytes": 83136
+    },
+    {
+      "id": "ca-ccr-9",
+      "path": "requirements/shards/ca-ccr-9.jsonl",
+      "records": 90,
+      "bytes": 249151
     },
     {
       "id": "ca-hsc",
