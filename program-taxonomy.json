@@ -1,6 +1,6 @@
 {
-  "$comment": "Single source of truth for the live-only `Program` grouping field. Edit here, then run scripts/assign_program.py --write. Labels are what is stored on rows; `aliases` let you rename a program (old label -> new) and the script migrates rows. Rules are Python/JS-compatible regexes tested case-insensitively against Purpose; first match in `rule_order` wins. Anything unmatched is stored as `unassigned_label` and listed by the script so you can add a rule or a new program. 2026-09-15: added the Cal/OSHA subject-family set for 8 CCR Title 8, routed by citation_rules rather than Purpose regexes so a family is anchored to the regulation rather than to wording. Registry with scope, citation basis, source URL, owner and verification date lives in RegIntel_Work 06_Reviews/Applied/CA__Administrative__CA-RR__Title-08__Baseline-20260902/cal-osha-program-registry.json. Boundary placements (3340/3341 -> HazCom, 5157/5158 -> HazMat, 3205 -> BBP) signed off by Dalton Scott 2026-09-15. 2026-09-16: added Licensed Profession Curriculum & Program Approval (care-setting last-match) and widened the Role-lane renewal/specialty/initial regexes for 16 CCR Title 16. Topic families still win when Purpose names a clinical subject; the new program only takes leftover board-approved curricula.",
- "version": "2026-10-07",
+  "$comment": "Single source of truth for the live-only `Program` grouping field. Edit here, then run scripts/assign_program.py --write. Labels are what is stored on rows; `aliases` let you rename a program (old label -> new) and the script migrates rows. Rules are Python/JS-compatible regexes tested case-insensitively against Purpose; first match in `rule_order` wins. Anything unmatched is stored as `unassigned_label` and listed by the script so you can add a rule or a new program. 2026-09-15: added the Cal/OSHA subject-family set for 8 CCR Title 8, routed by citation_rules rather than Purpose regexes so a family is anchored to the regulation rather than to wording. Registry with scope, citation basis, source URL, owner and verification date lives in RegIntel_Work 06_Reviews/Applied/CA__Administrative__CA-RR__Title-08__Baseline-20260902/cal-osha-program-registry.json. Boundary placements (3340/3341 -> HazCom, 5157/5158 -> HazMat, 3205 -> BBP) signed off by Dalton Scott 2026-09-15. 2026-09-16: added Licensed Profession Curriculum & Program Approval (care-setting last-match) and widened the Role-lane renewal/specialty/initial regexes for 16 CCR Title 16. Topic families still win when Purpose names a clinical subject; the new program only takes leftover board-approved curricula. 2026-10-08: Title 17 exact Purpose overrides for 55 rows the existing rules left unassigned (lab competency, radiation instruction, syringe-exchange plans, DD residential rights and incident reporting, secured-perimeter training). No new programs.",
+ "version": "2026-10-08",
  "unassigned_label": "Unassigned (needs review)",
  "lanes": {
   "care-setting": {
@@ -545,7 +545,36 @@
     "Confidentiality of patient records in narcotic treatment programs": "Policies, Procedures & Documentation",
     "Residential AOD staff qualifications - required knowledge areas": "Behavioral Health & Special Treatment Programs",
     "Personnel instruction on reporting personal rights violations": "Resident Rights, Abuse Prevention & Ethics",
-    "Staff training as a condition of serving adolescents in adult residential AOD facilities": "Behavioral Health & Special Treatment Programs"
+    "Staff training as a condition of serving adolescents in adult residential AOD facilities": "Behavioral Health & Special Treatment Programs",
+    "Medical laboratory technician work scope: documented competency before reporting results or performing phlebotomy": "Clinical Service Line Competency",
+    "Preceptor program for non-laboratory licensees performing moderate complexity point-of-care testing: preceptor training topics": "Clinical Service Line Competency",
+    "Preceptor program for non-laboratory licensees performing moderate complexity point-of-care testing: preceptor program competency concordance": "Clinical Service Line Competency",
+    "Waived laboratory supervisor responsibilities: evaluating and documenting testing staff competency": "Clinical Service Line Competency",
+    "Waived laboratory supervisor responsibilities: periodic performance evaluation of waived testing personnel": "Clinical Service Line Competency",
+    "Standards for protection against radiation: instructions to individuals working in or frequenting controlled areas": "Clinical Service Line Competency",
+    "Use of X-rays in the healing arts: safety rules provided to each X-ray operator, with demonstrated familiarity": "Clinical Service Line Competency",
+    "Mammography quality assurance program establishment and maintenance": "Policies, Procedures & Documentation",
+    "Operational requirements for certified syringe exchange programs: program plans": "Policies, Procedures & Documentation",
+    "Reporting to the local health authority: administrative procedures assuring disease reports": "Policies, Procedures & Documentation",
+    "Regional center contract duties: written internal consumer grievance procedure": "Policies, Procedures & Documentation",
+    "Special incident reporting by vendors and long-term health care facilities: incidents reportable regardless of when or where they occurred": "Policies, Procedures & Documentation",
+    "Special incident reporting: initial report within 24 hours": "Policies, Procedures & Documentation",
+    "Special incident reporting: written report within 48 hours": "Policies, Procedures & Documentation",
+    "Special incident reporting: simultaneous report of unusual occurrences to the regional center": "Policies, Procedures & Documentation",
+    "Enhanced Behavioral Supports Home facility program plan": "Policies, Procedures & Documentation",
+    "Documentation of rights denials in the treatment record": "Resident Rights, Abuse Prevention & Ethics",
+    "Notification of rights: posting of rights in health facilities": "Resident Rights, Abuse Prevention & Ethics",
+    "Notification of rights: personal notification of rights": "Resident Rights, Abuse Prevention & Ethics",
+    "Notification of rights: written notice to representative": "Resident Rights, Abuse Prevention & Ethics",
+    "Syringe exchange program sharps plan: staff familiarity with the needlestick injury protocol": "Infection Prevention & Control",
+    "Syringe exchange program sharps plan: sharps waste disposal education for staff": "Infection Prevention & Control",
+    "Enhanced Behavioral Supports Home direct care lead staff qualifications: Registered Behavior Technician credential": "Behavioral Health & Special Treatment Programs",
+    "Enhanced Behavioral Supports Home direct care staff qualifications: Registered Behavior Technician credential": "Behavioral Health & Special Treatment Programs",
+    "Enhanced Behavioral Supports Home staff training: DSP competency-based training and test": "Behavioral Health & Special Treatment Programs",
+    "Training for direct care staff in facilities using secured perimeters": "Emergency Preparedness & Disaster Response",
+    "Training for direct care staff in ICF/DD and ICF/DD-H facilities using secured perimeters": "Emergency Preparedness & Disaster Response",
+    "Nonresidential vendor ongoing staff training (if developed)": "Orientation & Staff Development",
+    "In-home respite agency ongoing staff training (if developed)": "Orientation & Staff Development"
    },
    "purpose_prefix_overrides": [
     {
@@ -675,7 +704,8 @@
     "Personal Care/Home Health Aide Services": "Initial Certification & Licensure Training",
     "Administrator Certification Requirements": "Initial Certification & Licensure Training",
     "Administrator Recertification Requirements": "Certification Renewal & Continuing Education",
-    "Renewal of Unexpired Certificates": "Certification Renewal & Continuing Education"
+    "Renewal of Unexpired Certificates": "Certification Renewal & Continuing Education",
+    "Radiologic Technology Act: X-ray bone densitometry instruction for licentiate supervisor and operator permit": "Specialty Permit & Expanded Scope"
    },
    "purpose_prefix_overrides": [
     {
