@@ -1842,7 +1842,7 @@
     const row = item.row;
     const key = item.key;
     const selected = selectedCardKey === key;
-    const sub = [row.citation, item.program].filter(Boolean).join(' · ');
+    const sub = row.citation || '';
     return `<div class="tree-row tree-leaf${selected ? ' selected' : ''}" role="button" tabindex="0" data-open-drawer="${esc(key)}" data-card-key="${esc(key)}" aria-selected="${selected ? 'true' : 'false'}">
       <span class="tree-leaf-spacer" aria-hidden="true"></span>
       <span class="tree-main">
@@ -1864,7 +1864,7 @@
         row: child
       });
     }).join('');
-    const sub = [item.subtitle, item.program].filter(Boolean).join(' · ');
+    const sub = item.subtitle || '';
     return renderTreeNode(
       'module',
       item.key,
