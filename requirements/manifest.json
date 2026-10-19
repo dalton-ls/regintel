@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "budgetBytes": 10485760,
-  "recordCount": 7247,
+  "recordCount": 7246,
   "shards": [
     {
       "id": "ca-ccr-16",
@@ -204,8 +204,8 @@
     {
       "id": "ca-hsc",
       "path": "requirements/shards/ca-hsc.jsonl",
-      "records": 557,
-      "bytes": 1894852
+      "records": 556,
+      "bytes": 1891002
     },
     {
       "id": "ca-wic",
