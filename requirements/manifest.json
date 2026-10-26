@@ -1,13 +1,13 @@
 {
   "schemaVersion": 1,
   "budgetBytes": 10485760,
-  "recordCount": 7247,
+  "recordCount": 7244,
   "shards": [
     {
       "id": "ca-ccr-16",
       "path": "requirements/shards/ca-ccr-16.jsonl",
       "records": 1122,
-      "bytes": 4133134
+      "bytes": 4133143
     },
     {
       "id": "ca-ccr-17",
@@ -18,8 +18,8 @@
     {
       "id": "ca-ccr-22",
       "path": "requirements/shards/ca-ccr-22.jsonl",
-      "records": 1651,
-      "bytes": 5921700
+      "records": 1649,
+      "bytes": 5916746
     },
     {
       "id": "ca-ccr-8--division_1-chapter_4-subchapter_7",
@@ -204,8 +204,8 @@
     {
       "id": "ca-hsc",
       "path": "requirements/shards/ca-hsc.jsonl",
-      "records": 557,
-      "bytes": 1894852
+      "records": 556,
+      "bytes": 1890992
     },
     {
       "id": "ca-wic",
