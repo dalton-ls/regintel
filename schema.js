@@ -164,13 +164,15 @@ const SCHEMA_VOCAB = {
   "Program": PROGRAM_VOCAB,
   "Jurisdiction": ["US"],
   "Authority Level": ["Federal Floor", "State Floor", "Competency"],
-    "HSTM Role": [
+  "HSTM Role": [
     "Clinical, Medication Dispensing",
     "Clinical, Non-Medication Dispensing",
+    "Physicians & Practitioners",
     "Non-Clinical, Patient-Facing",
     "Non-Clinical, Non-Patient Facing",
-    "Managerial Staff",
-    "Physicians & Practitioners"
+    "Billers, Coders & HIM Staff",
+    "Executives, Board & Corporate Staff",
+    "Managerial Staff"
   ],
   "Role Classification Status": ["Classified", "Needs Classification"],
   "Regulation Type": [

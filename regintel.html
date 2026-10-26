@@ -661,6 +661,12 @@
     .drawer-edit-hint { font-size: 10px; color: #b0b8cc; margin-top: 3px; }
     .edit-impact-list { display: flex; flex-wrap: wrap; gap: 6px 12px; }
     .edit-impact-opt { font-size: 12px; color: #1a2332; font-weight: 500; display: inline-flex; align-items: center; gap: 5px; text-transform: none; letter-spacing: 0; }
+    .edit-role-list { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+    .drawer-edit-field label.edit-role-opt {
+      display: inline-flex; align-items: center; gap: 5px; margin-bottom: 0;
+      font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: #1a2332;
+    }
+    .drawer-edit-field label.edit-role-opt input { width: auto; }
     .drawer-edit-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 8px; border-top: 1px solid #f0f2f5; }
     .drawer-edit-actions .btn.primary { background: #2463eb; color: #fff; border-color: #2463eb; }
     .drawer-edit-actions .btn.danger { background: #fff; color: #b91c1c; border-color: #f5b8b8; margin-left: auto; }
@@ -2207,8 +2213,8 @@
 
   function renderHstmRoleChecks(selected) {
     const { known, set } = hstmRoleOptions(selected);
-    return '<div class="edit-impact-list">' + known.map(t =>
-      '<label class="edit-impact-opt"><input type="checkbox" data-hstm-role="' + esc(t) + '"' + (set.has(t) ? ' checked' : '') + '> ' + esc(t) + '</label>'
+    return '<div class="edit-role-list">' + known.map(t =>
+      '<label class="edit-role-opt"><input type="checkbox" data-hstm-role="' + esc(t) + '"' + (set.has(t) ? ' checked' : '') + '> ' + esc(t) + '</label>'
     ).join('') + '</div>';
   }
 
