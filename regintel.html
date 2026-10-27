@@ -519,6 +519,10 @@
     .tree-node.level-module > .tree-head .tree-row { padding: 9px 16px 9px 52px; }
     .tree-leaf { padding: 9px 16px 9px 72px; background: #fff; }
     .tree-node.level-program > .tree-body > .tree-body-inner > .tree-leaf { padding-left: 52px; }
+    .tree-instrument {
+      font-size: 11px; font-weight: 650; letter-spacing: 0.04em; text-transform: uppercase;
+      color: #6b7a99; padding: 10px 16px 4px 52px;
+    }
 
     .tree-chevron {
       color: #6b7a99; flex-shrink: 0;
@@ -657,6 +661,12 @@
     .drawer-edit-hint { font-size: 10px; color: #b0b8cc; margin-top: 3px; }
     .edit-impact-list { display: flex; flex-wrap: wrap; gap: 6px 12px; }
     .edit-impact-opt { font-size: 12px; color: #1a2332; font-weight: 500; display: inline-flex; align-items: center; gap: 5px; text-transform: none; letter-spacing: 0; }
+    .edit-role-list { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+    .drawer-edit-field label.edit-role-opt {
+      display: inline-flex; align-items: center; gap: 5px; margin-bottom: 0;
+      font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; color: #1a2332;
+    }
+    .drawer-edit-field label.edit-role-opt input { width: auto; }
     .drawer-edit-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-top: 8px; border-top: 1px solid #f0f2f5; }
     .drawer-edit-actions .btn.primary { background: #2463eb; color: #fff; border-color: #2463eb; }
     .drawer-edit-actions .btn.danger { background: #fff; color: #b91c1c; border-color: #f5b8b8; margin-left: auto; }
@@ -1692,6 +1702,174 @@
     return String(a || '').localeCompare(String(b || ''), undefined, { numeric: true, sensitivity: 'base' });
   }
 
+  // Citation order inside a program: instrument, then the section as a decimal
+  // (1569.625 before 1569.7), then subdivisions. Equal citations keep source order.
+  function parseCitation(citation) {
+    const raw = String(citation || '').replace(/\s+/g, ' ').trim();
+    const sign = raw.indexOf('§');
+    if (sign < 0) return { instrument: '', section: '', tokens: [], parsed: false };
+    const instrument = raw.slice(0, sign).trim().toLowerCase();
+    const rest = raw.slice(sign + 1);
+    const sectionMatch = rest.match(/(\d+(?:\.\d+)?)/);
+    const section = sectionMatch ? sectionMatch[1] : '';
+    const tail = sectionMatch ? rest.slice(sectionMatch.index + sectionMatch[0].length) : rest;
+    const tokens = [];
+    const re = /\(([A-Za-z]+|\d+)\)|(\d+)\./g;
+    let match;
+    while ((match = re.exec(tail))) tokens.push((match[1] || match[2]).toLowerCase());
+    return { instrument, section, tokens, parsed: !!(instrument || section) };
+  }
+
+  function romanToInt(token) {
+    const map = { i: 1, v: 5, x: 10, l: 50 };
+    let total = 0;
+    for (let i = 0; i < token.length; i++) {
+      const cur = map[token[i]];
+      const next = map[token[i + 1]] || 0;
+      if (!cur) return null;
+      total += cur < next ? -cur : cur;
+    }
+    return total;
+  }
+
+  function intToRoman(n) {
+    const pairs = [[10, 'x'], [9, 'ix'], [5, 'v'], [4, 'iv'], [1, 'i']];
+    let out = '';
+    pairs.forEach(([val, glyph]) => {
+      while (n >= val) { out += glyph; n -= val; }
+    });
+    return out;
+  }
+
+  function isCanonicalRoman(token) {
+    if (!/^[ivxl]+$/.test(token)) return false;
+    const n = romanToInt(token);
+    return n >= 1 && n <= 40 && intToRoman(n) === token;
+  }
+
+  function instrumentMeta(instrument) {
+    const s = instrument || '';
+    if (/\busc\b/.test(s)) return { rank: 0, label: 'United States Code', titleNum: null };
+    if (/\bcfr\b/.test(s)) return { rank: 1, label: 'Code of Federal Regulations', titleNum: null };
+    if (/\bhsc\b/.test(s)) return { rank: 2, label: 'Health and Safety Code', titleNum: null };
+    const ccr = s.match(/(\d+)\s*,?\s*ccr/);
+    if (ccr) return { rank: 3, label: 'Title ' + ccr[1], titleNum: Number(ccr[1]) };
+    if (s) return { rank: 4, label: s.toUpperCase(), titleNum: null };
+    return { rank: 5, label: 'Other', titleNum: null };
+  }
+
+  function compareInstrumentMeta(a, b) {
+    if (a.rank !== b.rank) return a.rank - b.rank;
+    if (a.titleNum != null && b.titleNum != null && a.titleNum !== b.titleNum) return a.titleNum - b.titleNum;
+    return compareTitles(a.label, b.label);
+  }
+
+  function compareSectionNumbers(a, b) {
+    if (a === b) return 0;
+    if (!a) return 1;
+    if (!b) return -1;
+    const [ai, af = ''] = a.split('.');
+    const [bi, bf = ''] = b.split('.');
+    if (Number(ai) !== Number(bi)) return Number(ai) - Number(bi);
+    const len = Math.max(af.length, bf.length);
+    const afN = Number((af || '0').padEnd(len, '0'));
+    const bfN = Number((bf || '0').padEnd(len, '0'));
+    if (afN !== bfN) return afN - bfN;
+    return af.length - bf.length;
+  }
+
+  function romanDepths(parsedList) {
+    const depths = {};
+    const max = parsedList.reduce((n, p) => Math.max(n, p.tokens.length), 0);
+    for (let depth = 0; depth < max; depth++) {
+      const tokens = parsedList.map(p => p.tokens[depth]).filter(Boolean);
+      const unambiguous = tokens.some(t => isCanonicalRoman(t) && t.length > 1);
+      const letter = tokens.some(t => /^[a-z]$/.test(t) && !/^[ivx]$/.test(t));
+      depths[depth] = unambiguous || (!letter && tokens.some(isCanonicalRoman));
+    }
+    return depths;
+  }
+
+  function compareSubdivisionToken(a, b, asRoman) {
+    const kind = token => {
+      if (/^\d+$/.test(token)) return { kind: 0, n: Number(token), s: '' };
+      if (asRoman && isCanonicalRoman(token)) return { kind: 1, n: romanToInt(token), s: '' };
+      return { kind: 2, n: 0, s: token };
+    };
+    const ka = kind(a);
+    const kb = kind(b);
+    if (ka.kind !== kb.kind) return ka.kind - kb.kind;
+    if (ka.kind === 2) return ka.s < kb.s ? -1 : ka.s > kb.s ? 1 : 0;
+    return ka.n - kb.n;
+  }
+
+  function moduleTitleOrder(title) {
+    const match = String(title || '').match(/^Module\s+(\d+)/i);
+    return match ? Number(match[1]) : null;
+  }
+
+  function compareParsedCitations(a, b, depths) {
+    if (!a.parsed.parsed && !b.parsed.parsed) {
+      const ma = moduleTitleOrder(a.title);
+      const mb = moduleTitleOrder(b.title);
+      if (ma != null || mb != null) {
+        if (ma == null) return 1;
+        if (mb == null) return -1;
+        if (ma !== mb) return ma - mb;
+      }
+      return a.index - b.index;
+    }
+    if (!a.parsed.parsed) return 1;
+    if (!b.parsed.parsed) return -1;
+    const instrumentOrder = compareInstrumentMeta(instrumentMeta(a.parsed.instrument), instrumentMeta(b.parsed.instrument));
+    if (a.parsed.instrument !== b.parsed.instrument && instrumentOrder) return instrumentOrder;
+    const sectionOrder = compareSectionNumbers(a.parsed.section, b.parsed.section);
+    if (sectionOrder) return sectionOrder;
+    const len = Math.max(a.parsed.tokens.length, b.parsed.tokens.length);
+    for (let i = 0; i < len; i++) {
+      const ta = a.parsed.tokens[i];
+      const tb = b.parsed.tokens[i];
+      if (ta == null) return -1;
+      if (tb == null) return 1;
+      const tokenOrder = compareSubdivisionToken(ta, tb, depths[i]);
+      if (tokenOrder) return tokenOrder;
+    }
+    return a.index - b.index;
+  }
+
+  function sortByCitation(list, citeOf, titleOf) {
+    const wrapped = list.map((item, index) => ({
+      item,
+      index,
+      title: titleOf ? titleOf(item) : '',
+      parsed: parseCitation(citeOf(item))
+    }));
+    const depths = romanDepths(wrapped.map(entry => entry.parsed));
+    wrapped.sort((a, b) => compareParsedCitations(a, b, depths));
+    return wrapped.map(entry => entry.item);
+  }
+
+  function groupProgramItems(list) {
+    const groups = new Map();
+    list.forEach(item => {
+      const parsed = parseCitation(item.subtitle || (item.row && item.row.citation) || '');
+      const meta = instrumentMeta(parsed.instrument);
+      const key = meta.rank + '|' + (meta.titleNum == null ? '' : meta.titleNum) + '|' + meta.label;
+      if (!groups.has(key)) groups.set(key, { meta, items: [] });
+      groups.get(key).items.push(item);
+    });
+    return [...groups.values()]
+      .sort((a, b) => compareInstrumentMeta(a.meta, b.meta))
+      .map(group => ({
+        label: group.meta.rank === 5 ? '' : group.meta.label,
+        items: sortByCitation(
+          group.items,
+          item => item.subtitle || (item.row && item.row.citation) || '',
+          item => item.title
+        )
+      }));
+  }
+
   function programChildLabel(items) {
     const mods = items.filter(i => i.kind === 'module').length;
     const leaves = items.filter(i => i.kind === 'leaf').length;
@@ -1751,7 +1929,11 @@
 
     const items = Object.entries(byObl).map(([ok, group]) => {
       const parent = group.find(r => r.row_type === 'Parent') || null;
-      const children = group.filter(r => r.row_type === 'Child');
+      const children = sortByCitation(
+        group.filter(r => r.row_type === 'Child'),
+        row => row.citation,
+        row => row.training_topic
+      );
       const sample = parent || group[0];
       const state = sample.state || '';
       const agency = sample.oversight_agency || 'Unspecified authority';
@@ -1793,14 +1975,8 @@
     return statesInOrder(tree).map(s => {
       const authorities = Object.entries(tree[s]).map(([agency, programs]) => {
         const programList = Object.entries(programs).map(([program, list]) => {
-          const sorted = list.slice().sort((a, b) => {
-            const aMod = /^Module\s+\d+/i.test(a.title || '');
-            const bMod = /^Module\s+\d+/i.test(b.title || '');
-            if (a.kind !== b.kind) return a.kind === 'module' ? -1 : 1;
-            if (aMod !== bMod) return aMod ? -1 : 1;
-            return compareTitles(a.title, b.title);
-          });
-          return { program, items: sorted };
+          const instruments = groupProgramItems(list);
+          return { program, instruments, items: instruments.flatMap(group => group.items) };
         }).sort((a, b) => compareTitles(a.program, b.program));
         return { agency, programs: programList };
       }).sort((a, b) => compareTitles(a.agency, b.agency));
@@ -1842,7 +2018,7 @@
     const row = item.row;
     const key = item.key;
     const selected = selectedCardKey === key;
-    const sub = [row.citation, item.program].filter(Boolean).join(' · ');
+    const sub = row.citation || '';
     return `<div class="tree-row tree-leaf${selected ? ' selected' : ''}" role="button" tabindex="0" data-open-drawer="${esc(key)}" data-card-key="${esc(key)}" aria-selected="${selected ? 'true' : 'false'}">
       <span class="tree-leaf-spacer" aria-hidden="true"></span>
       <span class="tree-main">
@@ -1864,7 +2040,7 @@
         row: child
       });
     }).join('');
-    const sub = [item.subtitle, item.program].filter(Boolean).join(' · ');
+    const sub = item.subtitle || '';
     return renderTreeNode(
       'module',
       item.key,
@@ -1878,7 +2054,15 @@
 
   function renderProgram(program) {
     const key = program._key;
-    const children = program.items.map(item => item.kind === 'module' ? renderModule(item) : renderLeaf(item)).join('');
+    const groups = program.instruments && program.instruments.length
+      ? program.instruments
+      : [{ label: '', items: program.items || [] }];
+    const showLabels = groups.filter(group => group.label).length > 1;
+    const children = groups.map(group => {
+      const body = group.items.map(item => item.kind === 'module' ? renderModule(item) : renderLeaf(item)).join('');
+      const label = showLabels && group.label ? `<div class="tree-instrument">${esc(group.label)}</div>` : '';
+      return label + body;
+    }).join('');
     return renderTreeNode('program', key, program.program, '', programChildLabel(program.items), children, null, programActions(program));
   }
 
@@ -2029,8 +2213,8 @@
 
   function renderHstmRoleChecks(selected) {
     const { known, set } = hstmRoleOptions(selected);
-    return '<div class="edit-impact-list">' + known.map(t =>
-      '<label class="edit-impact-opt"><input type="checkbox" data-hstm-role="' + esc(t) + '"' + (set.has(t) ? ' checked' : '') + '> ' + esc(t) + '</label>'
+    return '<div class="edit-role-list">' + known.map(t =>
+      '<label class="edit-role-opt"><input type="checkbox" data-hstm-role="' + esc(t) + '"' + (set.has(t) ? ' checked' : '') + '> ' + esc(t) + '</label>'
     ).join('') + '</div>';
   }
 
