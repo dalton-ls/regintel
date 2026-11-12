@@ -2681,7 +2681,7 @@
       if (id) ids.add(id);
       if (r.obligation_id) oids.add(r.obligation_id);
     });
-    [...DATA, ...CARE_DATA].forEach(r => {
+    publicRecords([...DATA, ...CARE_DATA]).forEach(r => {
       if (r.obligation_id && oids.has(r.obligation_id)) {
         const id = recordIdOf(r);
         if (id) ids.add(id);
@@ -2982,7 +2982,7 @@
   function lookupRow(key) {
     if (!key) return null;
     if (rowMap[key]) return rowMap[key];
-    const all = DATA.concat(CARE_DATA, WR_DATA);
+    const all = publicRecords(DATA.concat(CARE_DATA)).concat(WR_DATA);
     return all.find(r => (r._mergedKey || cardKey(r)) === key) || null;
   }
 
@@ -3991,7 +3991,7 @@
     const seenSettings = new Set();
     CARE_SETTINGS_LIST = [];
     Object.keys(CS_DATA).sort().forEach(k => {
-      const records = CS_DATA[k];
+      const records = publicRecords(CS_DATA[k]);
       const found = records.find(r => r.hstm_setting);
       if (found) {
         const setting = found.hstm_setting;
@@ -4006,14 +4006,15 @@
     // Care Setting × Role), not from Intelligence Role / Care Setting tabs.
 
     // Seed filter state from loaded data (select all by default)
-    ALL_JURISDICTIONS = [...new Set([...DATA, ...CARE_DATA].map(r => r.state).filter(Boolean))].sort();
-    ALL_REQUIREMENT_LEVELS  = [...new Set([...DATA, ...CARE_DATA].map(r => r.requirement_level).filter(Boolean))];
-    ALL_AUTHORITY_LEVELS    = [...new Set([...DATA, ...CARE_DATA].map(r => r.authority_level).filter(Boolean))];
-    ALL_APPLICABILITY_VALUES = [...new Set([...DATA, ...CARE_DATA].flatMap(r => applicabilityTokens(r.applicability_rules)))].sort();
-    ALL_IMPACT_TYPES = buildImpactTypeFacetValues([...DATA, ...CARE_DATA]);
-    ALL_POLICY_ACTIONS = [...new Set([...DATA, ...CARE_DATA].map(r => r.policy_action_relevance).filter(Boolean))];
-    ALL_PRODUCT_USE_CASES = [...new Set([...DATA, ...CARE_DATA].map(r => r.product_use_case).filter(Boolean))];
-    ALL_OPERATIONAL_DOMAINS = [...new Set([...DATA, ...CARE_DATA].map(r => r.operational_domain).filter(Boolean))];
+    const catalog = publicRecords([...DATA, ...CARE_DATA]);
+    ALL_JURISDICTIONS = [...new Set(catalog.map(r => r.state).filter(Boolean))].sort();
+    ALL_REQUIREMENT_LEVELS  = [...new Set(catalog.map(r => r.requirement_level).filter(Boolean))];
+    ALL_AUTHORITY_LEVELS    = [...new Set(catalog.map(r => r.authority_level).filter(Boolean))];
+    ALL_APPLICABILITY_VALUES = [...new Set(catalog.flatMap(r => applicabilityTokens(r.applicability_rules)))].sort();
+    ALL_IMPACT_TYPES = buildImpactTypeFacetValues(catalog);
+    ALL_POLICY_ACTIONS = [...new Set(catalog.map(r => r.policy_action_relevance).filter(Boolean))];
+    ALL_PRODUCT_USE_CASES = [...new Set(catalog.map(r => r.product_use_case).filter(Boolean))];
+    ALL_OPERATIONAL_DOMAINS = [...new Set(catalog.map(r => r.operational_domain).filter(Boolean))];
     filterState.jurisdictions = new Set(ALL_JURISDICTIONS);
     filterState.requirementLevels   = new Set(ALL_REQUIREMENT_LEVELS);
     filterState.authorityLevels     = new Set(ALL_AUTHORITY_LEVELS);
@@ -4026,10 +4027,10 @@
     // Facility/Learner Applicability Profile facets (Phase 6) — derived from
     // the FULL flat dataset (both lanes), since a profile query isn't
     // confined to whichever lane a record happened to arrive in.
-    ALL_HSTM_SETTINGS = [...new Set([...DATA, ...CARE_DATA].map(r => r.hstm_setting).filter(Boolean))].sort();
-    ALL_HSTM_ROLES = [...new Set([...DATA, ...CARE_DATA].flatMap(r => Array.isArray(r.hstm_role) ? r.hstm_role : (r.hstm_role ? [r.hstm_role] : [])))].sort();
+    ALL_HSTM_SETTINGS = [...new Set(catalog.map(r => r.hstm_setting).filter(Boolean))].sort();
+    ALL_HSTM_ROLES = [...new Set(catalog.flatMap(r => Array.isArray(r.hstm_role) ? r.hstm_role : (r.hstm_role ? [r.hstm_role] : [])))].sort();
     rowMap = {};
-    [...DATA, ...CARE_DATA, ...WR_DATA].forEach(r => { rowMap[cardKey(r)] = r; });
+    catalog.concat(WR_DATA).forEach(r => { rowMap[cardKey(r)] = r; });
     populateHeaderJurisdictions();
   }
 
@@ -4115,6 +4116,8 @@
 
       CURRENT_SHEETS = sheets;
       parseData(CURRENT_SHEETS);
+      PROJECTION_META.count = publicRecords([...DATA, ...CARE_DATA]).length;
+      updateProjectionBadge();
       return;
     } catch (err) {
       // Fall back to the legacy combined export if the unified files aren't
@@ -4125,7 +4128,7 @@
         const json = await res.json();
         CURRENT_SHEETS = json;
         parseData(CURRENT_SHEETS);
-        PROJECTION_META = { source: 'local', count: DATA.length + CARE_DATA.length, proxyError: err && err.message ? err.message : '' };
+        PROJECTION_META = { source: 'local', count: publicRecords([...DATA, ...CARE_DATA]).length, proxyError: err && err.message ? err.message : '' };
         updateProjectionBadge();
         return;
       } catch (fallbackErr) {
@@ -4146,12 +4149,12 @@
   loadData().then(async () => {
     // Program vocabulary is data-driven: program-taxonomy.json ∪ values on live rows.
     try {
-      const vocab = await loadProgramVocab([...DATA, ...CARE_DATA].map(r => r._raw));
+      const vocab = await loadProgramVocab(publicRecords([...DATA, ...CARE_DATA]).map(r => r._raw));
       EDIT_SELECT_OPTIONS['Program'] = vocab.labels;
     } catch (e) { console.warn('program-taxonomy.json unavailable, using fallback vocab', e); }
     applyHashSection();
     rowMap = {};
-    [...DATA, ...CARE_DATA, ...WR_DATA].forEach(r => { rowMap[cardKey(r)] = r; });
+    publicRecords([...DATA, ...CARE_DATA]).concat(WR_DATA).forEach(r => { rowMap[cardKey(r)] = r; });
     render();
   });
   // ─── Admin Mode ───
